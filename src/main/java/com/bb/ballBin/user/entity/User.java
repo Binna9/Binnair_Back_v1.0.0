@@ -1,18 +1,19 @@
 package com.bb.ballBin.user.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import org.hibernate.annotations.UuidGenerator;
 
 @Entity
-@Getter
-@Setter
+@Data
 @Table(name = "users")
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    @GeneratedValue
+    @UuidGenerator
+    @Column(updatable = false, nullable = false, unique = true)
+    private String id;
 
     @Column(nullable = false)
     private String userName;
