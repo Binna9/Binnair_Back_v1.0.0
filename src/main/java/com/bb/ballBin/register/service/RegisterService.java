@@ -1,7 +1,7 @@
 package com.bb.ballBin.register.service;
 
 import com.bb.ballBin.user.entity.User;
-import com.bb.ballBin.register.model.RegisterDto;
+import com.bb.ballBin.register.model.RegisterUserRequestDto;
 import com.bb.ballBin.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -19,25 +19,21 @@ public class RegisterService {
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
 
-    public void registerProcess(RegisterDto registerDto) {
+    public void registerAccount(RegisterUserRequestDto registerUserRequestDto) {
 
-        String username = registerDto.getUserName();
-        String password = registerDto.getPassword();
-        String email = registerDto.getEmail();
-        String nickName = registerDto.getNickName();
-
-        Boolean isExist = userRepository.existsByUserName(username);
-        if (isExist) {
-            return;
-        }
+        String loginId = registerUserRequestDto.getLoginId();
+        String loginPassword = registerUserRequestDto.getLoginPassword();
+        String userName = registerUserRequestDto.getUserName();
+        String email = registerUserRequestDto.getEmail();
+        String nickName = registerUserRequestDto.getNickName();
 
         User user = new User();
 
-        user.setUserName(username);
-        user.setPassword(bCryptPasswordEncoder.encode(password));
+        user.setLoginId(loginId);
+        user.setLoginPassword(bCryptPasswordEncoder.encode(loginPassword));
+        user.setUserName(userName);
         user.setEmail(email);
         user.setNickName(nickName);
-        user.setRole("ROLE_ADMIN");
 
         userRepository.save(user);
     }

@@ -2,13 +2,14 @@ package com.bb.ballBin.role.entity;
 
 import com.bb.ballBin.role.model.RoleResponseDto;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
 
-@Data
 @Entity
+@Data
 @NoArgsConstructor
 @Table(name = "roles")
 public class Role {

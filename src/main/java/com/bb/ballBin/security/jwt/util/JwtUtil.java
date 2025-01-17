@@ -36,9 +36,9 @@ public class JwtUtil {
         return Jwts.builder()
                 .claim("username", username)
                 .claim("role", role)
-                .issuedAt(new Date(System.currentTimeMillis()))
+                .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiredMs))
-                .signWith(secretKey, SignatureAlgorithm.HS256) // 서명
+                .signWith(secretKey) // 서명
                 .compact();
     }
 }

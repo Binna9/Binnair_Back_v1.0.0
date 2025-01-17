@@ -2,10 +2,11 @@ package com.bb.ballBin.security.jwt;
 
 import com.bb.ballBin.user.entity.User;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 public class BallBinUserDetails implements UserDetails {
 
@@ -18,27 +19,19 @@ public class BallBinUserDetails implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
 
-        Collection<GrantedAuthority> collection = new ArrayList<>();
-
-        collection.add(new GrantedAuthority() {
-
-            @Override
-            public String getAuthority() {
-                return user.getRole();
-            }
-        });
-
-        return collection;
+        return user.getRoles().stream()
+                .map(SimpleGrantedAuthority::new) // roles 에서 각 String 을 SimpleGrantedAuthority 로 변환
+                .collect(Collectors.toSet());
     }
 
     @Override
     public String getPassword() {
-        return user.getPassword();
+        return user.getLoginPassword();
     }
 
     @Override
     public String getUsername() {
-        return user.getUserName();
+        return user.getLoginId();
     }
 
     @Override
@@ -48,7 +41,7 @@ public class BallBinUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return user.getFailedLoginAttempts() < 5;
     }
 
     @Override
@@ -58,6 +51,6 @@ public class BallBinUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return user.isActive();
     }
 }
