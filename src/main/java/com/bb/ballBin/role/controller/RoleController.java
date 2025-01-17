@@ -56,7 +56,7 @@ public class RoleController {
                 .body("역할 수정에 성공하셨습니다.");
     }
 
-    @DeleteMapping("")
+    @DeleteMapping("/{id}")
     @Operation(summary = "역할 삭제")
     ResponseEntity<String> removeRole(@PathVariable String id){
 

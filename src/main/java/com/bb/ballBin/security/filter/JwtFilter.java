@@ -1,8 +1,8 @@
 package com.bb.ballBin.security.filter;
 
 import com.bb.ballBin.security.jwt.BallBinUserDetails;
+import com.bb.ballBin.security.jwt.BallBinUserDetailsService;
 import com.bb.ballBin.security.jwt.util.JwtUtil;
-import com.bb.ballBin.user.entity.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,9 +18,11 @@ import java.io.IOException;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final BallBinUserDetailsService ballBinUserDetailsService;
 
-    public JwtFilter(JwtUtil jwtUtil) {
+    public JwtFilter(JwtUtil jwtUtil, BallBinUserDetailsService ballBinUserDetailsService) {
         this.jwtUtil = jwtUtil;
+        this.ballBinUserDetailsService = ballBinUserDetailsService;
     }
 
     @Override
@@ -46,15 +48,9 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        String username = jwtUtil.getUsernameFromToken(token);
-        String role = jwtUtil.getRoleFromToken(token);
+        String loginId = jwtUtil.getUsernameFromToken(token);
 
-        User user = new User();
-        user.setUserName(username);
-        user.setPassword("temppassword");
-        user.setRole(role);
-
-        BallBinUserDetails ballBinUserDetails = new BallBinUserDetails(user);
+        BallBinUserDetails ballBinUserDetails = (BallBinUserDetails) ballBinUserDetailsService.loadUserByUsername(loginId);
 
         //스프링 시큐리티 인증 토큰 생성
         Authentication authToken = new UsernamePasswordAuthenticationToken(ballBinUserDetails, null, ballBinUserDetails.getAuthorities());

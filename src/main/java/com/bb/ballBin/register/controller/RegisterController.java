@@ -1,8 +1,10 @@
 package com.bb.ballBin.register.controller;
 
-import com.bb.ballBin.register.model.RegisterDto;
+import com.bb.ballBin.register.model.RegisterUserRequestDto;
 import com.bb.ballBin.register.service.RegisterService;
 import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,9 +21,13 @@ public class RegisterController {
     }
 
     @PostMapping("")
-    @Operation(summary = "회원가입")
-    public String registerProcess(@RequestBody RegisterDto registerDto) {
-        registerService.registerProcess(registerDto);
-        return "회원가입 성공";
+    @Operation(summary = "사용자 회원가입")
+    public ResponseEntity<String> registerUser(@RequestBody RegisterUserRequestDto registerUserRequestDto) {
+
+        registerService.registerAccount(registerUserRequestDto);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body("회원가입에 성공하셨습니다.");
     }
 }
