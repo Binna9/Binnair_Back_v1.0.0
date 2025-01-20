@@ -23,11 +23,13 @@ public class SecurityConfig {
 
     private final AuthenticationConfiguration authenticationConfiguration;
     private final BallBinUserDetailsService ballBinUserDetailsService;
+    private final SecurityPolicy securityPolicy;
     private final JwtUtil jwtUtil;
 
-    public SecurityConfig(AuthenticationConfiguration authenticationConfiguration, BallBinUserDetailsService ballBinUserDetailsService, JwtUtil jwtUtil) {
+    public SecurityConfig(AuthenticationConfiguration authenticationConfiguration, BallBinUserDetailsService ballBinUserDetailsService, SecurityPolicy securityPolicy, JwtUtil jwtUtil) {
         this.authenticationConfiguration = authenticationConfiguration;
         this.ballBinUserDetailsService = ballBinUserDetailsService;
+        this.securityPolicy = securityPolicy;
         this.jwtUtil = jwtUtil;
     }
 
@@ -55,10 +57,10 @@ public class SecurityConfig {
         http
                 .httpBasic(AbstractHttpConfigurer::disable); // HttpBasic 비활성
         http
-                .formLogin(AbstractHttpConfigurer::disable); // 로그인 Form 비활
+                .formLogin(AbstractHttpConfigurer::disable); // 로그인 Form 비활성
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/login", "/", "/register").permitAll()
+                        .requestMatchers(securityPolicy.getPermittedUrls().toArray(String[]::new)).permitAll()
                         .requestMatchers("/admin").hasRole("ADMIN")
                         .anyRequest().authenticated()); // 명시되지 않은 모든 요청 인증 사용자 접근
         http
