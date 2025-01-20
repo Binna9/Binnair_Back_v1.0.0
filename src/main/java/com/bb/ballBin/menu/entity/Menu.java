@@ -1,5 +1,6 @@
 package com.bb.ballBin.menu.entity;
 
+import com.bb.ballBin.common.convert.BooleanToYNConverter;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,13 +28,11 @@ public class Menu {
     private String upperMenuId;
 
     private int menuOrder;
+
     @Column(nullable = false)
     private int menuLevel;
-    @Column(nullable = false)
-    private boolean isActive;
 
-    @ElementCollection
-    private Set<String> roles;
-    @ElementCollection
-    private Set<String> permissions;
+    @Column(nullable = false)
+    @Convert(converter = BooleanToYNConverter.class)
+    private boolean isActive;
 }

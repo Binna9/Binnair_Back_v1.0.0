@@ -1,5 +1,6 @@
 package com.bb.ballBin.role.entity;
 
+import com.bb.ballBin.permission.entity.Permission;
 import com.bb.ballBin.role.model.RoleResponseDto;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -7,6 +8,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Data
@@ -24,6 +28,14 @@ public class Role {
     private String roleName;
 
     private String roleDescription;
+
+    @ManyToMany
+    @JoinTable(
+            name = "role_permissions",
+            joinColumns = @JoinColumn(name = "roleid"),
+            inverseJoinColumns = @JoinColumn(name = "permissionid")
+    )
+    private Set<Permission> permissions = new HashSet<>();
 
     @Builder
     @SuppressWarnings("unused")

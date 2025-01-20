@@ -26,37 +26,38 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest req, @NonNull HttpServletResponse res, @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        String authorization= request.getHeader("Authorization");
+        String authorization= req.getHeader("Authorization");
 
         if (authorization == null || !authorization.startsWith("Bearer ")) {
-
-            System.out.println("token null");
-            filterChain.doFilter(request, response);
-
+            filterChain.doFilter(req, res);
             return;
         }
 
-        String token = authorization.split(" ")[1];
+        String token = authorization.substring(7);
 
         if (jwtUtil.isExpired(token)) {
-
-            System.out.println("token expired");
-            filterChain.doFilter(request, response);
-
+            filterChain.doFilter(req, res);
             return;
         }
 
-        String loginId = jwtUtil.getUsernameFromToken(token);
+        String userId = jwtUtil.getUserIdFromToken(token);
 
-        BallBinUserDetails ballBinUserDetails = (BallBinUserDetails) ballBinUserDetailsService.loadUserByUsername(loginId);
+        if (userId != null) {
+            BallBinUserDetails ballBinUserDetails = (BallBinUserDetails) ballBinUserDetailsService.loadUserByUsername(userId);
 
-        //스프링 시큐리티 인증 토큰 생성
-        Authentication authToken = new UsernamePasswordAuthenticationToken(ballBinUserDetails, null, ballBinUserDetails.getAuthorities());
-        //세션에 사용자 등록
-        SecurityContextHolder.getContext().setAuthentication(authToken);
+            // Spring Security 인증 객체 생성
+            Authentication authToken = new UsernamePasswordAuthenticationToken(
+                    ballBinUserDetails,
+                    null,
+                    ballBinUserDetails.getAuthorities()
+            );
 
-        filterChain.doFilter(request, response);
+            // SecurityContext 에 인증 정보 저장
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+        }
+
+        filterChain.doFilter(req, res);
     }
 }

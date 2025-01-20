@@ -16,12 +16,23 @@ public class BallBinUserDetails implements UserDetails {
         this.user = user;
     }
 
+    /**
+     * 사용자 역할 (Roles)을 Spring Security 의 GrantedAuthority 로 변환
+     */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-
         return user.getRoles().stream()
-                .map(SimpleGrantedAuthority::new) // roles 에서 각 String 을 SimpleGrantedAuthority 로 변환
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                 .collect(Collectors.toSet());
+    }
+
+    @Override
+    public String getUsername() {
+        return user.getUserId();
+    }
+
+    public String getUserId() {
+        return user.getUserId();
     }
 
     @Override
@@ -29,26 +40,33 @@ public class BallBinUserDetails implements UserDetails {
         return user.getLoginPassword();
     }
 
-    @Override
-    public String getUsername() {
-        return user.getLoginId();
-    }
-
+    /**
+     * 계정 만료 여부
+     */
     @Override
     public boolean isAccountNonExpired() {
         return true;
     }
 
+    /**
+     * 계정 잠금 여부 (5회)
+     */
     @Override
     public boolean isAccountNonLocked() {
         return user.getFailedLoginAttempts() < 5;
     }
 
+    /**
+     * 자격 증명 만료 여부
+     */
     @Override
     public boolean isCredentialsNonExpired() {
         return true;
     }
 
+    /**
+     * 계정 활성화 여부
+     */
     @Override
     public boolean isEnabled() {
         return user.isActive();

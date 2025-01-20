@@ -1,10 +1,13 @@
 package com.bb.ballBin.user.entity;
 
+import com.bb.ballBin.common.convert.BooleanToYNConverter;
+import com.bb.ballBin.role.entity.Role;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -20,21 +23,33 @@ public class User {
     private String userId;
 
     @Column(nullable = false, unique = true)
-
     private String loginId;
+
     @Column(nullable = false)
     private String loginPassword;
+
     @Column(nullable = false)
     private String userName;
-    @Column(nullable = false, unique = true)
+
+    @Column(unique = true)
     private String email;
+
     @Column(nullable = false, unique = true)
     private String nickName;
-    @Column(nullable = false)
-    private boolean isActive;
+
+    @Column
+    private String phoneNumber;
+
+    @Convert(converter = BooleanToYNConverter.class)
+    private boolean isActive = true;
 
     private int failedLoginAttempts = 0;
 
-    @ElementCollection
-    private Set<String> roles;
+    @ManyToMany
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
 }

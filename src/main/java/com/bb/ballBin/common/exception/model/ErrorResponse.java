@@ -1,4 +1,4 @@
-package com.bb.ballBin.global.exception.model;
+package com.bb.ballBin.common.exception.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
