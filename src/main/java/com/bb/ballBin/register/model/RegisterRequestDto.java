@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @Builder
-public class RegisterUserRequestDto {
+public class RegisterRequestDto {
 
     @Schema(description = "사용자 로그인 ID")
     private String loginId;
@@ -22,4 +22,6 @@ public class RegisterUserRequestDto {
     private String email;
     @Schema(description = "사용자 별칭")
     private String nickName;
+    @Schema(description = "핸드폰 번호")
+    private String phoneNumber;
 }

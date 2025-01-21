@@ -20,6 +20,9 @@ public class RoleService {
         this.roleRepository=roleRepository;
     }
 
+    /**
+     * 역할 전체 조회
+     */
     public List<RoleResponseDto> getAllRoles() {
 
         return roleRepository.findAll().stream()
@@ -27,14 +30,20 @@ public class RoleService {
                 .collect(Collectors.toList());
     }
 
-    public RoleResponseDto getRoleById(String id) {
+    /**
+     * 역할 개별 조회
+     */
+    public RoleResponseDto getRoleById(String roleId) {
 
-        Role role = roleRepository.findById(id)
+        Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RuntimeException("역할을 찾을 수 없습니다."));
 
         return role.toDto();
     }
 
+    /**
+     * 역할 생성
+     */
     public void createRole(RoleRequestDto roleRequestDto) {
 
         if (roleRequestDto.getRoleName() == null || roleRequestDto.getRoleName().isEmpty()) {
@@ -45,9 +54,12 @@ public class RoleService {
         roleRepository.save(role);
     }
 
-    public void updateRole(String id, RoleRequestDto roleRequestDto) {
+    /**
+     * 역할 수정
+     */
+    public void updateRole(String roleId, RoleRequestDto roleRequestDto) {
 
-        Role role = roleRepository.findById(id)
+        Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RuntimeException("역할을 찾을 수 없습니다."));
 
         role.setRoleName(roleRequestDto.getRoleName());
@@ -56,8 +68,11 @@ public class RoleService {
         roleRepository.save(role);
     }
 
-    public void deleteRole(String id) {
+    /**
+     * 역할 삭제
+     */
+    public void deleteRole(String roleId) {
 
-        roleRepository.deleteById(id);
+        roleRepository.deleteById(roleId);
     }
 }

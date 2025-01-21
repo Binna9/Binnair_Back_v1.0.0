@@ -4,6 +4,7 @@ import com.bb.ballBin.security.filter.JwtFilter;
 import com.bb.ballBin.security.filter.LoginFilter;
 import com.bb.ballBin.security.jwt.BallBinUserDetailsService;
 import com.bb.ballBin.security.jwt.util.JwtUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -38,6 +39,11 @@ public class SecurityConfig {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
+    @Bean
+    public JwtFilter jwtFilter() {
+        return new JwtFilter(jwtUtil, ballBinUserDetailsService);
+    }
+
     /**
      * Password 암호화
      */
@@ -62,11 +68,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers(securityPolicy.getPermittedUrls().toArray(String[]::new)).permitAll()
                         .requestMatchers("/admin").hasRole("ADMIN")
+                        .requestMatchers(securityPolicy.getAuthenticatedUrls().toArray(String[]::new)).authenticated()
                         .anyRequest().authenticated()); // 명시되지 않은 모든 요청 인증 사용자 접근
         http
                 .addFilterBefore(new JwtFilter(jwtUtil, ballBinUserDetailsService), LogoutFilter.class);
         http
-                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), new ObjectMapper(), jwtUtil), UsernamePasswordAuthenticationFilter.class);
         http
                 .sessionManagement((session) -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // 세션을 사용하지 않는 무상태 방식(STATELESS)

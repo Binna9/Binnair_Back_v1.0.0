@@ -7,13 +7,33 @@ import java.util.List;
 @Component
 public class SecurityPolicy {
 
+    /**
+     * 인증 없이 사용 가능
+     */
     public List<String> getPermittedUrls() {
         return List.of(
-                "/",
                 "/login",
-                "/register",
-                "/roles",
-                "/menus"
+                "/registers"
+        );
+    }
+
+    /**
+     * 인증된 사용자만 접근 가능
+     */
+    public List<String> getAuthenticatedUrls() {
+        return List.of(
+                "/roles/**",
+                "/menus/**",
+                "/boards/**"
+        );
+    }
+
+    /**
+     * 관리자만 접근 가능
+     */
+    public List<String> getAdminUrls() {
+        return List.of(
+                "/admin/**"
         );
     }
 }

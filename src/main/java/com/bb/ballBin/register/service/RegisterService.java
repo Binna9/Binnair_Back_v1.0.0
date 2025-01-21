@@ -1,7 +1,7 @@
 package com.bb.ballBin.register.service;
 
 import com.bb.ballBin.user.entity.User;
-import com.bb.ballBin.register.model.RegisterUserRequestDto;
+import com.bb.ballBin.register.model.RegisterRequestDto;
 import com.bb.ballBin.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -19,13 +19,14 @@ public class RegisterService {
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
 
-    public void registerAccount(RegisterUserRequestDto registerUserRequestDto) {
+    public void registerAccount(RegisterRequestDto registerRequestDto) {
 
-        String loginId = registerUserRequestDto.getLoginId();
-        String loginPassword = registerUserRequestDto.getLoginPassword();
-        String userName = registerUserRequestDto.getUserName();
-        String email = registerUserRequestDto.getEmail();
-        String nickName = registerUserRequestDto.getNickName();
+        String loginId = registerRequestDto.getLoginId();
+        String loginPassword = registerRequestDto.getLoginPassword();
+        String userName = registerRequestDto.getUserName();
+        String email = registerRequestDto.getEmail();
+        String nickName = registerRequestDto.getNickName();
+        String phoneNumber = registerRequestDto.getPhoneNumber();
 
         User user = new User();
 
@@ -34,6 +35,7 @@ public class RegisterService {
         user.setUserName(userName);
         user.setEmail(email);
         user.setNickName(nickName);
+        user.setPhoneNumber(phoneNumber);
 
         userRepository.save(user);
     }

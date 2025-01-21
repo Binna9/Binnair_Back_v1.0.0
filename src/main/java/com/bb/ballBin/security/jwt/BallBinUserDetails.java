@@ -28,11 +28,15 @@ public class BallBinUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
-        return user.getUserId();
+        return user.getLoginId();
     }
 
     public String getUserId() {
         return user.getUserId();
+    }
+
+    public String getLoginId(){
+        return user.getLoginId();
     }
 
     @Override

@@ -1,6 +1,6 @@
 package com.bb.ballBin.register.controller;
 
-import com.bb.ballBin.register.model.RegisterUserRequestDto;
+import com.bb.ballBin.register.model.RegisterRequestDto;
 import com.bb.ballBin.register.service.RegisterService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
@@ -22,9 +22,9 @@ public class RegisterController {
 
     @PostMapping("")
     @Operation(summary = "사용자 회원가입")
-    public ResponseEntity<String> registerUser(@RequestBody RegisterUserRequestDto registerUserRequestDto) {
+    public ResponseEntity<String> registerUser(@RequestBody RegisterRequestDto registerRequestDto) {
 
-        registerService.registerAccount(registerUserRequestDto);
+        registerService.registerAccount(registerRequestDto);
 
         return ResponseEntity
                 .status(HttpStatus.OK)

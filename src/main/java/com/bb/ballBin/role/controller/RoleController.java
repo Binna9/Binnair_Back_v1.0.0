@@ -22,16 +22,16 @@ public class RoleController {
 
     @GetMapping("")
     @Operation(summary = "역할 전체 조회")
-    public List<RoleResponseDto> roleList(){
+    public ResponseEntity<List<RoleResponseDto>> roleList(){
 
-        return roleService.getAllRoles();
+        return ResponseEntity.ok(roleService.getAllRoles());
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "역할 ID 조회")
-    public RoleResponseDto roleDetail(@PathVariable String id){
+    @GetMapping("/{roleId}")
+    @Operation(summary = "역할 개별 조회")
+    public ResponseEntity<RoleResponseDto> roleDetail(@PathVariable String roleId){
 
-        return roleService.getRoleById(id);
+        return ResponseEntity.ok(roleService.getRoleById(roleId));
     }
 
     @PostMapping("")
@@ -45,22 +45,22 @@ public class RoleController {
                 .body("역할 생성에 성공하셨습니다.");
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{roleId}")
     @Operation(summary = "역할 수정")
-    ResponseEntity<String> modifyRole(@PathVariable String id, @RequestBody RoleRequestDto roleRequestDto){
+    public ResponseEntity<String> modifyRole(@PathVariable String roleId, @RequestBody RoleRequestDto roleRequestDto){
 
-        roleService.updateRole(id ,roleRequestDto);
+        roleService.updateRole(roleId ,roleRequestDto);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body("역할 수정에 성공하셨습니다.");
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{roleId}")
     @Operation(summary = "역할 삭제")
-    ResponseEntity<String> removeRole(@PathVariable String id){
+    public ResponseEntity<String> removeRole(@PathVariable String roleId){
 
-        roleService.deleteRole(id);
+        roleService.deleteRole(roleId);
 
         return ResponseEntity
                 .status(HttpStatus.OK)

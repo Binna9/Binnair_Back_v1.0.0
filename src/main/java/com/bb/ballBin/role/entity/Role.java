@@ -15,21 +15,24 @@ import java.util.Set;
 @Entity
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Table(name = "roles")
 public class Role {
 
     @Id
     @GeneratedValue
     @UuidGenerator
-    @Column(updatable = false, nullable = false, unique = true)
+    @Column(updatable = false, nullable = false, unique = true, name ="role_id")
     private String roleId;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, name = "role_name")
     private String roleName;
 
+    @Column(name = "role_description")
     private String roleDescription;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "role_permissions",
             joinColumns = @JoinColumn(name = "roleid"),
@@ -37,14 +40,9 @@ public class Role {
     )
     private Set<Permission> permissions = new HashSet<>();
 
-    @Builder
-    @SuppressWarnings("unused")
-    public Role(String roleId, String roleName, String roleDescription) {
-        this.roleId = roleId;
-        this.roleName = roleName;
-        this.roleDescription = roleDescription;
-    }
-
+    /**
+     * Entity to DTO
+     */
     public RoleResponseDto toDto() {
         return RoleResponseDto.builder()
                 .roleName(this.roleName)

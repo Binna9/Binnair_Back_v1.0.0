@@ -29,6 +29,7 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest req, @NonNull HttpServletResponse res, @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String authorization= req.getHeader("Authorization");
+        System.out.println(authorization);
 
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             filterChain.doFilter(req, res);
@@ -42,10 +43,10 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        String userId = jwtUtil.getUserIdFromToken(token);
+        String loginId = jwtUtil.getUserIdFromToken(token);
 
-        if (userId != null) {
-            BallBinUserDetails ballBinUserDetails = (BallBinUserDetails) ballBinUserDetailsService.loadUserByUsername(userId);
+        if (loginId != null) {
+            BallBinUserDetails ballBinUserDetails = (BallBinUserDetails) ballBinUserDetailsService.loadUserByUsername(loginId);
 
             // Spring Security 인증 객체 생성
             Authentication authToken = new UsernamePasswordAuthenticationToken(
