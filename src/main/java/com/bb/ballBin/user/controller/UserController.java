@@ -1,6 +1,6 @@
 package com.bb.ballBin.user.controller;
 
-import com.bb.ballBin.user.entity.User;
+import com.bb.ballBin.common.message.annotation.MessageKey;
 import com.bb.ballBin.user.model.UserRequsetDto;
 import com.bb.ballBin.user.model.UserResponseDto;
 import com.bb.ballBin.user.service.UserService;
@@ -37,23 +37,21 @@ public class UserController {
 
     @PutMapping("/{userId}")
     @Operation(summary = "사용자 수정")
+    @MessageKey(value = "success.user.update")
     public ResponseEntity<String> modifyUser(@PathVariable String userId, @RequestBody UserRequsetDto userRequsetDto) {
 
         userService.updateUser(userId, userRequsetDto);
 
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body("사용자 수정에 성공하셨습니다.");
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @DeleteMapping("/{userId}")
     @Operation(summary = "사용자 삭제")
+    @MessageKey(value = "success.user.delete")
     public ResponseEntity<String> removeUser(@PathVariable String userId) {
 
         userService.deleteUser(userId);
 
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body("사용자 삭제에 성공하셨습니다.");
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

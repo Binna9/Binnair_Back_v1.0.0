@@ -1,5 +1,6 @@
 package com.bb.ballBin.user.service;
 
+import com.bb.ballBin.common.message.Service.MessageService;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.user.model.UserRequsetDto;
 import com.bb.ballBin.user.model.UserResponseDto;
@@ -34,7 +35,7 @@ public class UserService {
     public UserResponseDto getUserById(String userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new RuntimeException("error.user.notfound"));
 
         return user.toDto();
     }
@@ -44,7 +45,7 @@ public class UserService {
      */
     public void updateUser(String userId , UserRequsetDto userRequsetDto){
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new RuntimeException("error.user.notfound"));
 
         userRepository.save(user);
     }

@@ -1,5 +1,6 @@
 package com.bb.ballBin.register.controller;
 
+import com.bb.ballBin.common.message.annotation.MessageKey;
 import com.bb.ballBin.register.model.RegisterRequestDto;
 import com.bb.ballBin.register.service.RegisterService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,12 +23,11 @@ public class RegisterController {
 
     @PostMapping("")
     @Operation(summary = "사용자 회원가입")
+    @MessageKey(value = "success.user.register")
     public ResponseEntity<String> registerUser(@RequestBody RegisterRequestDto registerRequestDto) {
 
         registerService.registerAccount(registerRequestDto);
 
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body("회원가입에 성공하셨습니다.");
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

@@ -28,25 +28,24 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest req, @NonNull HttpServletResponse res, @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        String authorization= req.getHeader("Authorization");
-        System.out.println(authorization);
+        String authorization= req.getHeader("Authorization"); // 값 읽기
 
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             filterChain.doFilter(req, res);
             return;
         }
 
-        String token = authorization.substring(7);
+        String token = authorization.substring(7); // Bearer 제거 실제 토큰 추출
 
-        if (jwtUtil.isExpired(token)) {
+        if (jwtUtil.isExpired(token)) { // 토큰 만료 확인
             filterChain.doFilter(req, res);
             return;
         }
 
-        String loginId = jwtUtil.getUserIdFromToken(token);
+        String userId = jwtUtil.getUserIdFromToken(token); // 토큰의 userId 부분
 
-        if (loginId != null) {
-            BallBinUserDetails ballBinUserDetails = (BallBinUserDetails) ballBinUserDetailsService.loadUserByUsername(loginId);
+        if (userId != null) {
+            BallBinUserDetails ballBinUserDetails = (BallBinUserDetails) ballBinUserDetailsService.loadUserById(userId);
 
             // Spring Security 인증 객체 생성
             Authentication authToken = new UsernamePasswordAuthenticationToken(

@@ -47,13 +47,16 @@ public class User {
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    @Builder.Default
     @Convert(converter = BooleanToYNConverter.class)
     @Column(name = "is_active")
     private boolean isActive = true;
 
+    @Builder.Default
     @Column(name = "failed_login_attempts")
-    private int failedLoginAttempts = 0;
+    private Integer failedLoginAttempts = 0;
 
+    @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",

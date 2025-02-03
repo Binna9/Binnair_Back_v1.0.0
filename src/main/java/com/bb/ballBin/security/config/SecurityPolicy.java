@@ -24,7 +24,8 @@ public class SecurityPolicy {
         return List.of(
                 "/roles/**",
                 "/menus/**",
-                "/boards/**"
+                "/boards/**",
+                "/bookmarks/**"
         );
     }
 

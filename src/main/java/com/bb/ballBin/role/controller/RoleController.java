@@ -1,5 +1,7 @@
 package com.bb.ballBin.role.controller;
 
+import com.bb.ballBin.common.message.Service.MessageService;
+import com.bb.ballBin.common.message.annotation.MessageKey;
 import com.bb.ballBin.role.model.RoleRequestDto;
 import com.bb.ballBin.role.model.RoleResponseDto;
 import com.bb.ballBin.role.service.RoleService;
@@ -15,8 +17,10 @@ import java.util.List;
 public class RoleController {
 
     private final RoleService roleService;
+    private final MessageService messageService;
 
-    public RoleController(RoleService roleService) {
+    public RoleController(RoleService roleService, MessageService messageService) {
+        this.messageService = messageService;
         this.roleService = roleService;
     }
 
@@ -36,34 +40,31 @@ public class RoleController {
 
     @PostMapping("")
     @Operation(summary = "역할 생성")
+    @MessageKey(value = "success.role.create")
     public ResponseEntity<String> addRole(@RequestBody RoleRequestDto roleRequestDto){
 
         roleService.createRole(roleRequestDto);
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body("역할 생성에 성공하셨습니다.");
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @PutMapping("/{roleId}")
     @Operation(summary = "역할 수정")
+    @MessageKey(value = "success.role.update")
     public ResponseEntity<String> modifyRole(@PathVariable String roleId, @RequestBody RoleRequestDto roleRequestDto){
 
         roleService.updateRole(roleId ,roleRequestDto);
 
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body("역할 수정에 성공하셨습니다.");
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @DeleteMapping("/{roleId}")
     @Operation(summary = "역할 삭제")
+    @MessageKey(value = "success.role.delete")
     public ResponseEntity<String> removeRole(@PathVariable String roleId){
 
         roleService.deleteRole(roleId);
 
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body("역할 삭제에 성공하셨습니다.");
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

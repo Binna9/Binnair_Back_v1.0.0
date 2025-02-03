@@ -1,7 +1,7 @@
 package com.bb.ballBin.board.controller;
 
-import com.bb.ballBin.board.dto.BoardRequestDto;
-import com.bb.ballBin.board.dto.BoardResponseDto;
+import com.bb.ballBin.board.model.BoardRequestDto;
+import com.bb.ballBin.board.model.BoardResponseDto;
 import com.bb.ballBin.board.service.BoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

@@ -1,7 +1,7 @@
 package com.bb.ballBin.board.service;
 
-import com.bb.ballBin.board.dto.BoardRequestDto;
-import com.bb.ballBin.board.dto.BoardResponseDto;
+import com.bb.ballBin.board.model.BoardRequestDto;
+import com.bb.ballBin.board.model.BoardResponseDto;
 import com.bb.ballBin.board.entity.Board;
 import com.bb.ballBin.board.repository.BoardRepository;
 import lombok.RequiredArgsConstructor;

@@ -1,5 +1,6 @@
 package com.bb.ballBin.security.filter;
 
+import com.bb.ballBin.common.message.Service.MessageService;
 import com.bb.ballBin.security.jwt.BallBinUserDetails;
 import com.bb.ballBin.security.jwt.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,29 +22,15 @@ import java.util.stream.Collectors;
 public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     private final AuthenticationManager authenticationManager;
+    private final MessageService messageService;
     private final ObjectMapper objectMapper;
     private final JwtUtil jwtUtil;
 
-    public LoginFilter(AuthenticationManager authenticationManager, ObjectMapper objectMapper, JwtUtil jwtUtil) {
+    public LoginFilter(AuthenticationManager authenticationManager, MessageService messageService, ObjectMapper objectMapper, JwtUtil jwtUtil) {
         this.authenticationManager = authenticationManager;
+        this.messageService = messageService;
         this.objectMapper = objectMapper;
         this.jwtUtil = jwtUtil;
-    }
-
-    /**
-     * Request loginId 추출
-     */
-    @Override
-    protected String obtainUsername(HttpServletRequest request) {
-        return request.getParameter("loginId");
-    }
-
-    /**
-     * Request loginPassword 추출
-     */
-    @Override
-    protected String obtainPassword(HttpServletRequest request) {
-        return request.getParameter("loginPassword");
     }
 
     /**
@@ -56,8 +43,8 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     @Override
     public Authentication attemptAuthentication(HttpServletRequest req, HttpServletResponse res) throws AuthenticationException {
 
-        String loginId = obtainUsername(req);
-        String loginPassword = obtainPassword(req);
+        String loginId = req.getParameter("loginId");
+        String loginPassword = req.getParameter("loginPassword");
 
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(loginId, loginPassword, null);
 
@@ -75,16 +62,17 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
         BallBinUserDetails ballBinUserDetails = (BallBinUserDetails) auth.getPrincipal();
 
-        String loginId = ballBinUserDetails.getLoginId();
+        String userId = ballBinUserDetails.getUserId(); //생성시 어떤 정보를 포함할지
 
         Set<String> roles = auth.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
 
-        String token = jwtUtil.createJwtToken(loginId, roles, 60 * 60 * 10L); // 10시간 만료
+        String token = jwtUtil.createJwtToken(userId, roles, 60 * 60 * 10L); // 10시간 만료
 
         Map<String,String> tokenMap = Map.of("token", token);
 
+        res.setStatus(HttpServletResponse.SC_OK);
         res.addHeader("Authorization", "Bearer " + token);
         res.setContentType("application/json");
         res.setCharacterEncoding("UTF-8");
@@ -98,7 +86,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest req, HttpServletResponse res, AuthenticationException failed) throws IOException {
 
-        Map<String, String> errorResponse = Map.of("ERROR", "잘못된 비밀번호입니다. 다시 시도하거나 비밀번호 찾기를 클릭하여 재설정하세요.");
+        Map<String, String> errorResponse = Map.of("ERROR", messageService.getMessage("error.security.password"));
 
         res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         res.setContentType("application/json");

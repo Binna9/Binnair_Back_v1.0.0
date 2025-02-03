@@ -14,11 +14,12 @@ public class Permission {
     @Id
     @GeneratedValue
     @UuidGenerator
-    @Column(updatable = false, nullable = false, unique = true)
+    @Column(updatable = false, nullable = false, unique = true, name = "permission_id")
     private String permissionId;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, name = "permission_name")
     private String permissionName;
 
+    @Column(name = "permission_description")
     private String permissionDescription;
 }

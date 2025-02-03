@@ -32,11 +32,12 @@ public class Role {
     @Column(name = "role_description")
     private String roleDescription;
 
+    @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "role_permissions",
-            joinColumns = @JoinColumn(name = "roleid"),
-            inverseJoinColumns = @JoinColumn(name = "permissionid")
+            joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
     private Set<Permission> permissions = new HashSet<>();
 

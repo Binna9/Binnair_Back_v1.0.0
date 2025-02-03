@@ -36,7 +36,7 @@ public class RoleService {
     public RoleResponseDto getRoleById(String roleId) {
 
         Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new RuntimeException("역할을 찾을 수 없습니다."));
+                .orElseThrow(() -> new RuntimeException("error.role.notfound"));
 
         return role.toDto();
     }
@@ -47,7 +47,7 @@ public class RoleService {
     public void createRole(RoleRequestDto roleRequestDto) {
 
         if (roleRequestDto.getRoleName() == null || roleRequestDto.getRoleName().isEmpty()) {
-            throw new IllegalArgumentException("역할 명은 필수 값 입니다.");
+            throw new IllegalArgumentException("error.role.valid_role_name");
         }
 
         Role role = roleRequestDto.toEntity();
@@ -60,7 +60,7 @@ public class RoleService {
     public void updateRole(String roleId, RoleRequestDto roleRequestDto) {
 
         Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new RuntimeException("역할을 찾을 수 없습니다."));
+                .orElseThrow(() -> new RuntimeException("error.role.notfound"));
 
         role.setRoleName(roleRequestDto.getRoleName());
         role.setRoleDescription(roleRequestDto.getRoleDescription());

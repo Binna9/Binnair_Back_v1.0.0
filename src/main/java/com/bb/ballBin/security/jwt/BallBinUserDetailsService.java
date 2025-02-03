@@ -20,7 +20,14 @@ public class BallBinUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String loginId) throws UsernameNotFoundException {
 
         User user = userRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new UsernameNotFoundException("해당 사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new UsernameNotFoundException("error.user.notfound"));
+
+        return new BallBinUserDetails(user);
+    }
+
+    public UserDetails loadUserById(String userId) throws UsernameNotFoundException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("error.user.notfound"));
 
         return new BallBinUserDetails(user);
     }

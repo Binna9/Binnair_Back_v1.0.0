@@ -1,4 +1,4 @@
-package com.bb.ballBin.board.dto;
+package com.bb.ballBin.board.model;
 
 import lombok.Getter;
 import lombok.Setter;
