@@ -25,12 +25,36 @@ public class JwtUtil {
 
     public String getUserIdFromToken(String token) {
         try {
-            return Jwts.parser()
+            System.out.println("📌 Parsing Token: " + token);
+            Claims claims = Jwts.parser()
                     .verifyWith(secretKey)
                     .build()
                     .parseSignedClaims(token)
-                    .getPayload()
-                    .get("userId", String.class);
+                    .getPayload();
+
+            System.out.println("✅ Extracted Claims: " + claims);
+
+            // ✅ 기존 코드에서 .get("userId", String.class) 대신 Object 로 받아 변환
+            Object userIdObject = claims.get("userId");
+            String userId = userIdObject != null ? String.valueOf(userIdObject) : null;
+
+            System.out.println("✅ Extracted userId: " + userId);
+            return userId;
+        } catch (JwtException | IllegalArgumentException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Date getExpiration(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            return claims.getExpiration();
         } catch (JwtException | IllegalArgumentException e) {
             return null;
         }
@@ -52,9 +76,9 @@ public class JwtUtil {
     public Set<String> getRolesFromToken(String token) {
         try {
             Claims claims = Jwts.parser()
-                    .verifyWith(secretKey) // 변경된 메서드
+                    .verifyWith(secretKey)
                     .build()
-                    .parseSignedClaims(token) // 변경된 메서드
+                    .parseSignedClaims(token)
                     .getPayload();
 
             List<String> roles = claims.get("roles", List.class);
@@ -71,19 +95,44 @@ public class JwtUtil {
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
-            return claims.getExpiration().before(new Date());
+
+            Date expiration = claims.getExpiration();
+            System.out.println("📌 Token Expiration Time: " + expiration);
+            System.out.println("📌 Current Time: " + new Date());
+
+            return expiration.before(new Date());
         } catch (JwtException | IllegalArgumentException e) {
-            return true; // 오류가 발생하면 만료로 간주
+            System.out.println("❌ Token validation failed: " + e.getMessage());
+            e.printStackTrace();
+            return true; // 🚨 예외 발생 시 만료된 것으로 간주
         }
     }
 
     public String createJwtToken(String userId, Set<String> roles, Long expiredMs) {
-        return Jwts.builder()
+
+        String token = Jwts.builder()
                 .claim("userId", userId)
                 .claim("roles", roles)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiredMs))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
+
+        // 🔍 생성된 JWT 의 Payload 를 확인하는 코드 추가
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            System.out.println("✅ JWT Payload: " + claims);
+        } catch (Exception e) {
+            System.out.println("❌ JWT Payload 확인 실패!");
+            e.printStackTrace();
+        }
+
+        System.out.println("✅ Created JWT: " + token);
+        return token;
     }
 }

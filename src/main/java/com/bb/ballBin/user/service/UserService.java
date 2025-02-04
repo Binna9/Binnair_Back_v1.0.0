@@ -1,6 +1,5 @@
 package com.bb.ballBin.user.service;
 
-import com.bb.ballBin.common.message.Service.MessageService;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.user.model.UserRequsetDto;
 import com.bb.ballBin.user.model.UserResponseDto;

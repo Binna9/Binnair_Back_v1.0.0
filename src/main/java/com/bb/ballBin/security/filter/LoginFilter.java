@@ -68,7 +68,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
 
-        String token = jwtUtil.createJwtToken(userId, roles, 60 * 60 * 10L); // 10시간 만료
+        String token = jwtUtil.createJwtToken(userId, roles, 60 * 60 * 10L * 100); // 10시간 만료
 
         Map<String,String> tokenMap = Map.of("token", token);
 

@@ -1,5 +1,6 @@
 package com.bb.ballBin.role.entity;
 
+import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.permission.entity.Permission;
 import com.bb.ballBin.role.model.RoleResponseDto;
 import jakarta.persistence.*;
@@ -18,7 +19,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @Table(name = "roles")
-public class Role {
+public class Role extends BaseEntity {
 
     @Id
     @GeneratedValue
