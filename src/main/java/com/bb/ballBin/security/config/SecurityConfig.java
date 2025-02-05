@@ -1,11 +1,9 @@
 package com.bb.ballBin.security.config;
 
-import com.bb.ballBin.common.message.Service.MessageService;
 import com.bb.ballBin.security.filter.JwtFilter;
-import com.bb.ballBin.security.filter.LoginFilter;
 import com.bb.ballBin.security.jwt.BallBinUserDetailsService;
+import com.bb.ballBin.security.jwt.service.JwtBlacklistService;
 import com.bb.ballBin.security.jwt.util.JwtUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,24 +15,21 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.logout.LogoutFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final SecurityPolicy securityPolicy;
-    private final MessageService messageService;
-    private final ObjectMapper objectMapper;
     private final JwtUtil jwtUtil;
     private final BallBinUserDetailsService ballBinUserDetailsService;
+    private final JwtBlacklistService jwtBlacklistService;
 
-    public SecurityConfig(SecurityPolicy securityPolicy, MessageService messageService, ObjectMapper objectMapper, JwtUtil jwtUtil, BallBinUserDetailsService ballBinUserDetailsService) {
+    public SecurityConfig(SecurityPolicy securityPolicy, JwtUtil jwtUtil, BallBinUserDetailsService ballBinUserDetailsService, JwtBlacklistService jwtBlacklistService) {
         this.securityPolicy = securityPolicy;
-        this.messageService = messageService;
-        this.objectMapper = objectMapper;
         this.jwtUtil = jwtUtil;
         this.ballBinUserDetailsService = ballBinUserDetailsService;
+        this.jwtBlacklistService = jwtBlacklistService;
     }
 
     /**
@@ -57,23 +52,21 @@ public class SecurityConfig {
      * Security 설정
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        JwtFilter jwtFilter = new JwtFilter(jwtUtil, ballBinUserDetailsService);
-        LoginFilter loginFilter = new LoginFilter(authenticationManager, messageService, objectMapper, jwtUtil);
-
-        loginFilter.setFilterProcessesUrl("/login");
+        JwtFilter jwtFilter = new JwtFilter(jwtUtil, ballBinUserDetailsService, jwtBlacklistService);
 
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(securityPolicy.getPermittedUrls().toArray(String[]::new)).permitAll()
-                        .requestMatchers("/admin").hasRole("ADMIN")
-                        .anyRequest().authenticated())
-                .addFilterBefore(jwtFilter, LogoutFilter.class)
-                .addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class)
+                        .requestMatchers(securityPolicy.getPermittedUrls().toArray(String[]::new)).permitAll() // ✅ 인증 없이 접근 가능
+                        .requestMatchers(securityPolicy.getAuthenticatedUrls().toArray(String[]::new)).authenticated() // ✅ 인증 필요
+                        .requestMatchers(securityPolicy.getAdminUrls().toArray(String[]::new)).hasRole("ADMIN") // ✅ 관리자 권한 필요
+                        .anyRequest().denyAll() // ✅ 나머지 요청은 차단
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class) // ✅ 필터 순서 변경
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();

@@ -1,6 +1,5 @@
 package com.bb.ballBin.role.controller;
 
-import com.bb.ballBin.common.message.Service.MessageService;
 import com.bb.ballBin.common.message.annotation.MessageKey;
 import com.bb.ballBin.role.model.RoleRequestDto;
 import com.bb.ballBin.role.model.RoleResponseDto;
@@ -17,10 +16,8 @@ import java.util.List;
 public class RoleController {
 
     private final RoleService roleService;
-    private final MessageService messageService;
 
-    public RoleController(RoleService roleService, MessageService messageService) {
-        this.messageService = messageService;
+    public RoleController(RoleService roleService) {
         this.roleService = roleService;
     }
 

@@ -1,6 +1,7 @@
 package com.bb.ballBin.user.entity;
 
 import com.bb.ballBin.common.convert.BooleanToYNConverter;
+import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.role.entity.Role;
 import com.bb.ballBin.role.model.RoleResponseDto;
 import com.bb.ballBin.user.model.UserResponseDto;
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @Builder
 @Table(name = "users")
-public class User {
+public class User extends BaseEntity {
 
     @Id
     @GeneratedValue

@@ -1,9 +1,7 @@
 package com.bb.ballBin.common.entity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.Column;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.MappedSuperclass;
+import com.bb.ballBin.user.entity.User;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,53 +9,68 @@ import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EntityListeners(BaseEntityListener.class)
+@EntityListeners(AuditingEntityListener.class)
 @MappedSuperclass
 public class BaseEntity {
 
     @CreatedDate
     @Column(name = "create_datetime", nullable = false, updatable = false)
-    @Schema(description = "생성 일시")
-    private Timestamp createDatetime;
-
-    @CreatedBy
-    @Column(name = "creator_id", nullable = false, updatable = false)
-    @Schema(description = "생성자 ID")
-    private String creatorId;
-
-    @CreatedBy
-    @Column(name = "creator_login_id", nullable = false, updatable = false)
-    @Schema(description = "생성자 로그인 ID")
-    private String creatorLoginId;
-
-    @CreatedBy
-    @Column(name = "creator_name", nullable = false, updatable = false)
-    @Schema(description = "생성자 명")
-    private String creatorName;
+    private LocalDateTime createDatetime;
 
     @LastModifiedDate
-    @Column(name = "modify_datetime", nullable = false)
-    @Schema(description = "수정 일시")
-    private Timestamp modifyDatetime;
+    @Column(name = "modify_datetime")
+    private LocalDateTime modifyDatetime;
+
+    @CreatedBy
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "creator_id", referencedColumnName = "user_id")
+    private User createdByUser;
 
     @LastModifiedBy
-    @Column(name = "modifier_id", nullable = false)
-    @Schema(description = "수정자 ID")
-    private String modifierId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "modifier_id", referencedColumnName = "user_id")
+    private User modifiedByUser;
 
-    @LastModifiedBy
-    @Column(name = "modifier_login_id", nullable = false)
-    @Schema(description = "수정자 로그인 ID")
+    @Column(name = "creator_login_id", nullable = false, updatable = false)
+    private String creatorLoginId;
+
+    @Column(name = "creator_name", nullable = false, updatable = false)
+    private String creatorName;
+
+    @Column(name = "modifier_login_id")
     private String modifierLoginId;
 
-    @LastModifiedBy
-    @Column(name = "modifier_name", nullable = false)
-    @Schema(description = "수정자 명")
+    @Column(name = "modifier_name")
     private String modifierName;
+
+    @PrePersist
+    public void prePersist() {
+
+        this.modifyDatetime = null;
+
+        if (createdByUser != null) {
+            this.creatorLoginId = createdByUser.getLoginId();
+            this.creatorName = createdByUser.getUserName();
+        }
+
+        this.modifiedByUser = null;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+
+        this.modifyDatetime = LocalDateTime.now();
+
+        if (modifiedByUser != null) {
+            this.modifierLoginId = modifiedByUser.getLoginId();
+            this.modifierName = modifiedByUser.getUserName();
+        }
+    }
 }
