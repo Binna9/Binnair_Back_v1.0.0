@@ -1,42 +1,45 @@
 package com.bb.ballBin.register.service;
 
+import com.bb.ballBin.common.util.FileUtil;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.register.model.RegisterRequestDto;
 import com.bb.ballBin.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class RegisterService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final FileUtil fileUtil;
 
     @Autowired
-    public RegisterService(UserRepository userRepository, BCryptPasswordEncoder bCryptPasswordEncoder) {
+    public RegisterService(UserRepository userRepository, BCryptPasswordEncoder bCryptPasswordEncoder, FileUtil fileUtil) {
         this.userRepository = userRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+        this.fileUtil = fileUtil;
     }
 
-    public void registerAccount(RegisterRequestDto registerRequestDto) {
-
-        String loginId = registerRequestDto.getLoginId();
-        String loginPassword = registerRequestDto.getLoginPassword();
-        String userName = registerRequestDto.getUserName();
-        String email = registerRequestDto.getEmail();
-        String nickName = registerRequestDto.getNickName();
-        String phoneNumber = registerRequestDto.getPhoneNumber();
+    public void registerAccount(RegisterRequestDto registerRequestDto, MultipartFile file) {
 
         User user = new User();
 
-        user.setLoginId(loginId);
-        user.setLoginPassword(bCryptPasswordEncoder.encode(loginPassword));
-        user.setUserName(userName);
-        user.setEmail(email);
-        user.setNickName(nickName);
-        user.setPhoneNumber(phoneNumber);
+        user.setLoginId(registerRequestDto.getLoginId());
+        user.setLoginPassword(bCryptPasswordEncoder.encode(registerRequestDto.getLoginPassword()));
+        user.setUserName(registerRequestDto.getUserName());
+        user.setEmail(registerRequestDto.getEmail());
+        user.setNickName(registerRequestDto.getNickName());
+        user.setPhoneNumber(registerRequestDto.getPhoneNumber());
 
-        userRepository.save(user);
+        user = userRepository.save(user);
+
+        if (file != null && !file.isEmpty()) {
+            String filePath = fileUtil.saveFile(user.getUserId(), file);
+            user.setImageFilePath(filePath);
+            userRepository.save(user);
+        }
     }
 }

@@ -30,7 +30,7 @@ public class RoleController {
 
     @GetMapping("/{roleId}")
     @Operation(summary = "역할 개별 조회")
-    public ResponseEntity<RoleResponseDto> roleDetail(@PathVariable String roleId){
+    public ResponseEntity<RoleResponseDto> roleDetail(@PathVariable("roleId") String roleId){
 
         return ResponseEntity.ok(roleService.getRoleById(roleId));
     }
@@ -48,7 +48,7 @@ public class RoleController {
     @PutMapping("/{roleId}")
     @Operation(summary = "역할 수정")
     @MessageKey(value = "success.role.update")
-    public ResponseEntity<String> modifyRole(@PathVariable String roleId, @RequestBody RoleRequestDto roleRequestDto){
+    public ResponseEntity<String> modifyRole(@PathVariable("roleId") String roleId, @RequestBody RoleRequestDto roleRequestDto){
 
         roleService.updateRole(roleId ,roleRequestDto);
 
@@ -58,7 +58,7 @@ public class RoleController {
     @DeleteMapping("/{roleId}")
     @Operation(summary = "역할 삭제")
     @MessageKey(value = "success.role.delete")
-    public ResponseEntity<String> removeRole(@PathVariable String roleId){
+    public ResponseEntity<String> removeRole(@PathVariable("roleId") String roleId){
 
         roleService.deleteRole(roleId);
 

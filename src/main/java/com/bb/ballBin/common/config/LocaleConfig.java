@@ -12,8 +12,10 @@ public class LocaleConfig {
 
     @Bean
     public LocaleResolver localeResolver() {
+
         SessionLocaleResolver localeResolver = new SessionLocaleResolver();
         localeResolver.setDefaultLocale(Locale.KOREAN);
+
         return localeResolver;
     }
 }

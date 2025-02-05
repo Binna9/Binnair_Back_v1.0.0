@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Setter
@@ -24,4 +25,7 @@ public class RegisterRequestDto {
     private String nickName;
     @Schema(description = "핸드폰 번호")
     private String phoneNumber;
+
+    @Schema(description = "사용자 파일 필드")
+    private MultipartFile userFile;
 }

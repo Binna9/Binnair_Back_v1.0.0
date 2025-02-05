@@ -1,10 +1,13 @@
 package com.bb.ballBin.user.controller;
 
 import com.bb.ballBin.common.message.annotation.MessageKey;
+import com.bb.ballBin.common.util.FileUtil;
 import com.bb.ballBin.user.model.UserRequsetDto;
 import com.bb.ballBin.user.model.UserResponseDto;
+import com.bb.ballBin.user.repository.UserRepository;
 import com.bb.ballBin.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +19,13 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
+    private final FileUtil fileUtil;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, UserRepository userRepository, FileUtil fileUtil) {
         this.userService = userService;
+        this.userRepository = userRepository;
+        this.fileUtil = fileUtil;
     }
 
     @GetMapping("")
@@ -33,6 +40,15 @@ public class UserController {
     public ResponseEntity<UserResponseDto> userDetail(@PathVariable String userId) {
 
         return ResponseEntity.ok(userService.getUserById(userId));
+    }
+
+    @GetMapping("/{userId}/image")
+    @Operation(summary = "사용자 이미지 반환")
+    public ResponseEntity<Resource> getProfileImage(@PathVariable String userId) {
+
+        return userRepository.findById(userId)
+                .map(user -> fileUtil.getProfileImageResponse(user.getImageFilePath()))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{userId}")

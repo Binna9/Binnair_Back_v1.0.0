@@ -60,7 +60,7 @@ public class AuthService {
                     .collect(Collectors.toSet());
 
             // ✅ JWT 토큰 생성 (10시간 만료)
-            String token = jwtUtil.createJwtToken(userId, roles, 60 * 60 * 10L * 1000);
+            String token = jwtUtil.createJwtToken(userId, roles, 60 * 60 * 10L * 50);
 
             String jsonResponse = objectMapper.writeValueAsString(Map.of("token", token));
 

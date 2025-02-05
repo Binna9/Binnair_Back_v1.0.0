@@ -21,7 +21,7 @@ public class AuthController {
     }
 
     /**
-     * 로그인 요청
+     * 로그인
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
@@ -33,7 +33,7 @@ public class AuthController {
     }
 
     /**
-     * 로그아웃 요청
+     * 로그아웃
      */
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request) {
