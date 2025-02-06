@@ -8,7 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -22,8 +22,8 @@ import java.util.Set;
 public class Role extends BaseEntity {
 
     @Id
-    @GeneratedValue
-    @UuidGenerator
+    @GeneratedValue(generator = "uuid2")
+    @GenericGenerator(name = "uuid2", strategy = "uuid2")
     @Column(updatable = false, nullable = false, unique = true, name ="role_id")
     private String roleId;
 

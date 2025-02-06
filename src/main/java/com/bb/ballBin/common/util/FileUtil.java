@@ -23,11 +23,18 @@ public class FileUtil {
     /**
      * 파일 저장 (사용자 ID 기반 폴더에 저장)
      *
-     * @param userId 사용자 ID (디렉토리 구분)
      * @param file   업로드할 파일
      * @return 저장된 파일의 상대 경로 (예: userId/uuid-filename.png)
      */
     public String saveFile(String userId, MultipartFile file) {
+
+        if (userId == null || userId.isEmpty()) {
+            throw new IllegalArgumentException("userId가 null 또는 비어 있습니다.");
+        }
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("파일이 비어 있습니다.");
+        }
 
         try {
             String userDir = Paths.get(uploadDir, userId).toString();
@@ -38,21 +45,25 @@ public class FileUtil {
             }
 
             String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || originalFilename.isEmpty()) {
+                throw new IllegalArgumentException("파일 이름이 없습니다.");
+            }
+
             String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
+            if (originalFilename.contains(".")) {
                 extension = originalFilename.substring(originalFilename.lastIndexOf("."));
             }
 
             String fileName = UUID.randomUUID() + extension;
-
             File destination = new File(directory, fileName);
             file.transferTo(destination);
 
             return Paths.get(userId, fileName).toString();
         } catch (IOException e) {
-            throw new RuntimeException("파일 저장 실패", e);
+            throw new RuntimeException("파일 저장 중 오류 발생", e);
         }
     }
+
 
     /**
      * 저장된 파일의 전체 경로 가져오기

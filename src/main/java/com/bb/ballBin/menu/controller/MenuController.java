@@ -2,24 +2,20 @@ package com.bb.ballBin.menu.controller;
 
 import com.bb.ballBin.common.message.annotation.MessageKey;
 import com.bb.ballBin.menu.model.MenuRequest;
-import com.bb.ballBin.menu.model.MenuResponse;
 import com.bb.ballBin.menu.service.MenuService;
 import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/menus")
 public class MenuController {
 
     private final MenuService menuService;
-
-    public MenuController(MenuService menuService) {
-        this.menuService = menuService;
-    }
 
 //    @GetMapping
 //    @Operation(summary = "메뉴 목록 조회")

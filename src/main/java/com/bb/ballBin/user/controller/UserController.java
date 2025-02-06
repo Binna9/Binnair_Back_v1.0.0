@@ -7,6 +7,7 @@ import com.bb.ballBin.user.model.UserResponseDto;
 import com.bb.ballBin.user.repository.UserRepository;
 import com.bb.ballBin.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,18 +16,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/users")
 public class UserController {
 
     private final UserService userService;
     private final UserRepository userRepository;
     private final FileUtil fileUtil;
-
-    public UserController(UserService userService, UserRepository userRepository, FileUtil fileUtil) {
-        this.userService = userService;
-        this.userRepository = userRepository;
-        this.fileUtil = fileUtil;
-    }
 
     @GetMapping("")
     @Operation(summary = "사용자 전체 조회")

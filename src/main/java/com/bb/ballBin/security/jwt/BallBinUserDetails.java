@@ -2,6 +2,7 @@ package com.bb.ballBin.security.jwt;
 
 import com.bb.ballBin.user.entity.User;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,13 +11,10 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 @Getter
+@RequiredArgsConstructor
 public class BallBinUserDetails implements UserDetails {
 
     private final User user;
-
-    public BallBinUserDetails(User user) {
-        this.user = user;
-    }
 
     /**
      * 사용자 역할 (Roles)을 Spring Security 의 GrantedAuthority 로 변환
