@@ -1,35 +1,68 @@
 package com.bb.ballBin.board.entity;
 
+import com.bb.ballBin.board.model.BoardResponseDto;
+import com.bb.ballBin.common.entity.BaseEntity;
+import com.bb.ballBin.user.entity.User;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
-import java.util.UUID;
-
-@Getter
-@Setter
-@NoArgsConstructor
 @Entity
-@Table(name = "board")
-public class Board extends BaseEntity { // BaseEntity 상속
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Table(name = "boards")
+public class Board extends BaseEntity {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(
-            name = "UUID",
-            strategy = "org.hibernate.id.UUIDGenerator"
-    )
-    @Column(updatable = false, nullable = false)
-    private UUID id;
+    @GeneratedValue(generator = "uuid2")
+    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @Column(updatable = false, nullable = false, unique = true, name = "board_id")
+    private String boardId;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "board_type", length = 10, nullable = false)
+    private String boardType; // 공지사항, 커뮤니티, 1:1 문의, 자주하는 질문
+
+    @Column(name = "title", length = 255, nullable = false)
     private String title;
 
-    @Column(nullable = false, length = 500)
+    @Lob
+    @Column(name = "content", nullable = false)
     private String content;
 
-    @Column(nullable = false, length = 50)
-    private String author;
+    @Column(name = "views", nullable = false)
+    private Integer views = 0;
+
+    @Column(name = "likes", nullable = false)
+    private Integer likes = 0;
+
+    @Column(name = "file_path")
+    private String filePath;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "writer_id", referencedColumnName = "user_id", nullable = false)
+    private User writer;
+
+    @Column(name = "writer_name", length = 30, nullable = false)
+    private String writerName;
+
+    /**
+     * ✅ Entity → DTO 변환 (인스턴스 메서드)
+     */
+    public BoardResponseDto toDto() {
+        return BoardResponseDto.builder()
+                .boardId(this.boardId)
+                .boardType(this.boardType)
+                .title(this.title)
+                .content(this.content)
+                .views(this.views)
+                .likes(this.likes)
+                .filePath(this.filePath)
+                .writerId(this.writer.getUserId())
+                .writerName(this.writerName)
+                .createDatetime(this.getCreateDatetime())
+                .modifyDatetime(this.getModifyDatetime())
+                .build();
+    }
 }

@@ -1,6 +1,7 @@
 package com.bb.ballBin.common.aop.aspect;
 
 import com.bb.ballBin.common.message.annotation.MessageKey;
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Around;
@@ -13,13 +14,10 @@ import java.util.Locale;
 
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class MessageAspect {
 
     private final MessageSource messageSource;
-
-    public MessageAspect(MessageSource messageSource) {
-        this.messageSource = messageSource;
-    }
 
     /**
      * Controller Aspect
@@ -43,7 +41,8 @@ public class MessageAspect {
     /**
      * Service Aspect
      */
-    @AfterThrowing(pointcut = "@within(org.springframework.stereotype.Service)", throwing = "exception")
+    @AfterThrowing(pointcut = "@within(org.springframework.stereotype.Service) || @within(org.springframework.stereotype.Component)",
+            throwing = "exception")
     public void handleException(Throwable exception) {
 
         String messageKey = exception.getMessage();

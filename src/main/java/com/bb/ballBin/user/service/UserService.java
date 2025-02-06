@@ -4,19 +4,19 @@ import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.user.model.UserRequsetDto;
 import com.bb.ballBin.user.model.UserResponseDto;
 import com.bb.ballBin.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class UserService {
 
     private final UserRepository userRepository;
-
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     /**
      * 사용자 전체 조회

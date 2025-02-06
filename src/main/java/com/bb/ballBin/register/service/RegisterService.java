@@ -4,24 +4,19 @@ import com.bb.ballBin.common.util.FileUtil;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.register.model.RegisterRequestDto;
 import com.bb.ballBin.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
+@RequiredArgsConstructor
 public class RegisterService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final FileUtil fileUtil;
-
-    @Autowired
-    public RegisterService(UserRepository userRepository, BCryptPasswordEncoder bCryptPasswordEncoder, FileUtil fileUtil) {
-        this.userRepository = userRepository;
-        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
-        this.fileUtil = fileUtil;
-    }
 
     public void registerAccount(RegisterRequestDto registerRequestDto, MultipartFile file) {
 

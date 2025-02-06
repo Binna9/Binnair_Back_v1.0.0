@@ -3,6 +3,7 @@ package com.bb.ballBin.permission.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UuidGenerator;
 
 @Entity
@@ -12,8 +13,8 @@ import org.hibernate.annotations.UuidGenerator;
 public class Permission {
 
     @Id
-    @GeneratedValue
-    @UuidGenerator
+    @GeneratedValue(generator = "uuid2")
+    @GenericGenerator(name = "uuid2", strategy = "uuid2")
     @Column(updatable = false, nullable = false, unique = true, name = "permission_id")
     private String permissionId;
 

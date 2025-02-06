@@ -3,18 +3,16 @@ package com.bb.ballBin.user.entity;
 import com.bb.ballBin.common.convert.BooleanToYNConverter;
 import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.role.entity.Role;
-import com.bb.ballBin.role.model.RoleResponseDto;
 import com.bb.ballBin.user.model.UserResponseDto;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Entity
 @Data
@@ -25,8 +23,8 @@ import java.util.stream.Collectors;
 public class User extends BaseEntity {
 
     @Id
-    @GeneratedValue
-    @UuidGenerator
+    @GeneratedValue(generator = "uuid2")
+    @GenericGenerator(name = "uuid2", strategy = "uuid2")
     @Column(updatable = false, nullable = false, unique = true, name = "user_id")
     private String userId;
 

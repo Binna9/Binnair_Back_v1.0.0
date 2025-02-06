@@ -1,75 +1,115 @@
 package com.bb.ballBin.board.service;
 
+import com.bb.ballBin.board.entity.Board;
 import com.bb.ballBin.board.model.BoardRequestDto;
 import com.bb.ballBin.board.model.BoardResponseDto;
-import com.bb.ballBin.board.entity.Board;
 import com.bb.ballBin.board.repository.BoardRepository;
+import com.bb.ballBin.common.util.FileUtil;
+import com.bb.ballBin.common.util.SecurityUtil;
+import com.bb.ballBin.user.entity.User;
+import com.bb.ballBin.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class BoardService {
 
     private final BoardRepository boardRepository;
+    private final UserRepository userRepository;
+    private final FileUtil fileUtil;
 
-    // 모든 게시글 조회
-    public List<BoardResponseDto> getAllBoards() {
-        return boardRepository.findAll().stream()
-                .map(board -> {
-                    BoardResponseDto responseDto = new BoardResponseDto();
-                    responseDto.setId(board.getId());
-                    responseDto.setTitle(board.getTitle());
-                    responseDto.setContent(board.getContent());
-                    responseDto.setAuthor(board.getAuthor());
-                    responseDto.setCreatedAt(board.getCreatedAt());
-                    responseDto.setUpdatedAt(board.getUpdatedAt());
-                    return responseDto;
-                })
+    /**
+     * 게시글 목록 조회
+     */
+    public List<BoardResponseDto> getAllBoards(String boardType, Pageable pageable) {
+
+        Page<Board> boardPage = boardRepository.findByBoardType(boardType, pageable);
+
+        return boardPage.getContent().stream()
+                .map(Board::toDto)
                 .collect(Collectors.toList());
     }
 
-    // 게시글 생성
-    public BoardResponseDto createBoard(BoardRequestDto requestDto) {
-        Board board = new Board();
-        board.setTitle(requestDto.getTitle());
-        board.setContent(requestDto.getContent());
-        board.setAuthor(requestDto.getAuthor());
-        Board savedBoard = boardRepository.save(board);
+    /**
+     * 개별 게시글 조회
+     */
+    public BoardResponseDto getBoardById(String boardId) {
 
-        return toResponseDto(savedBoard);
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new RuntimeException("error.security.notfound"));
+
+        return board.toDto();
     }
 
-    // 게시글 수정
-    public BoardResponseDto updateBoard(UUID id, BoardRequestDto requestDto) {
-        Optional<Board> optionalBoard = boardRepository.findById(id);
-        if (optionalBoard.isEmpty()) {
-            throw new IllegalArgumentException("게시글을 찾을 수 없습니다. ID: " + id);
+    /**
+     * 게시글 생성
+     */
+    @Transactional
+    public void createBoard(BoardRequestDto boardRequestDto, MultipartFile file) {
+        try {
+            String userId = SecurityUtil.getCurrentUserId();
+
+            User writer = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("error.user.notfound"));
+
+            Board board = Board.builder()
+                    .boardType(boardRequestDto.getBoardType())
+                    .title(boardRequestDto.getTitle())
+                    .content(boardRequestDto.getContent())
+                    .writer(writer)
+                    .writerName(writer.getUserName())
+                    .build();
+
+            board = boardRepository.save(board);
+
+            if (file != null && !file.isEmpty()) {
+                String filePath = fileUtil.saveFile(board.getBoardId(), file);
+                board.setFilePath(filePath);
+                boardRepository.save(board);
+            }
+
+        } catch (Exception e) {
+            System.err.println("🔴 JPA 예외 발생: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("게시글 저장 중 오류 발생", e);
+        }
+    }
+
+    /**
+     * 게시글 수정
+     */
+    public void updateBoard(String boardId, BoardRequestDto boardRequestDto, MultipartFile file) {
+
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new RuntimeException("error.board.notfound"));
+
+        board.setTitle(boardRequestDto.getTitle());
+        board.setContent(boardRequestDto.getContent());
+
+        if (file != null && !file.isEmpty()) {
+            String filePath = fileUtil.saveFile(board.getBoardId(), file);
+            board.setFilePath(filePath);
         }
 
-        Board board = optionalBoard.get();
-        board.setTitle(requestDto.getTitle());
-        board.setContent(requestDto.getContent());
-        board.setAuthor(requestDto.getAuthor()); // 작성자도 수정 가능
-        Board updatedBoard = boardRepository.save(board);
-
-        return toResponseDto(updatedBoard);
+        boardRepository.save(board);
     }
 
-    // 응답 DTO로 변환하는 메서드
-    private BoardResponseDto toResponseDto(Board board) {
-        BoardResponseDto responseDto = new BoardResponseDto();
-        responseDto.setId(board.getId());
-        responseDto.setTitle(board.getTitle());
-        responseDto.setContent(board.getContent());
-        responseDto.setAuthor(board.getAuthor());
-        responseDto.setCreatedAt(board.getCreatedAt());
-        responseDto.setUpdatedAt(board.getUpdatedAt());
-        return responseDto;
+    /**
+     * 게시글 삭제
+     */
+    public void deleteBoard(String boardId) {
+
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new RuntimeException("error.board.notfound"));
+
+        boardRepository.delete(board);
     }
 }

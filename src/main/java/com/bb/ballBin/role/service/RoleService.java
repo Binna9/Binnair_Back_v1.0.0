@@ -4,6 +4,7 @@ import com.bb.ballBin.role.entity.Role;
 import com.bb.ballBin.role.model.RoleRequestDto;
 import com.bb.ballBin.role.model.RoleResponseDto;
 import com.bb.ballBin.role.repository.RoleRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,14 +12,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 @Transactional
 public class RoleService {
 
     private final RoleRepository roleRepository;
-
-    public RoleService(RoleRepository roleRepository) {
-        this.roleRepository=roleRepository;
-    }
 
     /**
      * 역할 전체 조회

@@ -6,20 +6,18 @@ import com.bb.ballBin.register.service.RegisterService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/registers")
 public class RegisterController {
 
     private final RegisterService registerService;
-
-    public RegisterController(RegisterService registerService) {
-        this.registerService = registerService;
-    }
 
     @PostMapping("")
     @MessageKey(value = "success.user.register")

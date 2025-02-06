@@ -4,6 +4,7 @@ import com.bb.ballBin.security.filter.JwtFilter;
 import com.bb.ballBin.security.jwt.BallBinUserDetailsService;
 import com.bb.ballBin.security.jwt.service.JwtBlacklistService;
 import com.bb.ballBin.security.jwt.util.JwtUtil;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,19 +19,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final SecurityPolicy securityPolicy;
     private final JwtUtil jwtUtil;
     private final BallBinUserDetailsService ballBinUserDetailsService;
     private final JwtBlacklistService jwtBlacklistService;
-
-    public SecurityConfig(SecurityPolicy securityPolicy, JwtUtil jwtUtil, BallBinUserDetailsService ballBinUserDetailsService, JwtBlacklistService jwtBlacklistService) {
-        this.securityPolicy = securityPolicy;
-        this.jwtUtil = jwtUtil;
-        this.ballBinUserDetailsService = ballBinUserDetailsService;
-        this.jwtBlacklistService = jwtBlacklistService;
-    }
 
     /**
      * Password 암호화

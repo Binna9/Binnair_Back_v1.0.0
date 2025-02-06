@@ -1,6 +1,54 @@
 ## TABLE DDL
 
 ``` sql
+CREATE TABLE boards (
+    board_id        character varying(36) NOT null PRIMARY KEY,
+    board_type      VARCHAR(10) NOT NULL, -- 공지사항, 커뮤니티, 1:1문의, 자주하는 질문
+    title           VARCHAR(255) NOT NULL,
+    content         TEXT NOT NULL,
+    views           INT DEFAULT 0,
+    likes           INT DEFAULT 0,
+    writer_id       VARCHAR(36) NOT NULL, -- UUID
+    writer_name     VARCHAR(30) NOT NULL,
+    create_datetime    timestamp with time zone,
+    creator_id    character varying(36),
+    creator_login_id    character varying(60),
+    creator_name    character varying(50),
+    modify_datetime    timestamp with time zone,
+    modifier_id    character varying(36),
+    modifier_login_id    character varying(60),
+    modifier_name    character varying(50),
+    CONSTRAINT fk_board_writer FOREIGN KEY (writer_id) REFERENCES users(user_id),
+    CONSTRAINT fk_board_creator FOREIGN KEY (creator_id) REFERENCES users(user_id),
+    CONSTRAINT fk_board_modifier FOREIGN KEY (modifier_id) REFERENCES users(user_id)
+);
+
+ALTER TABLE boards ADD COLUMN file_path VARCHAR(255);
+
+ALTER TABLE boards ADD COLUMN version BIGINT DEFAULT 0 NOT NULL;
+
+CREATE TABLE comments (
+    comment_id     character varying(36) NOT null PRIMARY KEY,
+    board_id       character varying(36) NOT null,
+    parent_id      character varying(36),
+    writer_id      VARCHAR(36) NOT NULL,
+    writer_name    VARCHAR(30) NOT NULL,
+    content        TEXT NOT NULL,
+    create_datetime    timestamp with time zone NOT NULL,
+    creator_id    character varying(36),
+    creator_login_id    character varying(60),
+    creator_name    character varying(50),
+    modify_datetime    timestamp with time zone,
+    modifier_id    character varying(36),
+    modifier_login_id    character varying(60),
+    modifier_name    character varying(50),
+    CONSTRAINT fk_comment_board FOREIGN KEY (board_id) REFERENCES boards(board_id) ON DELETE CASCADE,
+    CONSTRAINT fk_comment_parent FOREIGN KEY (parent_id) REFERENCES comments(comment_id) ON DELETE CASCADE,
+    CONSTRAINT fk_comment_writer FOREIGN KEY (writer_id) REFERENCES users(user_id),
+    CONSTRAINT fk_comment_creator FOREIGN KEY (creator_id) REFERENCES users(user_id),
+    CONSTRAINT fk_comment_modifier FOREIGN KEY (modifier_id) REFERENCES users(user_id)
+);
+
 CREATE TABLE users
 (
     user_id    character varying(36) NOT null PRIMARY KEY,
@@ -19,7 +67,9 @@ CREATE TABLE users
     modify_datetime    timestamp with time zone NOT NULL,
     modifier_id    character varying(36) NOT NULL,
     modifier_login_id    character varying(60) NOT NULL,
-    modifier_name    character varying(50) NOT NULL
+    modifier_name    character varying(50) NOT NULL,
+    CONSTRAINT fk_board_creator FOREIGN KEY (creator_id) REFERENCES users(user_id),
+    CONSTRAINT fk_board_modifier FOREIGN KEY (modifier_id) REFERENCES users(user_id)
 );
 
 CREATE TABLE roles

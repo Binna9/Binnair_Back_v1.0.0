@@ -5,6 +5,7 @@ import com.bb.ballBin.role.model.RoleRequestDto;
 import com.bb.ballBin.role.model.RoleResponseDto;
 import com.bb.ballBin.role.service.RoleService;
 import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,14 +13,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/roles")
 public class RoleController {
 
     private final RoleService roleService;
-
-    public RoleController(RoleService roleService) {
-        this.roleService = roleService;
-    }
 
     @GetMapping("")
     @Operation(summary = "역할 전체 조회")
