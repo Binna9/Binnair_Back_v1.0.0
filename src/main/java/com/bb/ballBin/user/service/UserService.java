@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -55,5 +56,10 @@ public class UserService {
     public void deleteUser(String userId){
 
         userRepository.deleteById(userId);
+    }
+
+    public Set<String> getUserRoles(String userId) {
+
+        return Set.of("ROLE_USER"); // todo :: 기본값으로 ROLE_USER 반환 (실제 DB 조회 필요)
     }
 }

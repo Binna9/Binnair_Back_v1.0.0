@@ -16,6 +16,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -52,6 +57,7 @@ public class SecurityConfig {
         JwtFilter jwtFilter = new JwtFilter(jwtUtil, ballBinUserDetailsService, jwtBlacklistService);
 
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ CORS 설정 추가
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -65,5 +71,23 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();
+    }
+
+    /**
+     * ✅ CORS 정책 설정 (프론트엔드 5173 포트 허용)
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // ✅ 프론트엔드 도메인 허용
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // ✅ 허용할 HTTP 메서드
+        configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type")); // ✅ 모든 헤더 허용
+        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowCredentials(true); // ✅ 인증정보 포함 허용 (쿠키, Authorization 등)
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
     }
 }

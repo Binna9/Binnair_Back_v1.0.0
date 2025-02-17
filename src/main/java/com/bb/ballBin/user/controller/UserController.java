@@ -8,17 +8,22 @@ import com.bb.ballBin.user.repository.UserRepository;
 import com.bb.ballBin.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
 public class UserController {
+
+    @Value("${file.upload-dir}") // ✅ 환경 변수에서 uploadDir 주입
+    private String uploadDir;
 
     private final UserService userService;
     private final UserRepository userRepository;
@@ -41,10 +46,21 @@ public class UserController {
     @GetMapping("/{userId}/image")
     @Operation(summary = "사용자 이미지 반환")
     public ResponseEntity<Resource> getProfileImage(@PathVariable String userId) {
-
         return userRepository.findById(userId)
-                .map(user -> fileUtil.getProfileImageResponse(user.getImageFilePath()))
-                .orElse(ResponseEntity.notFound().build());
+                .map(user -> {
+
+                    String relativePath = user.getImageFilePath();
+                    if (relativePath == null || relativePath.isEmpty()) {
+                        System.out.println("❌ No image path found for user: " + userId);
+                        return ResponseEntity.notFound().<Resource>build(); // ✅ 타입 명시
+                    }
+
+                    File imageFile = fileUtil.getFilePath(relativePath);
+                    System.out.println("📂 Fetching image from path: " + imageFile.getAbsolutePath());
+
+                    return fileUtil.getProfileImageResponse(relativePath);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().<Resource>build()); // ✅ 타입 명시
     }
 
     @PutMapping("/{userId}")

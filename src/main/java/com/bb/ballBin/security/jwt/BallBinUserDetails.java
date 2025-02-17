@@ -39,6 +39,8 @@ public class BallBinUserDetails implements UserDetails {
         return user.getLoginId();
     }
 
+    public String getEmail() {return user.getEmail();}
+
     @Override
     public String getPassword() {
         return user.getLoginPassword();

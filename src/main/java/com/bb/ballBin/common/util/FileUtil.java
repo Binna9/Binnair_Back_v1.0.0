@@ -95,7 +95,6 @@ public class FileUtil {
      * @return 이미지 파일을 ResponseEntity<Resource>로 반환
      */
     public ResponseEntity<Resource> getProfileImageResponse(String relativePath) {
-
         if (relativePath == null) {
             return ResponseEntity.notFound().build();
         }
@@ -110,7 +109,22 @@ public class FileUtil {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + imageFile.getName() + "\"")
-                .contentType(MediaType.IMAGE_JPEG)
+                .contentType(getMediaType(imageFile))
                 .body(resource);
+    }
+
+    /**
+     * 파일 확장자를 기반으로 MIME 타입 반환
+     */
+    private MediaType getMediaType(File file) {
+        String filename = file.getName().toLowerCase();
+
+        if (filename.endsWith(".png")) return MediaType.IMAGE_PNG;
+        if (filename.endsWith(".jpeg") || filename.endsWith(".jpg")) return MediaType.IMAGE_JPEG;
+        if (filename.endsWith(".gif")) return MediaType.IMAGE_GIF;
+        if (filename.endsWith(".svg")) return MediaType.valueOf("image/svg+xml");
+        if (filename.endsWith(".webp")) return MediaType.valueOf("image/webp");
+
+        return null; // ❌ 잘못된 파일 형식이면 null 반환
     }
 }

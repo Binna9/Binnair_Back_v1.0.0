@@ -26,34 +26,32 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest req, @NonNull HttpServletResponse res, @NonNull FilterChain filterChain) throws ServletException, IOException {
-
         String authorization = req.getHeader("Authorization");
-        System.out.println("📌 [JwtFilter] 요청 URL: " + req.getRequestURI());
-        System.out.println("📌 [JwtFilter] Authorization Header: " + authorization);
 
         if (authorization == null || !authorization.startsWith("Bearer ")) {
-            System.out.println("❌ [JwtFilter] 유효한 Authorization 헤더 없음");
             filterChain.doFilter(req, res);
             return;
         }
 
         String token = authorization.substring(7);
 
+        // ✅ 1. 블랙리스트된 토큰인지 확인
         if (jwtBlacklistService.isBlacklisted(token)) {
-            System.out.println("❌ [JwtFilter] 블랙리스트된 토큰");
             res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            res.getWriter().write("{\"error\":\"TOKEN_BLACKLISTED\"}");
             return;
         }
 
+        // ✅ 2. Access Token 만료 체크 (401 + ACCESS_TOKEN_EXPIRED 반환)
         if (jwtUtil.isExpired(token)) {
-            System.out.println("❌ [JwtFilter] 토큰 만료");
-            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            res.setContentType("application/json");
+            res.getWriter().write("{\"error\":\"ACCESS_TOKEN_EXPIRED\"}");
             return;
         }
 
+        // ✅ 3. Access Token 유효한 경우, 사용자 인증 처리
         String userId = jwtUtil.getUserIdFromToken(token);
-        System.out.println("✅ [JwtFilter] Extracted UserId: " + userId);
-
         if (userId != null) {
             BallBinUserDetails ballBinUserDetails = (BallBinUserDetails) ballBinUserDetailsService.loadUserById(userId);
 
@@ -64,7 +62,6 @@ public class JwtFilter extends OncePerRequestFilter {
             );
 
             SecurityContextHolder.getContext().setAuthentication(authToken);
-            System.out.println("✅ [JwtFilter] 인증 성공 - SecurityContext에 저장 완료");
         } else {
             System.out.println("❌ [JwtFilter] userId를 찾을 수 없음");
         }

@@ -1,9 +1,6 @@
 package com.bb.ballBin.security.jwt.util;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -44,6 +41,14 @@ public class JwtUtil {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private Claims parseToken(String token) throws JwtException {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     public Date getExpiration(String token) {
@@ -97,8 +102,6 @@ public class JwtUtil {
                     .getPayload();
 
             Date expiration = claims.getExpiration();
-            System.out.println("📌 Token Expiration Time: " + expiration);
-            System.out.println("📌 Current Time: " + new Date());
 
             return expiration.before(new Date());
         } catch (JwtException | IllegalArgumentException e) {
@@ -108,31 +111,38 @@ public class JwtUtil {
         }
     }
 
-    public String createJwtToken(String userId, Set<String> roles, Long expiredMs) {
+    public String createJwtToken(String userId, Set<String> roles, Long expiredMs, boolean isRefreshToken) {
 
-        String token = Jwts.builder()
+        long now = System.currentTimeMillis(); // ✅ 현재 시간 설정
+
+        JwtBuilder jwtBuilder = Jwts.builder()
                 .claim("userId", userId)
-                .claim("roles", roles)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiredMs))
-                .signWith(secretKey, SignatureAlgorithm.HS256)
-                .compact();
+                .issuedAt(new Date(now)) // ✅ 현재 시간 기준으로 issuedAt 설정
+                .expiration(new Date(now + expiredMs)) // ✅ 유효시간 계산
+                .signWith(secretKey, SignatureAlgorithm.HS256);
 
-        // 🔍 생성된 JWT 의 Payload 를 확인하는 코드 추가
-        try {
-            Claims claims = Jwts.parser()
-                    .verifyWith(secretKey)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-
-            System.out.println("✅ JWT Payload: " + claims);
-        } catch (Exception e) {
-            System.out.println("❌ JWT Payload 확인 실패!");
-            e.printStackTrace();
+        if (!isRefreshToken) { // ✅ Access Token 일 때만 roles 포함
+            jwtBuilder.claim("roles", roles);
         }
 
-        System.out.println("✅ Created JWT: " + token);
-        return token;
+        return jwtBuilder.compact();
+    }
+
+    /** ✅ Refresh Token 및 Access Token 검증 로직 추가 */
+    public Claims validateToken(String token, boolean isRefreshToken) {
+
+        try {
+            Claims claims = parseToken(token);
+
+            if (isRefreshToken && claims.get("roles") != null) {
+                System.out.println("❌ [JwtUtil] 잘못된 Refresh Token");
+                return null;
+            }
+
+            return claims; // ✅ 정상적인 토큰이면 Claims 반환
+        } catch (JwtException e) {
+            System.out.println("❌ [JwtUtil] 토큰 검증 실패: " + e.getMessage());
+            return null;
+        }
     }
 }

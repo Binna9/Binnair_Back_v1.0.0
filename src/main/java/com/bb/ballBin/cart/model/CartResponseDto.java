@@ -1,4 +1,4 @@
-package com.bb.ballBin.bookmark.model;
+package com.bb.ballBin.cart.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -10,10 +10,10 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @Builder
-public class BookmarkResponseDto {
+public class CartResponseDto {
 
-    @Schema(description = "즐겨찾기 ID")
-    private String bookmarkId;
+    @Schema(description = "장바구니 ID")
+    private String cartId;
 
     @Schema(description = "사용자 ID")
     private String userId;
@@ -23,4 +23,7 @@ public class BookmarkResponseDto {
 
     @Schema(description = "제품명")
     private String productName;
+
+    @Schema(description = "수량")
+    private Integer quantity;
 }

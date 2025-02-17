@@ -118,6 +118,61 @@ CREATE TABLE user_roles (
     FOREIGN KEY (role_id) REFERENCES roles(role_id)
 );
 
+CREATE TABLE products (
+    product_id character varying(36) NOT null PRIMARY KEY,  -- 제품 ID
+    product_name VARCHAR(255) NOT NULL,  -- 제품명
+    product_description TEXT,  -- 제품 설명
+    price DECIMAL(10, 2) NOT NULL,  -- 가격
+    stock_quantity INT NOT NULL DEFAULT 0,  -- 재고 수량
+    category VARCHAR(100),  -- 카테고리
+    image_url VARCHAR(500),  -- 제품 이미지 URL
+    create_datetime TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    creator_id VARCHAR(36),
+    creator_login_id VARCHAR(60),
+    creator_name VARCHAR(50),
+    modify_datetime TIMESTAMP WITH TIME ZONE,
+    modifier_id VARCHAR(36),
+    modifier_login_id VARCHAR(60),
+    modifier_name VARCHAR(50)
+);
 
+CREATE TABLE bookmarks (
+    bookmark_id character varying(36) NOT null PRIMARY KEY,  -- 즐겨찾기 ID
+    user_id VARCHAR(36) NOT NULL,  -- 사용자 ID
+    product_id VARCHAR(36) NOT NULL,  -- 즐겨찾기한 제품 ID
+
+    CONSTRAINT fk_bookmark_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_bookmark_product FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE,
+
+    -- BaseEntity 필드
+    create_datetime TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    creator_id VARCHAR(36),
+    creator_login_id VARCHAR(60),
+    creator_name VARCHAR(50),
+    modify_datetime TIMESTAMP WITH TIME ZONE,
+    modifier_id VARCHAR(36),
+    modifier_login_id VARCHAR(60),
+    modifier_name VARCHAR(50)
+);
+
+CREATE TABLE carts (
+    cart_id character varying(36) NOT null PRIMARY KEY,  -- 장바구니 ID
+    user_id VARCHAR(36) NOT NULL,  -- 사용자 ID
+    product_id VARCHAR(36) NOT NULL,  -- 장바구니에 담은 제품 ID
+    quantity INT NOT NULL CHECK (quantity > 0),  -- 수량
+
+    CONSTRAINT fk_cart_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_cart_product FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE,
+
+    -- BaseEntity 필드
+    create_datetime TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    creator_id VARCHAR(36),
+    creator_login_id VARCHAR(60),
+    creator_name VARCHAR(50),
+    modify_datetime TIMESTAMP WITH TIME ZONE,
+    modifier_id VARCHAR(36),
+    modifier_login_id VARCHAR(60),
+    modifier_name VARCHAR(50)
+);
 
 ```

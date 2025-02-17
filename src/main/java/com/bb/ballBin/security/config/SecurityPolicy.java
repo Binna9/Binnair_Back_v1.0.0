@@ -23,6 +23,7 @@ public class SecurityPolicy {
      */
     public List<String> getAuthenticatedUrls() {
         return List.of(
+                "/auth/user",
                 "/roles/**",
                 "/menus/**",
                 "/boards/**",

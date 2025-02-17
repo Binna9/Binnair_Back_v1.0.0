@@ -1,29 +1,44 @@
 package com.bb.ballBin.bookmark.entity;
 
+import com.bb.ballBin.common.entity.BaseEntity;
+import com.bb.ballBin.product.entity.Product;
+import com.bb.ballBin.user.entity.User;
+import com.bb.ballBin.bookmark.model.BookmarkResponseDto;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.UuidGenerator;
+import lombok.*;
+import org.hibernate.annotations.GenericGenerator;
 
 @Entity
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Table(name = "bookmarks")
-public class Bookmark {
+public class Bookmark extends BaseEntity {
 
     @Id
-    @GeneratedValue
-    @UuidGenerator
-    @Column(updatable = false, nullable = false, unique = true)
+    @GeneratedValue(generator = "uuid2")
+    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @Column(updatable = false, nullable = false, unique = true, name = "bookmark_id", length = 36)
     private String bookmarkId;
 
-    @Column(nullable = false)
-    private String userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(nullable = false)
-    private String objectId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
-    @Column(nullable = false)
-    private String objectType;
-
+    /**
+     * Entity to DTO 변환
+     */
+    public BookmarkResponseDto toDto() {
+        return BookmarkResponseDto.builder()
+                .bookmarkId(this.bookmarkId)
+                .userId(this.user.getUserId())
+                .productId(this.product.getProductId())
+                .productName(this.product.getProductName())
+                .build();
+    }
 }
