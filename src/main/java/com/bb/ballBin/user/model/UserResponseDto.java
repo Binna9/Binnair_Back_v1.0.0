@@ -12,6 +12,8 @@ import lombok.Setter;
 @Builder
 public class UserResponseDto {
 
+    @Schema(description = "사용자 ID")
+    private String userId;
     @Schema(description = "사용자 로그인 ID")
     private String loginId;
     @Schema(description = "사용자 비밀번호")

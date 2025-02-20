@@ -1,5 +1,6 @@
 package com.bb.ballBin.board.entity;
 
+import com.bb.ballBin.board.domain.BoardType;
 import com.bb.ballBin.board.model.BoardResponseDto;
 import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.user.entity.User;
@@ -21,13 +22,13 @@ public class Board extends BaseEntity {
     @Column(updatable = false, nullable = false, unique = true, name = "board_id")
     private String boardId;
 
-    @Column(name = "board_type", length = 10, nullable = false)
-    private String boardType; // 공지사항, 커뮤니티, 1:1 문의, 자주하는 질문
+    @Enumerated(EnumType.STRING) // ✅ Enum을 문자열로 저장
+    @Column(name = "board_type", length = 20, nullable = false)
+    private BoardType boardType; // 공지사항, 커뮤니티, 1:1 문의, 자주하는 질문
 
     @Column(name = "title", length = 255, nullable = false)
     private String title;
 
-    @Lob
     @Column(name = "content", nullable = false)
     private String content;
 
@@ -40,7 +41,7 @@ public class Board extends BaseEntity {
     @Column(name = "file_path")
     private String filePath;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY) // ✅ N:1 관계 설정 (지연 로딩 적용)
     @JoinColumn(name = "writer_id", referencedColumnName = "user_id", nullable = false)
     private User writer;
 
@@ -59,7 +60,7 @@ public class Board extends BaseEntity {
                 .views(this.views)
                 .likes(this.likes)
                 .filePath(this.filePath)
-                .writerId(this.writer.getUserId())
+                .writerId(this.writer.getUserId()) // ✅ writer에서 userId 가져오기
                 .writerName(this.writerName)
                 .createDatetime(this.getCreateDatetime())
                 .modifyDatetime(this.getModifyDatetime())

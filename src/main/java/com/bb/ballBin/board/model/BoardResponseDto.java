@@ -1,5 +1,6 @@
 package com.bb.ballBin.board.model;
 
+import com.bb.ballBin.board.domain.BoardType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -15,7 +16,7 @@ public class BoardResponseDto {
     @Schema(name = "게시글 ID")
     private String boardId;
     @Schema(name = "게시글 종류 타입")
-    private String boardType;
+    private BoardType boardType;
     @Schema(name = "게시글 제목")
     private String title;
     @Schema(name = "게시글 내용")

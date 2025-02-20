@@ -3,6 +3,7 @@ package com.bb.ballBin.cart.service;
 import com.bb.ballBin.cart.entity.Cart;
 import com.bb.ballBin.cart.model.CartRequestDto;
 import com.bb.ballBin.cart.model.CartResponseDto;
+import com.bb.ballBin.cart.model.QuantityRequestDto;
 import com.bb.ballBin.cart.repository.CartRepository;
 import com.bb.ballBin.product.entity.Product;
 import com.bb.ballBin.product.repository.ProductRepository;
@@ -56,14 +57,13 @@ public class CartService {
     /**
      * 장바구니 수량 수정
      */
-    public CartResponseDto updateCart(String cartId, CartRequestDto cartRequestDto) {
-        Cart cart = cartRepository.findById(cartId)
+    public void  updateCart(String cartId, String userId, QuantityRequestDto quantityRequestDto) {
+
+        Cart cart = cartRepository.findByCartIdAndUser_UserId(cartId, userId)
                 .orElseThrow(() -> new RuntimeException("error.cart.notfound"));
 
-        cart.setQuantity(cartRequestDto.getQuantity());
+        cart.setQuantity(quantityRequestDto.getQuantity());
         cartRepository.save(cart);
-
-        return cart.toDto();
     }
 
     /**

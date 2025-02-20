@@ -14,7 +14,8 @@ public class SecurityPolicy {
         return List.of(
                 "/auth/login",
                 "/auth/logout",
-                "/registers"
+                "/registers",
+                "/boards/**"
         );
     }
 
@@ -26,11 +27,11 @@ public class SecurityPolicy {
                 "/auth/user",
                 "/roles/**",
                 "/menus/**",
-                "/boards/**",
                 "/bookmarks/**",
                 "/users/**",
                 "/carts/**",
-                "/products/**"
+                "/products/**",
+                "/addresses/**"
         );
     }
 

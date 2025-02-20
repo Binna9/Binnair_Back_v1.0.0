@@ -22,9 +22,6 @@ import java.util.List;
 @RequestMapping("/users")
 public class UserController {
 
-    @Value("${file.upload-dir}") // ✅ 환경 변수에서 uploadDir 주입
-    private String uploadDir;
-
     private final UserService userService;
     private final UserRepository userRepository;
     private final FileUtil fileUtil;
@@ -48,19 +45,15 @@ public class UserController {
     public ResponseEntity<Resource> getProfileImage(@PathVariable String userId) {
         return userRepository.findById(userId)
                 .map(user -> {
-
                     String relativePath = user.getImageFilePath();
                     if (relativePath == null || relativePath.isEmpty()) {
                         System.out.println("❌ No image path found for user: " + userId);
-                        return ResponseEntity.notFound().<Resource>build(); // ✅ 타입 명시
+                        return ResponseEntity.notFound().<Resource>build();
                     }
 
-                    File imageFile = fileUtil.getFilePath(relativePath);
-                    System.out.println("📂 Fetching image from path: " + imageFile.getAbsolutePath());
-
-                    return fileUtil.getProfileImageResponse(relativePath);
+                    return fileUtil.getImageResponse("user", relativePath);
                 })
-                .orElseGet(() -> ResponseEntity.notFound().<Resource>build()); // ✅ 타입 명시
+                .orElseGet(() -> ResponseEntity.notFound().<Resource>build());
     }
 
     @PutMapping("/{userId}")

@@ -1,5 +1,6 @@
 package com.bb.ballBin.board.service;
 
+import com.bb.ballBin.board.domain.BoardType;
 import com.bb.ballBin.board.entity.Board;
 import com.bb.ballBin.board.model.BoardRequestDto;
 import com.bb.ballBin.board.model.BoardResponseDto;
@@ -29,7 +30,7 @@ public class BoardService {
     /**
      * 게시글 목록 조회
      */
-    public List<BoardResponseDto> getAllBoards(String boardType, Pageable pageable) {
+    public List<BoardResponseDto> getAllBoards(BoardType boardType, Pageable pageable) {
 
         Page<Board> boardPage = boardRepository.findByBoardType(boardType, pageable);
 
@@ -55,8 +56,16 @@ public class BoardService {
     @Transactional
     public void createBoard(BoardRequestDto boardRequestDto, MultipartFile file) {
         try {
-            String userId = SecurityUtil.getCurrentUserId();
+            if (boardRequestDto.getBoardType() == null) {
+                throw new IllegalArgumentException("❌ 게시판 유형(boardType)은 필수입니다.");
+            }
 
+            // ✅ 유효한 boardType 인지 검증
+            if (!BoardType.isValidType(boardRequestDto.getBoardType().name())) {
+                throw new IllegalArgumentException("❌ 유효하지 않은 게시판 유형입니다: " + boardRequestDto.getBoardType());
+            }
+
+            String userId = SecurityUtil.getCurrentUserId();
             User writer = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("error.user.notfound"));
 
@@ -71,7 +80,7 @@ public class BoardService {
             board = boardRepository.save(board);
 
             if (file != null && !file.isEmpty()) {
-                String filePath = fileUtil.saveFile(board.getBoardId(), file);
+                String filePath = fileUtil.saveFile("board" , board.getBoardId(), file);
                 board.setFilePath(filePath);
                 boardRepository.save(board);
             }
@@ -95,7 +104,7 @@ public class BoardService {
         board.setContent(boardRequestDto.getContent());
 
         if (file != null && !file.isEmpty()) {
-            String filePath = fileUtil.saveFile(board.getBoardId(), file);
+            String filePath = fileUtil.saveFile(null, board.getBoardId(), file);
             board.setFilePath(filePath);
         }
 

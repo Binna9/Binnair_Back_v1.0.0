@@ -1,5 +1,6 @@
 package com.bb.ballBin.board.controller;
 
+import com.bb.ballBin.board.domain.BoardType;
 import com.bb.ballBin.board.model.BoardRequestDto;
 import com.bb.ballBin.board.model.BoardResponseDto;
 import com.bb.ballBin.board.service.BoardService;
@@ -29,7 +30,7 @@ public class BoardController {
     @GetMapping
     @Operation(summary = "게시글 전체 조회")
     public ResponseEntity<List<BoardResponseDto>> boardList(
-            @RequestParam String boardType,
+            @RequestParam("boardType") BoardType boardType,
             @PageableDefault(size = 10, sort = "createDatetime", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return ResponseEntity.ok(boardService.getAllBoards(boardType, pageable));
@@ -37,9 +38,11 @@ public class BoardController {
 
     @GetMapping("/{boardId}")
     @Operation(summary = "게시글 개별 조회")
-    public ResponseEntity<BoardResponseDto> boardDetail(@PathVariable("boardId") String boardId) {
+    public ResponseEntity<BoardResponseDto> boardDetail(
+            @PathVariable("boardId") String boardId) {
 
-        return ResponseEntity.ok(boardService.getBoardById(boardId));
+        BoardResponseDto board = boardService.getBoardById(boardId);
+        return ResponseEntity.ok(board);
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

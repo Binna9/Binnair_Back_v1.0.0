@@ -32,7 +32,7 @@ public class RegisterService {
         user = userRepository.save(user);
 
         if (file != null && !file.isEmpty()) {
-            String filePath = fileUtil.saveFile(user.getUserId(), file);
+            String filePath = fileUtil.saveFile("user", user.getUserId(), file);
             user.setImageFilePath(filePath);
             userRepository.save(user);
         }

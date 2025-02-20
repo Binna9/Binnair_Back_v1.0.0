@@ -1,13 +1,17 @@
 package com.bb.ballBin.product.controller;
 
+import com.bb.ballBin.common.util.FileUtil;
 import com.bb.ballBin.product.model.ProductRequestDto;
 import com.bb.ballBin.product.model.ProductResponseDto;
+import com.bb.ballBin.product.repository.ProductRepository;
 import com.bb.ballBin.product.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -17,6 +21,8 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductRepository productRepository;
+    private final FileUtil fileUtil;
 
     /**
      * 모든 제품 조회
@@ -37,12 +43,16 @@ public class ProductController {
     }
 
     /**
-     * 제품 등록
+     * 제품 등록 (이미지 포함 가능)
      */
     @PostMapping("")
     @Operation(summary = "제품 등록")
-    public ResponseEntity<ProductResponseDto> createProduct(@RequestBody ProductRequestDto productRequestDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(productRequestDto));
+    public ResponseEntity<ProductResponseDto> createProduct(
+            @ModelAttribute ProductRequestDto productRequestDto,
+            @RequestPart(value = "productFile", required = false) MultipartFile file) {
+
+        ProductResponseDto responseDto = productService.createProduct(productRequestDto, file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     /**
@@ -62,5 +72,24 @@ public class ProductController {
     public ResponseEntity<Void> deleteProduct(@PathVariable String productId) {
         productService.deleteProduct(productId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    /**
+     * 제품 이미지 반환
+     */
+    @GetMapping("/{productId}/image")
+    @Operation(summary = "제품 이미지 반환")
+    public ResponseEntity<Resource> getProductImage(@PathVariable String productId) {
+        return productRepository.findById(productId)
+                .map(product -> {
+                    String relativePath = product.getImageUrl();
+                    if (relativePath == null || relativePath.isEmpty()) {
+                        System.out.println("❌ No image path found for product: " + productId);
+                        return ResponseEntity.notFound().<Resource>build();
+                    }
+
+                    return fileUtil.getImageResponse("product", relativePath);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().<Resource>build());
     }
 }

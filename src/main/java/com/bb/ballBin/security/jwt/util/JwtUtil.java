@@ -22,20 +22,17 @@ public class JwtUtil {
 
     public String getUserIdFromToken(String token) {
         try {
-            System.out.println("📌 Parsing Token: " + token);
             Claims claims = Jwts.parser()
                     .verifyWith(secretKey)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
 
-            System.out.println("✅ Extracted Claims: " + claims);
 
             // ✅ 기존 코드에서 .get("userId", String.class) 대신 Object 로 받아 변환
             Object userIdObject = claims.get("userId");
             String userId = userIdObject != null ? String.valueOf(userIdObject) : null;
 
-            System.out.println("✅ Extracted userId: " + userId);
             return userId;
         } catch (JwtException | IllegalArgumentException e) {
             e.printStackTrace();

@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -23,4 +25,10 @@ public class BookmarkResponseDto {
 
     @Schema(description = "제품명")
     private String productName;
+
+    @Schema(description = "제품 설명")
+    private String productDescription;
+
+    @Schema(description = "제품 가격")
+    private BigDecimal price;
 }

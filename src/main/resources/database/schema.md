@@ -175,4 +175,29 @@ CREATE TABLE carts (
     modifier_name VARCHAR(50)
 );
 
+CREATE TABLE addresses (
+    address_id           CHARACTER VARYING(36) PRIMARY KEY, -- 배송지 ID (PK)
+    user_id              CHARACTER VARYING(36) NOT NULL,   -- 사용자 ID (FK)
+    receiver             CHARACTER VARYING(50) NOT NULL,   -- 받는 사람 이름
+    phone                CHARACTER VARYING(20) NOT NULL,   -- 받는 사람 연락처
+    postal_code          CHARACTER VARYING(10) NOT NULL,   -- 우편번호
+    address1             TEXT NOT NULL,                   -- 기본 주소 (도로명 주소)
+    address2             TEXT,                            -- 상세 주소 (아파트, 동, 호수 등)
+    is_default           BOOLEAN DEFAULT FALSE,           -- 기본 배송지 여부 (기본값: FALSE)
+
+    -- ✅ BaseEntity 필드 추가
+    create_datetime      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    creator_id           CHARACTER VARYING(36),
+    creator_login_id     CHARACTER VARYING(60),
+    creator_name         CHARACTER VARYING(50),
+    modify_datetime      TIMESTAMP WITH TIME ZONE,
+    modifier_id          CHARACTER VARYING(36),
+    modifier_login_id    CHARACTER VARYING(60),
+    modifier_name        CHARACTER VARYING(50),
+
+    -- ✅ 사용자 테이블과 관계 설정 (FK)
+    CONSTRAINT fk_addresses_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+
 ```

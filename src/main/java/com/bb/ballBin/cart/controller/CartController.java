@@ -2,6 +2,7 @@ package com.bb.ballBin.cart.controller;
 
 import com.bb.ballBin.cart.model.CartRequestDto;
 import com.bb.ballBin.cart.model.CartResponseDto;
+import com.bb.ballBin.cart.model.QuantityRequestDto;
 import com.bb.ballBin.cart.service.CartService;
 import com.bb.ballBin.common.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -44,9 +45,14 @@ public class CartController {
      */
     @PutMapping("/{cartId}")
     @Operation(summary = "장바구니 수량 수정")
-    public ResponseEntity<CartResponseDto> updateCart(@PathVariable String cartId, @RequestBody CartRequestDto cartRequestDto) {
-        return ResponseEntity.ok(cartService.updateCart(cartId, cartRequestDto));
+    public ResponseEntity<String> updateCart(@PathVariable("cartId") String cartId, @RequestBody QuantityRequestDto quantityRequestDto) {
+        String userId = SecurityUtil.getCurrentUserId();
+
+        cartService.updateCart(cartId, userId, quantityRequestDto);
+
+        return ResponseEntity.status(HttpStatus.OK).build();  // userId 전달
     }
+
 
     /**
      * 장바구니 삭제

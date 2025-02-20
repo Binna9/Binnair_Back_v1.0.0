@@ -39,6 +39,8 @@ public class Bookmark extends BaseEntity {
                 .userId(this.user.getUserId())
                 .productId(this.product.getProductId())
                 .productName(this.product.getProductName())
+                .productDescription(this.product.getProductDescription())
+                .price(this.product.getPrice())
                 .build();
     }
 }
