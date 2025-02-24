@@ -43,6 +43,7 @@ public class AuthService {
      * 로그인 처리
      */
     public ResponseEntity<?> login(String loginId, String loginPassword) {
+
         try {
             // ✅ 아이디, 비밀번호 인증
             Authentication authentication = authenticationManager.authenticate(
@@ -58,10 +59,10 @@ public class AuthService {
                     .collect(Collectors.toSet());
 
             // ✅ Access Token (1시간)
-            String accessToken = jwtUtil.createJwtToken(userId, roles, 60 * 60 * 10L * 100, false);
+            String accessToken = jwtUtil.createJwtToken(userId, roles, false);
 
             // ✅ Refresh Token (3일)
-            String refreshToken = jwtUtil.createJwtToken(userId, null, 60 * 60 * 24L * 7 * 1000, true);
+            String refreshToken = jwtUtil.createJwtToken(userId, roles, true);
 
             // ✅ Refresh Token 을 Redis 에 저장 (권장)
             refreshTokenService.storeRefreshToken(userId, refreshToken);
@@ -94,33 +95,57 @@ public class AuthService {
         }
 
         String token = authorizationHeader.substring(7);
-        Date expirationTime = jwtUtil.getExpiration(token);
+        boolean isOAuth2Token = request.getRequestURI().startsWith("/oauth2/"); // ✅ OAuth2 토큰 여부 체크
 
-        if (expirationTime != null) {
-            jwtBlacklistService.addToBlacklist(token, expirationTime); // ✅ 만료시간 포함해서 블랙리스트 추가
+        // ✅ 1. 토큰 유효성 검증
+        Claims claims = jwtUtil.validateToken(token, false, isOAuth2Token);
+        if (claims == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(messageService.getMessage("error.token.invalid"));
         }
 
-        SecurityContextHolder.clearContext(); // 시큐리티 컨텍스트 초기화
+        // ✅ 2. 만료 시간 확인
+        Date expirationTime = claims.getExpiration();
+        if (expirationTime != null) {
+            jwtBlacklistService.addToBlacklist(token, expirationTime); // ✅ 블랙리스트 추가
+        }
+
+        // ✅ 3. 시큐리티 컨텍스트 초기화
+        SecurityContextHolder.clearContext();
 
         return ResponseEntity.ok(messageService.getMessage("success.logout"));
     }
 
+
     public ResponseEntity<?> refreshAccessToken(String refreshToken) {
         try {
-            // ✅ Refresh Token 검증
-            Claims claims = jwtUtil.validateToken(refreshToken, true); // Refresh Token 검증
-            String userId = claims.get("userId", String.class);
+            boolean isOAuth2Token = refreshToken.startsWith("oauth2-"); // ✅ OAuth2 여부 판별 로직 추가
 
-            // ✅ Redis 에서 저장된 Refresh Token 확인
+            // ✅ 1. Refresh Token 검증
+            Claims claims = jwtUtil.validateToken(refreshToken, true, isOAuth2Token);
+            if (claims == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("ERROR", "Invalid Refresh Token"));
+            }
+
+            String userId = claims.getSubject();
+            String providerId = claims.getSubject();
+            String email = claims.get("email", String.class);  // ✅ OAuth2 사용자의 이메일
+            String loginId = claims.get("loginId", String.class);  // ✅ OAuth2 사용자의 로그인 ID
+
+            // ✅ 2. Redis 에서 저장된 Refresh Token 확인
             String storedRefreshToken = refreshTokenService.getRefreshToken(userId);
             if (!refreshToken.equals(storedRefreshToken)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("ERROR", "Invalid Refresh Token"));
             }
 
-            // ✅ 새로운 Access Token 발급
+            // ✅ 3. 새로운 Access Token 발급
             Set<String> roles = userService.getUserRoles(userId);
-            String newAccessToken = jwtUtil.createJwtToken(userId, roles, 60 * 60 * 10L * 100, false);
+
+            String newAccessToken = isOAuth2Token ?
+
+                    jwtUtil.createJwtTokenForOAuth2(providerId, email, loginId, roles, false) :
+                    jwtUtil.createJwtToken(userId, roles, false);
 
             return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
 
@@ -134,6 +159,7 @@ public class AuthService {
     }
 
     public ResponseEntity<?> getCurrentUser() {
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         // ✅ 인증되지 않은 사용자 예외 처리

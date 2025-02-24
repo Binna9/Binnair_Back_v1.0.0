@@ -8,13 +8,11 @@ import com.bb.ballBin.user.repository.UserRepository;
 import com.bb.ballBin.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
 import java.util.List;
 
 @RestController

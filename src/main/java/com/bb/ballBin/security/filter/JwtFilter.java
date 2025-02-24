@@ -34,6 +34,7 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         String token = authorization.substring(7);
+        boolean isOAuth2Token = req.getRequestURI().startsWith("/google"); // ✅ OAuth2 로그인 여부 체크
 
         // ✅ 1. 블랙리스트된 토큰인지 확인
         if (jwtBlacklistService.isBlacklisted(token)) {
@@ -43,15 +44,15 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         // ✅ 2. Access Token 만료 체크 (401 + ACCESS_TOKEN_EXPIRED 반환)
-        if (jwtUtil.isExpired(token)) {
+        if (jwtUtil.isExpired(token, isOAuth2Token)) {
             res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             res.setContentType("application/json");
             res.getWriter().write("{\"error\":\"ACCESS_TOKEN_EXPIRED\"}");
             return;
         }
 
-        // ✅ 3. Access Token 유효한 경우, 사용자 인증 처리
-        String userId = jwtUtil.getUserIdFromToken(token);
+        String userId = jwtUtil.getUserIdFromToken(token, isOAuth2Token);
+
         if (userId != null) {
             BallBinUserDetails ballBinUserDetails = (BallBinUserDetails) ballBinUserDetailsService.loadUserById(userId);
 
