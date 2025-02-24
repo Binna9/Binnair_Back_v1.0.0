@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -71,5 +72,13 @@ public class CartService {
      */
     public void removeCart(String cartId) {
         cartRepository.deleteById(cartId);
+    }
+
+    /**
+     * 총 가격 반환
+     */
+    public BigDecimal getTotalAmountByUser(String userId) {
+        BigDecimal total = cartRepository.calculateTotalAmountByUser(userId);
+        return total != null ? total : BigDecimal.ZERO; // ✅ Null 방지
     }
 }

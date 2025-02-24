@@ -21,7 +21,9 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"provider", "providerId"})
+})
 public class User extends BaseEntity {
 
     @Id
@@ -32,6 +34,13 @@ public class User extends BaseEntity {
 
     @Column(nullable = false, unique = true, name = "login_id")
     private String loginId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AuthProvider provider; // ✅ 로그인 제공자
+
+    @Column(nullable = false, unique = true, name = "provider_id")
+    private String providerId; // ✅ 플랫폼별 유일한 식별자
 
     @Column(nullable = false, name = "login_password")
     private String loginPassword;

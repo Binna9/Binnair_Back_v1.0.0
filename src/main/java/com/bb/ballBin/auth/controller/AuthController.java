@@ -1,6 +1,8 @@
 package com.bb.ballBin.auth.controller;
 
 import com.bb.ballBin.auth.service.AuthService;
+import com.bb.ballBin.auth.service.OAuth2UserService;
+import com.bb.ballBin.security.jwt.model.JwtResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final OAuth2UserService oAuth2UserService;
 
     /**
      * 로그인
@@ -35,6 +38,27 @@ public class AuthController {
 
         return authService.logout(request);
     }
+
+    @PostMapping("/google/login")
+    public ResponseEntity<JwtResponse> googleLogin(@RequestBody Map<String, String> request) {
+
+        String code = request.get("code");
+        // ✅ Google OAuth 로그인 및 회원가입 처리 후 JWT 발급
+        String accessToken = oAuth2UserService.handleGoogleLogin(code);
+
+        return ResponseEntity.ok(new JwtResponse(accessToken));
+    }
+
+//    @PostMapping("/kakao/login")
+//    public ResponseEntity<JwtResponse> kakaoLogin(@RequestBody Map<String, String> request) {
+//
+//        String code = request.get("code");
+//         ✅ Google OAuth 로그인 및 회원가입 처리 후 JWT 발급
+//        String accessToken = oAuth2UserService.handleGoogleLogin(code);
+//
+//        return ResponseEntity.ok(new JwtResponse(accessToken));
+//    }
+
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestParam String refreshToken) {

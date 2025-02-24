@@ -11,7 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,6 +32,25 @@ public class CartController {
         String userId = SecurityUtil.getCurrentUserId();
         return ResponseEntity.ok(cartService.getUserCarts(userId));
     }
+
+    @GetMapping("/total")
+    public ResponseEntity<Map<String, Object>> getCartTotal() {
+
+        String userId = SecurityUtil.getCurrentUserId(); // ✅ 현재 로그인한 사용자 ID 가져오기
+        BigDecimal totalAmount = cartService.getTotalAmountByUser(userId);
+
+        // ✅ Null 값 방지: 장바구니가 비어 있으면 0으로 반환
+        if (totalAmount == null) {
+            totalAmount = BigDecimal.ZERO;
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", userId);
+        response.put("totalAmount", totalAmount);
+
+        return ResponseEntity.ok(response);
+    }
+
 
     /**
      * 장바구니 추가 (현재 로그인한 사용자)
