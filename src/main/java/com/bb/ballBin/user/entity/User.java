@@ -7,10 +7,7 @@ import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.role.entity.Role;
 import com.bb.ballBin.user.model.UserResponseDto;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.util.HashSet;
@@ -21,6 +18,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(callSuper = false, exclude = {"bookmarks", "carts", "roles"})
 @Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"provider", "providerId"})
 })
@@ -60,7 +58,7 @@ public class User extends BaseEntity {
     @Column(name = "phone_number")
     private String phoneNumber;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<Bookmark> bookmarks = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)

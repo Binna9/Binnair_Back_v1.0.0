@@ -3,8 +3,9 @@ package com.bb.ballBin.cart.service;
 import com.bb.ballBin.cart.entity.Cart;
 import com.bb.ballBin.cart.model.CartRequestDto;
 import com.bb.ballBin.cart.model.CartResponseDto;
-import com.bb.ballBin.cart.model.QuantityRequestDto;
+import com.bb.ballBin.cart.model.QuantityDto;
 import com.bb.ballBin.cart.repository.CartRepository;
+import com.bb.ballBin.common.util.SecurityUtil;
 import com.bb.ballBin.product.entity.Product;
 import com.bb.ballBin.product.repository.ProductRepository;
 import com.bb.ballBin.user.entity.User;
@@ -14,7 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,11 +32,23 @@ public class CartService {
     /**
      * 특정 사용자의 장바구니 목록 조회
      */
-    public List<CartResponseDto> getUserCarts(String userId) {
-        return cartRepository.findByUserUserId(userId).stream()
+    public Map<String, Object> getUserCarts(String userId) {
+        List<CartResponseDto> carts = cartRepository.findByUserUserId(userId).stream()
                 .map(Cart::toDto)
                 .collect(Collectors.toList());
+
+        BigDecimal totalAmount = cartRepository.calculateTotalAmountByUser(userId);
+        if (totalAmount == null) {
+            totalAmount = BigDecimal.ZERO;
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("carts", carts);
+        response.put("totalAmount", totalAmount);
+
+        return response;
     }
+
 
     /**
      * 장바구니 추가
@@ -56,15 +71,34 @@ public class CartService {
     }
 
     /**
-     * 장바구니 수량 수정
+     * 장바구니 수량 , 총 합 반환
      */
-    public void  updateCart(String cartId, String userId, QuantityRequestDto quantityRequestDto) {
+    @Transactional
+    public QuantityDto updateCart(String cartId, QuantityDto quantityDto) {
+
+        String userId = SecurityUtil.getCurrentUserId();
 
         Cart cart = cartRepository.findByCartIdAndUser_UserId(cartId, userId)
                 .orElseThrow(() -> new RuntimeException("error.cart.notfound"));
 
-        cart.setQuantity(quantityRequestDto.getQuantity());
-        cartRepository.save(cart);
+        Integer newQuantity = quantityDto.getQuantity();
+
+        if (newQuantity != null) {
+            cart.setQuantity(newQuantity);
+            cartRepository.save(cart);
+        }
+
+        BigDecimal totalAmount = cartRepository.calculateTotalAmountByUser(userId);
+
+        if (totalAmount == null) {
+            totalAmount = BigDecimal.ZERO;
+        }
+
+        return QuantityDto.builder()
+                .userId(userId)
+                .totalAmount(totalAmount)
+                .quantity(cart.getQuantity())
+                .build();
     }
 
     /**
@@ -72,13 +106,5 @@ public class CartService {
      */
     public void removeCart(String cartId) {
         cartRepository.deleteById(cartId);
-    }
-
-    /**
-     * 총 가격 반환
-     */
-    public BigDecimal getTotalAmountByUser(String userId) {
-        BigDecimal total = cartRepository.calculateTotalAmountByUser(userId);
-        return total != null ? total : BigDecimal.ZERO; // ✅ Null 방지
     }
 }

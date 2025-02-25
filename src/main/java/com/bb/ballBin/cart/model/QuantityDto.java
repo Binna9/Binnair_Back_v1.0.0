@@ -6,12 +6,18 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @AllArgsConstructor
 @Builder
-public class QuantityRequestDto {
+public class QuantityDto {
 
+    @Schema(description = "사용자 ID")
+    private String userId;
+    @Schema(description = "총 금액")
+    private BigDecimal totalAmount;
     @Schema(description = "수량")
     private Integer quantity;
 }

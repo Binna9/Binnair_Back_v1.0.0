@@ -2,20 +2,19 @@ package com.bb.ballBin.cart.controller;
 
 import com.bb.ballBin.cart.model.CartRequestDto;
 import com.bb.ballBin.cart.model.CartResponseDto;
-import com.bb.ballBin.cart.model.QuantityRequestDto;
+import com.bb.ballBin.cart.model.QuantityDto;
 import com.bb.ballBin.cart.service.CartService;
 import com.bb.ballBin.common.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
+import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+@EqualsAndHashCode
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/carts")
@@ -28,29 +27,12 @@ public class CartController {
      */
     @GetMapping("")
     @Operation(summary = "현재 로그인한 사용자의 장바구니 조회")
-    public ResponseEntity<List<CartResponseDto>> getUserCarts() {
+    public ResponseEntity<Map<String , Object>> getUserCarts() {
+
         String userId = SecurityUtil.getCurrentUserId();
+
         return ResponseEntity.ok(cartService.getUserCarts(userId));
     }
-
-    @GetMapping("/total")
-    public ResponseEntity<Map<String, Object>> getCartTotal() {
-
-        String userId = SecurityUtil.getCurrentUserId(); // ✅ 현재 로그인한 사용자 ID 가져오기
-        BigDecimal totalAmount = cartService.getTotalAmountByUser(userId);
-
-        // ✅ Null 값 방지: 장바구니가 비어 있으면 0으로 반환
-        if (totalAmount == null) {
-            totalAmount = BigDecimal.ZERO;
-        }
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("userId", userId);
-        response.put("totalAmount", totalAmount);
-
-        return ResponseEntity.ok(response);
-    }
-
 
     /**
      * 장바구니 추가 (현재 로그인한 사용자)
@@ -66,15 +48,13 @@ public class CartController {
      * 장바구니 수량 수정
      */
     @PutMapping("/{cartId}")
-    @Operation(summary = "장바구니 수량 수정")
-    public ResponseEntity<String> updateCart(@PathVariable("cartId") String cartId, @RequestBody QuantityRequestDto quantityRequestDto) {
-        String userId = SecurityUtil.getCurrentUserId();
+    @Operation(summary = "장바구니 수량 , 총 합 반환")
+    public ResponseEntity<QuantityDto> updateCart(@PathVariable("cartId") String cartId, @RequestBody QuantityDto quantityDto) {
 
-        cartService.updateCart(cartId, userId, quantityRequestDto);
+        QuantityDto updated = cartService.updateCart(cartId, quantityDto);
 
-        return ResponseEntity.status(HttpStatus.OK).build();  // userId 전달
+        return ResponseEntity.ok(updated);  // userId 전달
     }
-
 
     /**
      * 장바구니 삭제

@@ -7,6 +7,7 @@ import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -45,8 +46,19 @@ public class MessageAspect {
             throwing = "exception")
     public void handleException(Throwable exception) {
 
-        String messageKey = exception.getMessage();
-        String message = messageSource.getMessage(messageKey, null, Locale.KOREAN);
+        // 예외의 메시지(키)를 가져오는데 null이면 기본 키로 대체
+        String key = exception.getMessage();
+        if (key == null || key.isBlank()) {
+            key = "error.unknown";
+        }
+
+        String message;
+        try {
+            message = messageSource.getMessage(key, null, Locale.KOREAN);
+        } catch (NoSuchMessageException e) {
+            // 만약 해당 키가 없으면 기본 메시지로 대체
+            message = messageSource.getMessage("error.unknown", null, Locale.KOREAN);
+        }
 
         throw new RuntimeException(message, exception);
     }
