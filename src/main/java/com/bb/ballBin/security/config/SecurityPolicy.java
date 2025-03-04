@@ -12,6 +12,7 @@ public class SecurityPolicy {
      */
     public List<String> getPermittedUrls() {
         return List.of(
+                "/",
                 "/auth/**",
                 "/registers",
                 "/boards/**"

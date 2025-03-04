@@ -65,7 +65,7 @@ public class SecurityConfig {
                         .requestMatchers(securityPolicy.getPermittedUrls().toArray(String[]::new)).permitAll() // ✅ 인증 없이 접근 가능
                         .requestMatchers(securityPolicy.getAuthenticatedUrls().toArray(String[]::new)).authenticated() // ✅ 인증 필요
                         .requestMatchers(securityPolicy.getAdminUrls().toArray(String[]::new)).hasRole("ADMIN") // ✅ 관리자 권한 필요
-                        .anyRequest().denyAll() // ✅ 나머지 요청은 차단
+                                .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class) // ✅ 필터 순서 변경
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
@@ -79,9 +79,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // ✅ 프론트엔드 도메인 허용
+        configuration.setAllowedOrigins(List.of("http://localhost:5173","http://51.20.125.47:5173")); // ✅ 프론트엔드 도메인 허용
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // ✅ 허용할 HTTP 메서드
-        configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type")); // ✅ 모든 헤더 허용
+        configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true); // ✅ 인증정보 포함 허용 (쿠키, Authorization 등)
 

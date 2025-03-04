@@ -13,12 +13,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -43,29 +44,41 @@ public class AuthService {
      * 로그인 처리
      */
     public ResponseEntity<?> login(String loginId, String loginPassword) {
+        Logger logger = LoggerFactory.getLogger(this.getClass());
 
         try {
+            logger.info("로그인 시도 - ID: {}", loginId);
+
             // ✅ 아이디, 비밀번호 인증
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginId, loginPassword)
             );
 
+            logger.debug("인증 성공 - 로그인 ID: {}", loginId);
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
             BallBinUserDetails userDetails = (BallBinUserDetails) authentication.getPrincipal();
             String userId = userDetails.getUserId();
+
+            logger.debug("UserDetails 로딩 완료 - User ID: {}", userId);
 
             Set<String> roles = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toSet());
 
+            logger.debug("사용자 권한: {}", roles);
+
             // ✅ Access Token (1시간)
             String accessToken = jwtUtil.createJwtToken(userId, roles, false);
+            logger.debug("Access Token 생성 완료");
 
             // ✅ Refresh Token (3일)
             String refreshToken = jwtUtil.createJwtToken(userId, roles, true);
+            logger.debug("Refresh Token 생성 완료");
 
             // ✅ Refresh Token 을 Redis 에 저장 (권장)
             refreshTokenService.storeRefreshToken(userId, refreshToken);
+            logger.debug("Refresh Token 저장 완료");
 
             // ✅ 응답에 두 개의 토큰 포함
             String jsonResponse = objectMapper.writeValueAsString(Map.of(
@@ -73,11 +86,29 @@ public class AuthService {
                     "refreshToken", refreshToken
             ));
 
+            logger.info("로그인 성공 - ID: {}", loginId);
+
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(jsonResponse);
 
+        } catch (BadCredentialsException e) {
+            logger.warn("로그인 실패 - 아이디 또는 비밀번호 불일치 (ID: {})", loginId);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("ERROR", messageService.getMessage("error.security.password")));
+
+        } catch (DisabledException e) {
+            logger.warn("로그인 실패 - 계정 비활성화됨 (ID: {})", loginId);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("ERROR", "계정이 비활성화되었습니다."));
+
+        } catch (LockedException e) {
+            logger.warn("로그인 실패 - 계정 잠김 (ID: {})", loginId);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("ERROR", "계정이 잠겼습니다."));
+
         } catch (Exception e) {
+            logger.error("로그인 실패 - 예기치 않은 오류 발생 (ID: {})", loginId, e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("ERROR", messageService.getMessage("error.security.password")));
         }
