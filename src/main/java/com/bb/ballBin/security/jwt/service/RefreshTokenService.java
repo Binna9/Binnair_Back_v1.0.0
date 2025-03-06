@@ -14,7 +14,7 @@ public class RefreshTokenService {
 
     public void storeRefreshToken(String userId, String refreshToken) {
         // ✅ Redis 에 저장 (7일 동안 유지)
-        redisTemplate.opsForValue().set("refreshToken:" + userId, refreshToken, 7, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set("refreshToken:" + userId, refreshToken, 3, TimeUnit.DAYS);
     }
 
     public String getRefreshToken(String userId) {

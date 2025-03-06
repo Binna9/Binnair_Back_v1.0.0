@@ -4,6 +4,7 @@ import com.bb.ballBin.auth.service.AuthService;
 import com.bb.ballBin.auth.service.OAuth2UserService;
 import com.bb.ballBin.security.jwt.model.JwtResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,12 +23,12 @@ public class AuthController {
      * 로그인
      */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest, HttpServletResponse response) {
 
         String loginId = loginRequest.get("loginId");
         String loginPassword = loginRequest.get("loginPassword");
 
-        return authService.login(loginId, loginPassword);
+        return authService.login(loginId, loginPassword, response);
     }
 
     /**
@@ -59,9 +60,8 @@ public class AuthController {
 //        return ResponseEntity.ok(new JwtResponse(accessToken));
 //    }
 
-
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@RequestParam String refreshToken) {
+    public ResponseEntity<?> refreshToken(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
         return authService.refreshAccessToken(refreshToken);
     }
 

@@ -7,7 +7,7 @@ public enum BoardType {
     NOTICE("공지사항"),
     FAQ("자주 묻는 질문"),
     FREE("자유게시판"),
-    SUGGESTION("건의사항");
+    SUGGESTION("문의하기");
 
     private final String description;
 

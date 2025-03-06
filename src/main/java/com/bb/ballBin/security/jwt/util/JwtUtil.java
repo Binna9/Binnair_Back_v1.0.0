@@ -32,9 +32,9 @@ public class JwtUtil {
 
     /** ✅ 일반 로그인용 JWT 생성 */
     public String createJwtToken(String userId, Set<String> roles, boolean isRefreshToken) {
-        Map<String, Object> claims = Map.of(
-                "roles", roles
-        );
+        Map<String, Object> claims = isRefreshToken
+                ? Map.of() // ✅ Refresh Token 에는 claims 없음
+                : Map.of("roles", roles); // ✅ Access Token 에는 roles 추가
 
         return generateToken(userId, claims, isRefreshToken, false);
     }
@@ -51,9 +51,10 @@ public class JwtUtil {
     }
 
     /** ✅ JWT 토큰 생성 (공통) */
-    private String generateToken(String subject,  Map<String, Object> claims, boolean isRefreshToken, boolean isOAuth2) {
+    private String generateToken(String subject, Map<String, Object> claims, boolean isRefreshToken, boolean isOAuth2) {
 
         long expirationTime = isRefreshToken ? refreshTokenExpiration : accessTokenExpiration;
+
         SecretKey key = isOAuth2 ? oauth2SecretKey : secretKey;
 
         JwtBuilder jwtBuilder = Jwts.builder()
@@ -62,7 +63,9 @@ public class JwtUtil {
                 .expiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(key, SignatureAlgorithm.HS256);
 
-        claims.forEach(jwtBuilder::claim);
+        if (!isRefreshToken) { // ✅ Refresh Token 이 면 claims 추가 안 함
+            claims.forEach(jwtBuilder::claim);
+        }
 
         return jwtBuilder.compact();
     }

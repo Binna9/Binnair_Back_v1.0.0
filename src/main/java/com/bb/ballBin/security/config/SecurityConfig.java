@@ -79,7 +79,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173","http://51.20.125.47:5173")); // ✅ 프론트엔드 도메인 허용
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "http://51.20.125.47:5173",
+                "https://51.20.125.47:5173",  // ✅ HTTPS 로 변경
+                "https://binnair.com",
+                "https://www.binnair.com"
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // ✅ 허용할 HTTP 메서드
         configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
         configuration.setExposedHeaders(List.of("Authorization"));

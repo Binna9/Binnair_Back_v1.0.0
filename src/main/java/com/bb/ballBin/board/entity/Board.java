@@ -22,9 +22,9 @@ public class Board extends BaseEntity {
     @Column(updatable = false, nullable = false, unique = true, name = "board_id")
     private String boardId;
 
-    @Enumerated(EnumType.STRING) // ✅ Enum을 문자열로 저장
+    @Enumerated(EnumType.STRING)
     @Column(name = "board_type", length = 20, nullable = false)
-    private BoardType boardType; // 공지사항, 커뮤니티, 1:1 문의, 자주하는 질문
+    private BoardType boardType;
 
     @Column(name = "title", length = 255, nullable = false)
     private String title;
