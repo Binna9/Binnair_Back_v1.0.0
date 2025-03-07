@@ -10,10 +10,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -110,7 +107,7 @@ public class AuthService {
     /**
      * 로그아웃 처리
      */
-    public ResponseEntity<?> logout(HttpServletRequest request) {
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
 
         String authorizationHeader = request.getHeader("Authorization");
 
@@ -136,6 +133,16 @@ public class AuthService {
 
         // ✅ 3. 시큐리티 컨텍스트 초기화
         SecurityContextHolder.clearContext();
+
+        ResponseCookie deleteCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(false) // 로컬 개발 시 false, 프로덕션에서는 true
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(0) // ✅ 쿠키 즉시 만료
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
 
         return ResponseEntity.ok(messageService.getMessage("success.logout"));
     }

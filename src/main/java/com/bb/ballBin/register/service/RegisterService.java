@@ -20,6 +20,7 @@ public class RegisterService {
 
     public void registerAccount(RegisterRequestDto registerRequestDto, MultipartFile file) {
 
+        //todo : Valid check
         User user = new User();
 
         user.setLoginId(registerRequestDto.getLoginId());

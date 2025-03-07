@@ -1,4 +1,4 @@
-package com.bb.ballBin.board.comment.entity;
+package com.bb.ballBin.comment.entity;
 
 import com.bb.ballBin.board.entity.Board;
 import com.bb.ballBin.common.entity.BaseEntity;

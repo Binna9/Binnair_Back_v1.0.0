@@ -12,10 +12,10 @@ public class SecurityPolicy {
      */
     public List<String> getPermittedUrls() {
         return List.of(
-                "/",
                 "/auth/**",
                 "/registers",
-                "/boards/**"
+                "/boards/**",
+                "/products/**"
         );
     }
 
@@ -29,7 +29,6 @@ public class SecurityPolicy {
                 "/bookmarks/**",
                 "/users/**",
                 "/carts/**",
-                "/products/**",
                 "/addresses/**"
         );
     }

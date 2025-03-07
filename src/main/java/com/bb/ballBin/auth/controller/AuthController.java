@@ -35,9 +35,9 @@ public class AuthController {
      * 로그아웃
      */
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request) {
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
 
-        return authService.logout(request);
+        return authService.logout(request, response);
     }
 
     @PostMapping("/google/login")

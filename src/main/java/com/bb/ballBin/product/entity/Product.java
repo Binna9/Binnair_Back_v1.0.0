@@ -20,10 +20,10 @@ public class Product extends BaseEntity {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
-    @Column(updatable = false, nullable = false, unique = true, name = "product_id", length = 36)
+    @Column(updatable = false, nullable = false, unique = true, name = "product_id")
     private String productId;
 
-    @Column(nullable = false, name = "product_name", length = 255)
+    @Column(nullable = false, name = "product_name")
     private String productName;
 
     @Column(name = "product_description", columnDefinition = "TEXT")
@@ -35,10 +35,10 @@ public class Product extends BaseEntity {
     @Column(nullable = false, name = "stock_quantity")
     private Integer stockQuantity;
 
-    @Column(name = "category", length = 100)
+    @Column(name = "category")
     private String category;
 
-    @Column(name = "image_url", length = 500)
+    @Column(name = "image_url")
     private String imageUrl;
 
     /**

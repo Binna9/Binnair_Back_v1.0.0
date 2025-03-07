@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -29,12 +30,13 @@ public class BoardController {
 
     @GetMapping
     @Operation(summary = "게시글 전체 조회")
-    public ResponseEntity<List<BoardResponseDto>> boardList(
+    public ResponseEntity<Page<BoardResponseDto>> boardList(
             @RequestParam("boardType") BoardType boardType,
-            @PageableDefault(size = 10, sort = "createDatetime", direction = Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(page = 0, size = 8, sort = "createDatetime", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return ResponseEntity.ok(boardService.getAllBoards(boardType, pageable));
     }
+
 
     @GetMapping("/{boardId}")
     @Operation(summary = "게시글 개별 조회")

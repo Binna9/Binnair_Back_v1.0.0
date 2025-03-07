@@ -30,13 +30,9 @@ public class BoardService {
     /**
      * 게시글 목록 조회
      */
-    public List<BoardResponseDto> getAllBoards(BoardType boardType, Pageable pageable) {
-
-        Page<Board> boardPage = boardRepository.findByBoardType(boardType, pageable);
-
-        return boardPage.getContent().stream()
-                .map(Board::toDto)
-                .collect(Collectors.toList());
+    public Page<BoardResponseDto> getAllBoards(BoardType boardType, Pageable pageable) {
+        return boardRepository.findByBoardType(boardType, pageable)
+                .map(Board::toDto);
     }
 
     /**

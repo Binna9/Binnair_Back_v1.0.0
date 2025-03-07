@@ -26,6 +26,6 @@ public class RegisterRequestDto {
     @Schema(description = "핸드폰 번호")
     private String phoneNumber;
 
-    @Schema(description = "사용자 파일 필드")
+    @Schema(description = "사용자 이미지 파일")
     private MultipartFile userFile;
 }
