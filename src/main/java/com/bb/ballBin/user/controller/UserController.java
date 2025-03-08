@@ -1,0 +1,111 @@
+package com.bb.ballBin.user.controller;
+
+import com.bb.ballBin.common.message.annotation.MessageKey;
+import com.bb.ballBin.common.util.FileUtil;
+import com.bb.ballBin.user.model.UserRequsetDto;
+import com.bb.ballBin.user.model.UserResponseDto;
+import com.bb.ballBin.user.repository.UserRepository;
+import com.bb.ballBin.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/users")
+public class UserController {
+
+    private final UserService userService;
+    private final UserRepository userRepository;
+    private final FileUtil fileUtil;
+
+    @GetMapping("")
+    @Operation(summary = "사용자 전체 조회")
+    public ResponseEntity<List<UserResponseDto>> userList() {
+
+        return ResponseEntity.ok(userService.getAllUsers());
+    }
+
+    @GetMapping("/{userId}")
+    @Operation(summary = "사용자 개별 조회")
+    public ResponseEntity<UserResponseDto> userDetail(@PathVariable String userId) {
+
+        return ResponseEntity.ok(userService.getUserById(userId));
+    }
+
+    @GetMapping("/{userId}/image")
+    @Operation(summary = "사용자 이미지 반환")
+    public ResponseEntity<Resource> getProfileImage(@PathVariable String userId) {
+        return userRepository.findById(userId)
+                .map(user -> {
+                    String relativePath = user.getImageFilePath();
+                    if (relativePath == null || relativePath.isEmpty()) {
+                        System.out.println("❌ No image path found for user: " + userId);
+                        return ResponseEntity.notFound().<Resource>build();
+                    }
+
+                    return fileUtil.getImageResponse("user", relativePath);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().<Resource>build());
+    }
+
+    @PutMapping("/{userId}")
+    @Operation(summary = "사용자 수정")
+    @MessageKey(value = "success.user.update")
+    public ResponseEntity<String> modifyUser(@PathVariable String userId, @RequestBody UserRequsetDto userRequsetDto) {
+
+        userService.updateUser(userId, userRequsetDto);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @DeleteMapping("/{userId}")
+    @Operation(summary = "사용자 삭제")
+    @MessageKey(value = "success.user.delete")
+    public ResponseEntity<String> removeUser(@PathVariable String userId) {
+
+        userService.deleteUser(userId);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    public boolean equals(final Object o) {
+        if (o == this) return true;
+        if (!(o instanceof UserController)) return false;
+        final UserController other = (UserController) o;
+        if (!other.canEqual((Object) this)) return false;
+        final Object this$userService = this.userService;
+        final Object other$userService = other.userService;
+        if (this$userService == null ? other$userService != null : !this$userService.equals(other$userService))
+            return false;
+        final Object this$userRepository = this.userRepository;
+        final Object other$userRepository = other.userRepository;
+        if (this$userRepository == null ? other$userRepository != null : !this$userRepository.equals(other$userRepository))
+            return false;
+        final Object this$fileUtil = this.fileUtil;
+        final Object other$fileUtil = other.fileUtil;
+        if (this$fileUtil == null ? other$fileUtil != null : !this$fileUtil.equals(other$fileUtil)) return false;
+        return true;
+    }
+
+    protected boolean canEqual(final Object other) {
+        return other instanceof UserController;
+    }
+
+    public int hashCode() {
+        final int PRIME = 59;
+        int result = 1;
+        final Object $userService = this.userService;
+        result = result * PRIME + ($userService == null ? 43 : $userService.hashCode());
+        final Object $userRepository = this.userRepository;
+        result = result * PRIME + ($userRepository == null ? 43 : $userRepository.hashCode());
+        final Object $fileUtil = this.fileUtil;
+        result = result * PRIME + ($fileUtil == null ? 43 : $fileUtil.hashCode());
+        return result;
+    }
+}
