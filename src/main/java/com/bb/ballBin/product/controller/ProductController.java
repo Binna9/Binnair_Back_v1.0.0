@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -35,7 +34,7 @@ public class ProductController {
     @GetMapping("")
     @Operation(summary = "모든 제품 조회 (페이징 처리)")
     public ResponseEntity<Page<ProductResponseDto>> getAllProducts(
-            @PageableDefault(page = 0, size = 10, sort = "createDatetime", direction = Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(page = 0, size = 9, sort = "createDatetime", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(productService.getAllProducts(pageable));
     }
 
@@ -46,6 +45,13 @@ public class ProductController {
     @Operation(summary = "개별 제품 조회")
     public ResponseEntity<ProductResponseDto> getProductById(@PathVariable String productId) {
         return ResponseEntity.ok(productService.getProductById(productId));
+    }
+
+    @GetMapping("/list")
+    @Operation(summary = "제품 카테고리 리스트 조회")
+    public ResponseEntity<List<String>> getDistinctCategoryList() {
+        List<String> categories = productService.getDistinctCategories();
+        return ResponseEntity.ok(categories);
     }
 
     /**
