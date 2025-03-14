@@ -16,6 +16,8 @@ public class QuantityDto {
 
     @Schema(description = "사용자 ID")
     private String userId;
+    @Schema(description = "할인 금액")
+    private BigDecimal discountAmount;
     @Schema(description = "총 금액")
     private BigDecimal totalAmount;
     @Schema(description = "수량")

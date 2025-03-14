@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface AddressRepository extends JpaRepository<Address, String> {
     List<Address> findByUserUserId(String userId);
+
+    boolean existsByUser_UserIdAndDefaultAddressIndexIsNotNull(String userId);
 }

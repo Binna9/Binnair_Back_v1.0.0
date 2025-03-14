@@ -34,4 +34,10 @@ public class ProductResponseDto {
 
     @Schema(description = "이미지 URL")
     private String imageUrl;
+
+    @Schema(description = "제품 할인율")
+    private int discountRate;
+
+    @Schema(description = "제품 할인 적용 가격")
+    private BigDecimal discountPrice;
 }

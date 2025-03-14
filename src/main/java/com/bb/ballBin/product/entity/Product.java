@@ -32,6 +32,15 @@ public class Product extends BaseEntity {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(name = "discount_rate", nullable = false)
+    private int discountRate = 0;
+
+    @Column(name = "discount_amount", precision = 10, scale = 2)
+    private BigDecimal discountAmount;
+
+    @Column(name = "discount_price", precision = 10, scale = 2)
+    private BigDecimal discountPrice;
+
     @Column(nullable = false, name = "stock_quantity")
     private Integer stockQuantity;
 
@@ -50,6 +59,8 @@ public class Product extends BaseEntity {
                 .productName(this.productName)
                 .productDescription(this.productDescription)
                 .price(this.price)
+                .discountRate(this.discountRate)
+                .discountPrice(this.discountPrice)
                 .stockQuantity(this.stockQuantity)
                 .category(this.category)
                 .imageUrl(this.imageUrl)
@@ -66,5 +77,6 @@ public class Product extends BaseEntity {
         this.stockQuantity = dto.getStockQuantity();
         this.category = dto.getCategory();
         this.imageUrl = dto.getImageUrl();
+        this.discountRate = dto.getDiscountRate();
     }
 }

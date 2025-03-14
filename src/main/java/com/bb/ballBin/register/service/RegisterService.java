@@ -4,8 +4,10 @@ import com.bb.ballBin.common.util.FileUtil;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.register.model.RegisterRequestDto;
 import com.bb.ballBin.user.repository.UserRepository;
+import com.bb.ballBin.user.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,17 +16,21 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class RegisterService {
 
+    private final UserService userService;
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final FileUtil fileUtil;
 
-    public void registerAccount(RegisterRequestDto registerRequestDto, MultipartFile file) {
+    public ResponseEntity<String> registerAccount(RegisterRequestDto registerRequestDto, MultipartFile file) {
 
-        //todo : Valid check
+        userService.validatePassword(registerRequestDto.getLoginPassword());
+
         User user = new User();
-
         user.setLoginId(registerRequestDto.getLoginId());
-        user.setLoginPassword(bCryptPasswordEncoder.encode(registerRequestDto.getLoginPassword()));
+
+        String bcryptHashedPassword = bCryptPasswordEncoder.encode(registerRequestDto.getLoginPassword());
+
+        user.setLoginPassword(bcryptHashedPassword);
         user.setUserName(registerRequestDto.getUserName());
         user.setEmail(registerRequestDto.getEmail());
         user.setNickName(registerRequestDto.getNickName());
@@ -37,5 +43,7 @@ public class RegisterService {
             user.setImageFilePath(filePath);
             userRepository.save(user);
         }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("회원가입이 완료되었습니다.");
     }
 }

@@ -48,7 +48,7 @@ public class ProductController {
     }
 
     @GetMapping("/list")
-    @Operation(summary = "제품 카테고리 리스트 조회")
+    @Operation(summary = "제품별 카테고리 리스트 조회")
     public ResponseEntity<List<String>> getDistinctCategoryList() {
         List<String> categories = productService.getDistinctCategories();
         return ResponseEntity.ok(categories);

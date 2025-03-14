@@ -1,5 +1,6 @@
 package com.bb.ballBin.role.service;
 
+import com.bb.ballBin.common.exception.NotFoundException;
 import com.bb.ballBin.role.entity.Role;
 import com.bb.ballBin.role.model.RoleRequestDto;
 import com.bb.ballBin.role.model.RoleResponseDto;
@@ -34,7 +35,7 @@ public class RoleService {
     public RoleResponseDto getRoleById(String roleId) {
 
         Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new RuntimeException("error.role.notfound"));
+                .orElseThrow(() -> new NotFoundException("error.role.notfound"));
 
         return role.toDto();
     }
@@ -45,7 +46,7 @@ public class RoleService {
     public void createRole(RoleRequestDto roleRequestDto) {
 
         if (roleRequestDto.getRoleName() == null || roleRequestDto.getRoleName().isEmpty()) {
-            throw new IllegalArgumentException("error.role.valid_role_name");
+            throw new RuntimeException("error.role.valid_role_name");
         }
 
         Role role = roleRequestDto.toEntity();
@@ -58,7 +59,7 @@ public class RoleService {
     public void updateRole(String roleId, RoleRequestDto roleRequestDto) {
 
         Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new RuntimeException("error.role.notfound"));
+                .orElseThrow(() -> new NotFoundException("error.role.notfound"));
 
         role.setRoleName(roleRequestDto.getRoleName());
         role.setRoleDescription(roleRequestDto.getRoleDescription());
@@ -70,7 +71,6 @@ public class RoleService {
      * 역할 삭제
      */
     public void deleteRole(String roleId) {
-
         roleRepository.deleteById(roleId);
     }
 }

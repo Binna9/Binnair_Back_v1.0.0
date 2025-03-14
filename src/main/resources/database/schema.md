@@ -136,6 +136,13 @@ CREATE TABLE products (
     modifier_name VARCHAR(50)
 );
 
+ALTER TABLE products ADD COLUMN discount_rate SMALLINT NOT NULL DEFAULT 0;
+
+ALTER TABLE products
+ADD COLUMN discount_amount NUMERIC(10,2) GENERATED ALWAYS AS (ROUND(price * discount_rate / 100, 2)) STORED,
+ADD COLUMN discount_price NUMERIC(10,2) GENERATED ALWAYS AS (ROUND(price - (price * discount_rate / 100), 2)) STORED;
+
+
 CREATE TABLE bookmarks (
     bookmark_id character varying(36) NOT null PRIMARY KEY,  -- 즐겨찾기 ID
     user_id VARCHAR(36) NOT NULL,  -- 사용자 ID
@@ -180,12 +187,13 @@ CREATE TABLE addresses (
     user_id              CHARACTER VARYING(36) NOT NULL,   -- 사용자 ID (FK)
     receiver             CHARACTER VARYING(50) NOT NULL,   -- 받는 사람 이름
     phone                CHARACTER VARYING(20) NOT NULL,   -- 받는 사람 연락처
-    postal_code          CHARACTER VARYING(10) NOT NULL,   -- 우편번호
+    postal_code1          CHARACTER VARYING(10) NOT NULL,   -- 우편번호1
+    postal_code2          CHARACTER VARYING(10) ,   -- 우편번호2
+    postal_code3          CHARACTER VARYING(10) ,   -- 우편번호3
     address1             TEXT NOT NULL,                   -- 기본 주소 (도로명 주소)
     address2             TEXT,                            -- 상세 주소 (아파트, 동, 호수 등)
-    is_default           BOOLEAN DEFAULT FALSE,           -- 기본 배송지 여부 (기본값: FALSE)
-
-    -- ✅ BaseEntity 필드 추가
+    address3             TEXT,                            -- 상세 주소 (아파트, 동, 호수 등)
+    default_address_index INT CHECK (default_address_index IN (1, 2, 3)),
     create_datetime      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     creator_id           CHARACTER VARYING(36),
     creator_login_id     CHARACTER VARYING(60),
@@ -194,10 +202,25 @@ CREATE TABLE addresses (
     modifier_id          CHARACTER VARYING(36),
     modifier_login_id    CHARACTER VARYING(60),
     modifier_name        CHARACTER VARYING(50),
+    CONSTRAINT fk_addresses_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE cascade 
+    );
+   
 
-    -- ✅ 사용자 테이블과 관계 설정 (FK)
-    CONSTRAINT fk_addresses_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
+CREATE OR REPLACE FUNCTION set_first_default_address()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- 사용자의 기존 주소 개수 확인
+    IF (SELECT COUNT(*) FROM addresses WHERE user_id = NEW.user_id) = 0 THEN
+        NEW.default_address_index := 1;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_set_default_address
+BEFORE INSERT ON addresses
+FOR EACH ROW
+EXECUTE FUNCTION set_first_default_address();
 
 
 ```

@@ -1,5 +1,6 @@
 package com.bb.ballBin.user.address.service;
 
+import com.bb.ballBin.common.exception.NotFoundException;
 import com.bb.ballBin.user.address.entity.Address;
 import com.bb.ballBin.user.address.model.AddressRequestDto;
 import com.bb.ballBin.user.address.model.AddressResponseDto;
@@ -33,50 +34,27 @@ public class AddressService {
     /**
      * 배송지 추가
      */
+    @Transactional
     public AddressResponseDto addAddress(String userId, AddressRequestDto addressRequestDto) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("error.user.notfound"));
+                .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
-        // 기존 기본 배송지를 비활성화
-        if (Boolean.TRUE.equals(addressRequestDto.getIsDefault())) {
-            List<Address> addresses = addressRepository.findByUserUserId(userId);
-            addresses.forEach(addr -> addr.setIsDefault(false));
-            addressRepository.saveAll(addresses);  // 변경된 값 저장
-        }
+        boolean hasDefault = addressRepository.existsByUser_UserIdAndDefaultAddressIndexIsNotNull(userId);
 
         Address address = Address.builder()
                 .user(user)
                 .receiver(addressRequestDto.getReceiver())
                 .phone(addressRequestDto.getPhone())
-                .postalCode(addressRequestDto.getPostalCode())
+                .postalCode1(addressRequestDto.getPostalCode1())
+                .postalCode2(addressRequestDto.getPostalCode2())
+                .postalCode3(addressRequestDto.getPostalCode3())
                 .address1(addressRequestDto.getAddress1())
                 .address2(addressRequestDto.getAddress2())
-                .isDefault(Boolean.TRUE.equals(addressRequestDto.getIsDefault())) // null 방지
+                .address3(addressRequestDto.getAddress3())
+
+                .defaultAddressIndex(hasDefault ? null : 1) // 첫 번째 주소는 기본 배송지로 설정
                 .build();
-
-        addressRepository.save(address);
-        return address.toDto();
-    }
-
-    /**
-     * 배송지 수정
-     */
-    public AddressResponseDto updateAddress(String addressId, AddressRequestDto addressRequestDto) {
-        Address address = addressRepository.findById(addressId)
-                .orElseThrow(() -> new RuntimeException("error.address.notfound"));
-
-        // 기본 배송지 변경 로직 (다른 배송지 기본 설정 해제)
-        if (addressRequestDto.getIsDefault()) {
-            addressRepository.findByUserUserId(address.getUser().getUserId()).forEach(addr -> addr.setIsDefault(false));
-        }
-
-        address.setReceiver(addressRequestDto.getReceiver());
-        address.setPhone(addressRequestDto.getPhone());
-        address.setPostalCode(addressRequestDto.getPostalCode());
-        address.setAddress1(addressRequestDto.getAddress1());
-        address.setAddress2(addressRequestDto.getAddress2());
-        address.setIsDefault(addressRequestDto.getIsDefault());
 
         addressRepository.save(address);
         return address.toDto();

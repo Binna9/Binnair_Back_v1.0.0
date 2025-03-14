@@ -39,6 +39,7 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("error.product.notfound"));
         return product.toDto();
     }
+
     /**
      * 제품 카테고리 조회
      */

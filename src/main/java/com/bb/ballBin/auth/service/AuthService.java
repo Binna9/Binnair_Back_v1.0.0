@@ -1,10 +1,14 @@
 package com.bb.ballBin.auth.service;
 
+import com.bb.ballBin.common.exception.InvalidPasswordException;
+import com.bb.ballBin.common.exception.NotFoundException;
 import com.bb.ballBin.common.message.Service.MessageService;
 import com.bb.ballBin.security.jwt.BallBinUserDetails;
 import com.bb.ballBin.security.jwt.service.JwtBlacklistService;
 import com.bb.ballBin.security.jwt.service.RefreshTokenService;
 import com.bb.ballBin.security.jwt.util.JwtUtil;
+import com.bb.ballBin.user.entity.User;
+import com.bb.ballBin.user.repository.UserRepository;
 import com.bb.ballBin.user.service.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -23,6 +27,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,11 +41,13 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final MessageService messageService;
     private final UserService userService;
+    private final UserRepository userRepository;
 
     /**
      * 로그인 처리
      */
     public ResponseEntity<?> login(String loginId, String loginPassword, HttpServletResponse response) {
+
         Logger logger = LoggerFactory.getLogger(this.getClass());
 
         try {
@@ -56,6 +63,8 @@ public class AuthService {
             Set<String> roles = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toSet());
+
+            resetFailedAttempts(loginId);
 
             // ✅ Access Token (1시간)
             String accessToken = jwtUtil.createJwtToken(userId, roles, false);
@@ -83,10 +92,17 @@ public class AuthService {
                     .body(Map.of("accessToken", accessToken));
 
         } catch (BadCredentialsException e) {
-            logger.warn("로그인 실패 - 아이디 또는 비밀번호 불일치 (ID: {})", loginId);
+
+            Optional<User> optionalUser = userRepository.findByLoginId(loginId);
+            if (optionalUser.isPresent()) {
+                increaseFailedAttempts(loginId);
+                User user = optionalUser.get();
+                if (user.getFailedLoginAttempts() >= 5) {
+                    throw new InvalidPasswordException("error.security.login.lock"); // 🚨 5회 이상 틀리면 예외 발생
+                }
+            }
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("ERROR", messageService.getMessage("error.security.password")));
-
         } catch (DisabledException e) {
             logger.warn("로그인 실패 - 계정 비활성화됨 (ID: {})", loginId);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -209,5 +225,31 @@ public class AuthService {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * ✅ 로그인 실패 횟수 증가 및 계정 잠금 검사
+     */
+    public void increaseFailedAttempts(String loginId) {
+
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new NotFoundException("error.user.notfound"));
+
+        int failedAttempts = user.getFailedLoginAttempts() + 1;
+        user.setFailedLoginAttempts(failedAttempts);
+
+        userRepository.save(user);  // 변경된 값 저장
+    }
+
+    /**
+     * ✅ 로그인 성공 시 실패 횟수 초기화
+     */
+    public void resetFailedAttempts(String loginId) {
+
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new NotFoundException("error.user.notfound"));
+
+        user.setFailedLoginAttempts(0);  // 초기화
+        userRepository.save(user);
     }
 }

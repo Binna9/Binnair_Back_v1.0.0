@@ -24,6 +24,9 @@ public class ProductRequestDto {
     @Schema(description = "가격")
     private BigDecimal price;
 
+    @Schema(description = "제품 할인율")
+    private int discountRate;
+
     @Schema(description = "재고 수량")
     private Integer stockQuantity;
 
@@ -38,6 +41,7 @@ public class ProductRequestDto {
                 .productName(this.productName)
                 .productDescription(this.productDescription)
                 .price(this.price)
+                .discountRate(this.discountRate)
                 .stockQuantity(this.stockQuantity)
                 .category(this.category)
                 .imageUrl(this.imageUrl)

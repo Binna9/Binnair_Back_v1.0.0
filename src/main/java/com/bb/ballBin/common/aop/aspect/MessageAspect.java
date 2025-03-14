@@ -46,20 +46,21 @@ public class MessageAspect {
             throwing = "exception")
     public void handleException(Throwable exception) {
 
-        // 예외의 메시지(키)를 가져오는데 null이면 기본 키로 대체
-        String key = exception.getMessage();
-        if (key == null || key.isBlank()) {
-            key = "error.unknown";
+        // ✅ 만약 `RuntimeException`이면 그대로 던지기 (감싸지 않음)
+        if (exception instanceof RuntimeException) {
+            throw (RuntimeException) exception;
         }
 
+        // ✅ 체크 예외(`Exception`, `Throwable`)인 경우, `RuntimeException`으로 감싸기
+        String key = "error.unknown";
         String message;
         try {
             message = messageSource.getMessage(key, null, Locale.KOREAN);
         } catch (NoSuchMessageException e) {
-            // 만약 해당 키가 없으면 기본 메시지로 대체
-            message = messageSource.getMessage("error.unknown", null, Locale.KOREAN);
+            message = "알 수 없는 오류가 발생했습니다."; // 기본 메시지 설정
         }
 
         throw new RuntimeException(message, exception);
     }
+
 }

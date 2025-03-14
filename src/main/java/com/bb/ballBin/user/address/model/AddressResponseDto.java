@@ -1,5 +1,6 @@
 package com.bb.ballBin.user.address.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,12 +10,23 @@ import lombok.Setter;
 @Builder
 public class AddressResponseDto {
 
+    @Schema(description = "주소 ID")
     private String addressId;
-    private String receiver;
-    private String phone;
-    private String postalCode;
-    private String address1;
-    private String address2;
 
-    private Boolean isDefault;
+    @Schema(description = "수령인")
+    private String receiver;
+    @Schema(description = "전화번호")
+    private String phone;
+    @Schema(description = "우편번호1")
+    private String postalCode1;
+    @Schema(description = "우편번호2")
+    private String postalCode2;
+    @Schema(description = "우편번호3")
+    private String postalCode3;
+    @Schema(description = "주소1")
+    private String address1;
+    @Schema(description = "주소2")
+    private String address2;
+    @Schema(description = "주소2")
+    private String address3;
 }

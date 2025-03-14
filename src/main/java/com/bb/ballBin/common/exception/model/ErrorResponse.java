@@ -1,17 +1,16 @@
 package com.bb.ballBin.common.exception.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import org.springframework.http.HttpStatus;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ErrorResponse {
+public record ErrorResponse(
+        @Schema(description = "HTTP 상태 코드")
+        int status,
 
-    @Schema(description = "HTTP 상태 코드")
-    private Integer statusCode;
-    private String error;
-    private String message;
-
+        @Schema(description = "에러 메시지")
+        String message
+) {
+    public static ErrorResponse of(HttpStatus status, String message) {
+        return new ErrorResponse(status.value(), message);
+    }
 }

@@ -3,6 +3,7 @@ package com.bb.ballBin.register.controller;
 import com.bb.ballBin.common.message.annotation.MessageKey;
 import com.bb.ballBin.register.model.RegisterRequestDto;
 import com.bb.ballBin.register.service.RegisterService;
+import com.bb.ballBin.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
