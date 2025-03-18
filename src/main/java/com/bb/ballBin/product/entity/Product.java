@@ -47,8 +47,8 @@ public class Product extends BaseEntity {
     @Column(name = "category")
     private String category;
 
-    @Column(name = "image_url")
-    private String imageUrl;
+    @Column(name = "file_path")
+    private String filePath;
 
     /**
      * Entity to DTO 변환
@@ -63,7 +63,7 @@ public class Product extends BaseEntity {
                 .discountPrice(this.discountPrice)
                 .stockQuantity(this.stockQuantity)
                 .category(this.category)
-                .imageUrl(this.imageUrl)
+                .filePath(this.filePath)
                 .build();
     }
 
@@ -76,7 +76,7 @@ public class Product extends BaseEntity {
         this.price = dto.getPrice();
         this.stockQuantity = dto.getStockQuantity();
         this.category = dto.getCategory();
-        this.imageUrl = dto.getImageUrl();
+        this.filePath = dto.getFilePath();
         this.discountRate = dto.getDiscountRate();
     }
 }

@@ -40,7 +40,7 @@ public class RegisterService {
 
         if (file != null && !file.isEmpty()) {
             String filePath = fileUtil.saveFile("user", user.getUserId(), file);
-            user.setImageFilePath(filePath);
+            user.setFilePath(filePath);
             userRepository.save(user);
         }
 

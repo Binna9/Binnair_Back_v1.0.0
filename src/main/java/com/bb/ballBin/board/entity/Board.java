@@ -1,7 +1,6 @@
 package com.bb.ballBin.board.entity;
 
 import com.bb.ballBin.board.domain.BoardType;
-import com.bb.ballBin.board.model.BoardResponseDto;
 import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.user.entity.User;
 import jakarta.persistence.*;
@@ -47,23 +46,4 @@ public class Board extends BaseEntity {
 
     @Column(name = "writer_name", length = 30, nullable = false)
     private String writerName;
-
-    /**
-     * ✅ Entity → DTO 변환 (인스턴스 메서드)
-     */
-    public BoardResponseDto toDto() {
-        return BoardResponseDto.builder()
-                .boardId(this.boardId)
-                .boardType(this.boardType)
-                .title(this.title)
-                .content(this.content)
-                .views(this.views)
-                .likes(this.likes)
-                .filePath(this.filePath)
-                .writerId(this.writer.getUserId()) // ✅ writer에서 userId 가져오기
-                .writerName(this.writerName)
-                .createDatetime(this.getCreateDatetime())
-                .modifyDatetime(this.getModifyDatetime())
-                .build();
-    }
 }

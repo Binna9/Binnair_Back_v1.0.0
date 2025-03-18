@@ -19,7 +19,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Table(name = "comments")
-public class comment extends BaseEntity {
+public class Comment extends BaseEntity {
 
     @Id
     @GeneratedValue
@@ -33,19 +33,18 @@ public class comment extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id", referencedColumnName = "comment_id")
-    private comment parent;
+    private Comment parent;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "writer_id", referencedColumnName = "user_id", nullable = false)
     private User writer;
 
-    @Column(name = "writer_name", length = 30, nullable = false)
+    @Column(name = "writer_name", nullable = false)
     private String writerName;
 
-    @Lob
     @Column(name = "content", nullable = false)
     private String content;
 
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<comment> replies = new ArrayList<>();
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true) // 부모 댓글 삭제시 전부 삭제 , 여러 대댓글 가능
+    private List<Comment> replies = new ArrayList<>();
 }

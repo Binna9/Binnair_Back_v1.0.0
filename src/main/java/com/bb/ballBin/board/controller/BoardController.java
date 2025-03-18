@@ -5,6 +5,7 @@ import com.bb.ballBin.board.model.BoardRequestDto;
 import com.bb.ballBin.board.model.BoardResponseDto;
 import com.bb.ballBin.board.service.BoardService;
 import com.bb.ballBin.common.message.annotation.MessageKey;
+import com.bb.ballBin.common.util.FileUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,14 +20,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/boards")
 public class BoardController {
 
     private final BoardService boardService;
+    private final FileUtil fileUtil;
 
     @GetMapping
     @Operation(summary = "게시글 전체 조회")
@@ -81,7 +81,6 @@ public class BoardController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
-
     @DeleteMapping("/{boardId}")
     @Operation(summary = "게시글 삭제")
     @MessageKey(value = "success.board.delete")
@@ -91,4 +90,12 @@ public class BoardController {
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
+
+//    @DeleteMapping()
+//    @Operation(summary = "첨부파일 삭제")
+//    @MessageKey(value = "success.file.delete")
+//    public ResponseEntity<Void> deleteFile(@PathVariable("fileId") String fileId) {
+//
+//
+//    }
 }

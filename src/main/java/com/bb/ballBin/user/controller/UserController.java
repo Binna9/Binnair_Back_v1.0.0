@@ -14,6 +14,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -41,13 +42,15 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserById(userId));
     }
 
-    @GetMapping("/{userId}/image")
+    @GetMapping("/image")
     @Operation(summary = "사용자 이미지 반환")
-    public ResponseEntity<Resource> getProfileImage(@PathVariable String userId) {
+    public ResponseEntity<Resource> getProfileImage() {
+
+        String userId = SecurityUtil.getCurrentUserId();
 
         return userRepository.findById(userId)
                 .map(user -> {
-                    String relativePath = user.getImageFilePath();
+                    String relativePath = user.getFilePath();
                     if (relativePath == null || relativePath.isEmpty()) {
                         System.out.println("❌ No image path found for user: " + userId);
                         return ResponseEntity.notFound().<Resource>build();
@@ -65,6 +68,38 @@ public class UserController {
         userService.updateUser(userId, userRequsetDto);
 
         return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @PutMapping("/image-upload")
+    @Operation(summary = "사용자 프로필 이미지 업로드")
+    @MessageKey(value = "success.create")
+    public ResponseEntity<String> uploadProfileImage(@RequestParam(value = "file", required = false) MultipartFile file) {
+
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body("❌ 업로드할 파일이 없습니다.");
+        }
+
+        String userId = SecurityUtil.getCurrentUserId();
+
+        return userRepository.findById(userId).map(user -> {
+            try {
+                // 기존 이미지 삭제 (기존 파일이 있을 경우)
+                if (user.getFilePath() != null) {
+                    fileUtil.deleteFile("user", user.getFilePath());
+                }
+                // 새 이미지 저장
+                String savedPath = fileUtil.saveFile("user", userId, file);
+                // 사용자 정보 업데이트
+                user.setFilePath(savedPath);
+                userRepository.save(user);
+
+                return ResponseEntity.ok("✅ 프로필 이미지 업로드 성공: " + savedPath);
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("❌ 프로필 이미지 업로드 실패: " + e.getMessage());
+            }
+        }).orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("❌ 사용자를 찾을 수 없습니다."));
     }
 
     @DeleteMapping("/{userId}")

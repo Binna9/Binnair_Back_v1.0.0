@@ -4,6 +4,7 @@ import com.bb.ballBin.common.exception.model.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -71,7 +72,16 @@ public class GlobalExceptionHandler {
     // ✅ 500 Internal Server Error - 서버 내부 오류
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
+        String errorMessage;
+        try {
+            // 메시지가 존재하면 가져오고, 존재하지 않으면 예외 발생
+            errorMessage = messageSource.getMessage(ex.getMessage(), null, LocaleContextHolder.getLocale());
+        } catch (NoSuchMessageException e) {
+            // 메시지가 없으면 기본 예외 메시지를 사용
+            errorMessage = ex.getMessage();
+        }
+
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ErrorResponse.of(HttpStatus.INTERNAL_SERVER_ERROR, messageSource.getMessage(ex.getMessage(), null, LocaleContextHolder.getLocale())));
+                .body(ErrorResponse.of(HttpStatus.INTERNAL_SERVER_ERROR, errorMessage));
     }
 }

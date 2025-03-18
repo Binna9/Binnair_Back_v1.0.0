@@ -50,7 +50,7 @@ public class UserService {
                 .providerId(userDto.getProviderId()) // ✅ Google 제공 ID
                 .userName(userDto.getUserName()) // ✅ 사용자 이름
                 .email(userDto.getEmail()) // ✅ 이메일
-                .imageFilePath(userDto.getProfileImageUrl()) // ✅ 프로필 이미지
+                .filePath(userDto.getProfileImageUrl()) // ✅ 프로필 이미지
                 .isActive(true) // ✅ 기본 활성 상태
                 .roles(roles) // ✅ 기본 역할 설정
                 .build();

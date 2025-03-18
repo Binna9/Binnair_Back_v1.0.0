@@ -5,6 +5,8 @@ import com.bb.ballBin.board.entity.Board;
 import com.bb.ballBin.board.model.BoardRequestDto;
 import com.bb.ballBin.board.model.BoardResponseDto;
 import com.bb.ballBin.board.repository.BoardRepository;
+import com.bb.ballBin.comment.model.CommentResponseDto;
+import com.bb.ballBin.comment.repository.CommentRepository;
 import com.bb.ballBin.common.util.FileUtil;
 import com.bb.ballBin.common.util.SecurityUtil;
 import com.bb.ballBin.user.entity.User;
@@ -16,12 +18,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class BoardService {
 
     private final BoardRepository boardRepository;
     private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
     private final FileUtil fileUtil;
 
     /**
@@ -29,18 +34,24 @@ public class BoardService {
      */
     public Page<BoardResponseDto> getAllBoards(BoardType boardType, Pageable pageable) {
         return boardRepository.findByBoardType(boardType, pageable)
-                .map(Board::toDto);
+                .map(board -> BoardResponseDto.from(board, List.of()));
     }
 
     /**
      * 개별 게시글 조회
      */
+    @Transactional
     public BoardResponseDto getBoardById(String boardId) {
-
         Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new RuntimeException("error.security.notfound"));
+                .orElseThrow(() -> new RuntimeException("❌ 해당 게시글을 찾을 수 없습니다."));
 
-        return board.toDto();
+        // ✅ 댓글 조회 (부모 댓글만 가져오기)
+        List<CommentResponseDto> comments = commentRepository.findByBoard_BoardIdAndParentIsNull(boardId)
+                .stream()
+                .map(CommentResponseDto::from)
+                .toList();
+
+        return BoardResponseDto.from(board, comments); // ✅ 댓글 포함하여 DTO 변환
     }
 
     /**
@@ -53,7 +64,6 @@ public class BoardService {
                 throw new IllegalArgumentException("❌ 게시판 유형(boardType)은 필수입니다.");
             }
 
-            // ✅ 유효한 boardType 인지 검증
             if (!BoardType.isValidType(boardRequestDto.getBoardType().name())) {
                 throw new IllegalArgumentException("❌ 유효하지 않은 게시판 유형입니다: " + boardRequestDto.getBoardType());
             }
@@ -67,7 +77,7 @@ public class BoardService {
                     .title(boardRequestDto.getTitle())
                     .content(boardRequestDto.getContent())
                     .writer(writer)
-                    .writerName(writer.getUserName())
+                    .writerName(writer.getNickName())
                     .build();
 
             board = boardRepository.save(board);
@@ -88,6 +98,7 @@ public class BoardService {
     /**
      * 게시글 수정
      */
+    @Transactional
     public void updateBoard(String boardId, BoardRequestDto boardRequestDto, MultipartFile file) {
 
         Board board = boardRepository.findById(boardId)

@@ -34,7 +34,7 @@ public class ProductRequestDto {
     private String category;
 
     @Schema(description = "이미지 URL")
-    private String imageUrl;
+    private String filePath;
 
     public Product toEntity() {
         return Product.builder()
@@ -44,7 +44,7 @@ public class ProductRequestDto {
                 .discountRate(this.discountRate)
                 .stockQuantity(this.stockQuantity)
                 .category(this.category)
-                .imageUrl(this.imageUrl)
+                .filePath(this.filePath)
                 .build();
     }
 }

@@ -91,7 +91,16 @@ public class FileUtil {
      * @return 파일 객체
      */
     public File getFilePath(String type, String relativePath) {
-        String baseDir = "user".equals(type) ? userUploadDir : productUploadDir;
+        String baseDir;
+        if ("user".equals(type)) {
+            baseDir = userUploadDir;
+        } else if ("board".equals(type)) {
+            baseDir = boardUploadDir;
+        } else if ("product".equals(type)){
+            baseDir = productUploadDir;
+        } else {
+            throw new IllegalArgumentException("타입이 존재하지 않습니다.");
+        }
         return new File(Paths.get(baseDir, relativePath).toString());
     }
 
@@ -115,6 +124,7 @@ public class FileUtil {
      * @return 이미지 파일을 ResponseEntity<Resource>로 반환
      */
     public ResponseEntity<Resource> getImageResponse(String type, String relativePath) {
+
         if (relativePath == null) {
             return ResponseEntity.notFound().build();
         }

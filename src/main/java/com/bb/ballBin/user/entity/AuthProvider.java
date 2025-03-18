@@ -7,5 +7,4 @@ public enum AuthProvider {
     NAVER,
     APPLE,
     LOCAL;
-
 }

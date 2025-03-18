@@ -94,7 +94,7 @@ public class ProductController {
     public ResponseEntity<Resource> getProductImage(@PathVariable String productId) {
         return productRepository.findById(productId)
                 .map(product -> {
-                    String relativePath = product.getImageUrl();
+                    String relativePath = product.getFilePath();
                     if (relativePath == null || relativePath.isEmpty()) {
                         System.out.println("❌ No image path found for product: " + productId);
                         return ResponseEntity.notFound().<Resource>build();

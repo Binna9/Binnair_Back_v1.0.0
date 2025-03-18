@@ -33,7 +33,7 @@ public class ProductResponseDto {
     private String category;
 
     @Schema(description = "이미지 URL")
-    private String imageUrl;
+    private String filePath;
 
     @Schema(description = "제품 할인율")
     private int discountRate;

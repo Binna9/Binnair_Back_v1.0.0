@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -58,7 +57,7 @@ public class ProductService {
         if (file != null && !file.isEmpty()) {
             String filePath = fileUtil.saveFile("product", newProduct.getProductId(), file);
 
-            newProduct.setImageUrl(filePath);
+            newProduct.setFilePath(filePath);
 
             productRepository.save(newProduct); // 이미지 경로 포함하여 다시 저장
         }

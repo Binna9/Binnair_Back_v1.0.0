@@ -29,7 +29,8 @@ public class SecurityPolicy {
                 "/bookmarks/**",
                 "/users/**",
                 "/carts/**",
-                "/addresses/**"
+                "/addresses/**",
+                "/comments/**"
         );
     }
 

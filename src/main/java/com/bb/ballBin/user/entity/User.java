@@ -52,8 +52,8 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true, name = "nicK_name")
     private String nickName;
 
-    @Column(name = "image_file_path")
-    private String imageFilePath;
+    @Column(name = "file_path")
+    private String filePath;
 
     @Column(name = "phone_number")
     private String phoneNumber;

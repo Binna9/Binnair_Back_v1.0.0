@@ -10,6 +10,7 @@ CREATE TABLE boards (
     likes           INT DEFAULT 0,
     writer_id       VARCHAR(36) NOT NULL, -- UUID
     writer_name     VARCHAR(30) NOT NULL,
+    file_path VARCHAR(200),
     create_datetime    timestamp with time zone,
     creator_id    character varying(36),
     creator_login_id    character varying(60),
@@ -55,7 +56,7 @@ CREATE TABLE users
     user_name    character varying(50) NOT NULL,
     login_id    character varying(60) NOT NULL,
     login_password    character varying(100) NOT NULL,
-    image_file_path    character varying(200),
+    file_path    character varying(200),
     is_active BOOLEAN DEFAULT true,
     failed_login_attempts   numeric(3),
     email    character varying(50),
@@ -125,7 +126,7 @@ CREATE TABLE products (
     price DECIMAL(10, 2) NOT NULL,  -- 가격
     stock_quantity INT NOT NULL DEFAULT 0,  -- 재고 수량
     category VARCHAR(100),  -- 카테고리
-    image_url VARCHAR(500),  -- 제품 이미지 URL
+    file_path VARCHAR(200),  -- 제품 이미지 URL
     create_datetime TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     creator_id VARCHAR(36),
     creator_login_id VARCHAR(60),
