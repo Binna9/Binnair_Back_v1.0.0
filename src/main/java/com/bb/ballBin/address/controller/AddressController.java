@@ -1,9 +1,9 @@
-package com.bb.ballBin.user.address.controller;
+package com.bb.ballBin.address.controller;
 
 import com.bb.ballBin.common.message.annotation.MessageKey;
-import com.bb.ballBin.user.address.model.AddressRequestDto;
-import com.bb.ballBin.user.address.model.AddressResponseDto;
-import com.bb.ballBin.user.address.service.AddressService;
+import com.bb.ballBin.address.model.AddressRequestDto;
+import com.bb.ballBin.address.model.AddressResponseDto;
+import com.bb.ballBin.address.service.AddressService;
 import com.bb.ballBin.common.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +35,7 @@ public class AddressController {
      */
     @PostMapping("")
     @Operation(summary = "배송지 추가")
-    @MessageKey(value = "success.create")
+    @MessageKey(value = "success.address.create")
     public ResponseEntity<AddressResponseDto> addAddress(@RequestBody AddressRequestDto addressRequestDto) {
 
         String userId = SecurityUtil.getCurrentUserId();
@@ -43,12 +43,14 @@ public class AddressController {
         return ResponseEntity.status(HttpStatus.CREATED).body(addressService.addAddress(userId, addressRequestDto));
     }
 
+
+
     /**
      * 배송지 삭제
      */
     @DeleteMapping("/{addressId}")
     @Operation(summary = "배송지 삭제")
-    @MessageKey(value = "success.delete")
+    @MessageKey(value = "success.address.delete")
     public ResponseEntity<Void> removeAddress(@PathVariable String addressId) {
         addressService.removeAddress(addressId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();

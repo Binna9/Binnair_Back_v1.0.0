@@ -30,7 +30,8 @@ public class SecurityPolicy {
                 "/users/**",
                 "/carts/**",
                 "/addresses/**",
-                "/comments/**"
+                "/comments/**",
+                "/likes/**"
         );
     }
 

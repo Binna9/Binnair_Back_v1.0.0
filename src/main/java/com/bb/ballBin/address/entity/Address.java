@@ -1,8 +1,8 @@
-package com.bb.ballBin.user.address.entity;
+package com.bb.ballBin.address.entity;
 
 import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.user.entity.User;
-import com.bb.ballBin.user.address.model.AddressResponseDto;
+import com.bb.ballBin.address.model.AddressResponseDto;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
@@ -18,35 +18,27 @@ public class Address extends BaseEntity {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
-    @Column(updatable = false, nullable = false, unique = true, name = "address_id", length = 36)
+    @Column(updatable = false, nullable = false, unique = true, name = "address_id")
     private String addressId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false)
     private String receiver;
 
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     private String phone;
 
-    @Column(nullable = false, name = "postal_code1")
-    private String postalCode1;
-    @Column(name = "postal_code2")
-    private String postalCode2;
-    @Column(name = "postal_code3")
-    private String postalCode3;
+    @Column(nullable = false, name = "postal_code")
+    private String postalCode;
 
     @Column(nullable = false)
-    private String address1;
-    @Column
-    private String address2;
-    @Column(nullable = false)
-    private String address3;
+    private String address;
 
-    @Column(nullable = false, name = "default_address_index")
-    private Integer defaultAddressIndex;
+    @Column(nullable = false, name = "is_default")
+    private String isDefault;
 
     /**
      * Entity to DTO 변환
@@ -56,10 +48,8 @@ public class Address extends BaseEntity {
                 .addressId(this.addressId)
                 .receiver(this.receiver)
                 .phone(this.phone)
-                .postalCode1(this.postalCode1)
-                .address1(this.address1)
-                .address2(this.address2)
-
+                .postalCode(this.postalCode)
+                .address(this.address)
                 .build();
     }
 }

@@ -4,6 +4,7 @@ import com.bb.ballBin.board.domain.BoardType;
 import com.bb.ballBin.board.entity.Board;
 import com.bb.ballBin.board.model.BoardRequestDto;
 import com.bb.ballBin.board.model.BoardResponseDto;
+import com.bb.ballBin.board.model.BoardViewRequestDto;
 import com.bb.ballBin.board.repository.BoardRepository;
 import com.bb.ballBin.comment.model.CommentResponseDto;
 import com.bb.ballBin.comment.repository.CommentRepository;
@@ -69,6 +70,7 @@ public class BoardService {
             }
 
             String userId = SecurityUtil.getCurrentUserId();
+
             User writer = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("error.user.notfound"));
 
@@ -124,5 +126,18 @@ public class BoardService {
                 .orElseThrow(() -> new RuntimeException("error.board.notfound"));
 
         boardRepository.delete(board);
+    }
+
+    /**
+     * 게시글 조회 수 증가
+     */
+    public void viewUpdateBoard(BoardViewRequestDto boardViewRequestDto) {
+
+        Board board = boardRepository.findById(boardViewRequestDto.getBoardId())
+                .orElseThrow(() -> new RuntimeException("error.board.notfound"));
+
+        board.setViews(boardViewRequestDto.getViews());
+
+        boardRepository.save(board);
     }
 }

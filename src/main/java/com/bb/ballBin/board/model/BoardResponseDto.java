@@ -24,10 +24,14 @@ public class BoardResponseDto {
     private String title;
     @Schema(name = "게시글 내용")
     private String content;
+
     @Schema(name = "게시글 조회 수")
-    private Integer views;
+    private int views;
     @Schema(name = "게시글 좋아요 수")
-    private Integer likes;
+    private int likes;
+    @Schema(name = "게시글 싫어요 수")
+    private int unlikes;
+
     @Schema(name = "게시글 작성자 ID")
     private String writerId;
     @Schema(name = "게시글 작성자 명")
@@ -53,6 +57,7 @@ public class BoardResponseDto {
                 .content(board.getContent())
                 .views(board.getViews())
                 .likes(board.getLikes())
+                .unlikes(board.getUnlikes())
                 .filePath(board.getFilePath())
                 .writerId(board.getWriter().getUserId()) // ✅ writer 에서 userId 가져오기
                 .writerName(board.getWriterName())

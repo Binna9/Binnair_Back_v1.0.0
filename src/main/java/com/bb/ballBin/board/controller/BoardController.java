@@ -3,6 +3,7 @@ package com.bb.ballBin.board.controller;
 import com.bb.ballBin.board.domain.BoardType;
 import com.bb.ballBin.board.model.BoardRequestDto;
 import com.bb.ballBin.board.model.BoardResponseDto;
+import com.bb.ballBin.board.model.BoardViewRequestDto;
 import com.bb.ballBin.board.service.BoardService;
 import com.bb.ballBin.common.message.annotation.MessageKey;
 import com.bb.ballBin.common.util.FileUtil;
@@ -78,6 +79,16 @@ public class BoardController {
             @RequestPart(value = "file", required = false) MultipartFile file) {
 
         boardService.updateBoard(boardId, boardRequestDto, file);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @PutMapping("/views")
+    @Operation(summary = "게시글 조회 증가")
+    @MessageKey(value = "success.update")
+    public ResponseEntity<String> viewBoards(@RequestBody BoardViewRequestDto boardViewRequestDto){
+
+        boardService.viewUpdateBoard(boardViewRequestDto);
+
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 

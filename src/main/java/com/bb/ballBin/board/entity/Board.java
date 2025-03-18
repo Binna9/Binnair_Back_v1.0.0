@@ -22,20 +22,21 @@ public class Board extends BaseEntity {
     private String boardId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "board_type", length = 20, nullable = false)
+    @Column(name = "board_type", nullable = false)
     private BoardType boardType;
 
-    @Column(name = "title", length = 255, nullable = false)
+    @Column(name = "title", nullable = false)
     private String title;
 
     @Column(name = "content", nullable = false)
     private String content;
 
-    @Column(name = "views", nullable = false)
-    private Integer views = 0;
-
-    @Column(name = "likes", nullable = false)
-    private Integer likes = 0;
+    @Column(nullable = false)
+    private int views;
+    @Column(nullable = false)
+    private int likes;
+    @Column(nullable = false)
+    private int unlikes;
 
     @Column(name = "file_path")
     private String filePath;
@@ -44,6 +45,6 @@ public class Board extends BaseEntity {
     @JoinColumn(name = "writer_id", referencedColumnName = "user_id", nullable = false)
     private User writer;
 
-    @Column(name = "writer_name", length = 30, nullable = false)
+    @Column(name = "writer_name", nullable = false)
     private String writerName;
 }

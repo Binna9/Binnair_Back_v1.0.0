@@ -11,6 +11,7 @@ import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 
 @Data
@@ -55,6 +56,18 @@ public class BaseEntity {
 
         this.modifyDatetime = null;
 
+        if (hasField("views")) {
+            initializeFieldIfExists("views", 0);
+        }
+
+        if (hasField("likes")) {
+            initializeFieldIfExists("likes", 0);
+        }
+
+        if (hasField("unlikes")) {
+            initializeFieldIfExists("unlikes", 0);
+        }
+
         if (createdByUser != null) {
             this.creatorLoginId = createdByUser.getLoginId();
             this.creatorName = createdByUser.getUserName();
@@ -71,6 +84,28 @@ public class BaseEntity {
         if (modifiedByUser != null) {
             this.modifierLoginId = modifiedByUser.getLoginId();
             this.modifierName = modifiedByUser.getUserName();
+        }
+    }
+
+    private void initializeFieldIfExists(String fieldName, Object defaultValue) {
+        try {
+            Field field = this.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+
+            if (field.get(this) == null) {
+                field.set(this, defaultValue);
+            }
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private boolean hasField(String fieldName) {
+        try {
+            this.getClass().getDeclaredField(fieldName);
+            return true;
+        } catch (NoSuchFieldException e) {
+            return false;
         }
     }
 }

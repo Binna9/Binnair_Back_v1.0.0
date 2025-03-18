@@ -1,10 +1,10 @@
-package com.bb.ballBin.user.address.service;
+package com.bb.ballBin.address.service;
 
+import com.bb.ballBin.address.entity.Address;
+import com.bb.ballBin.address.model.AddressRequestDto;
+import com.bb.ballBin.address.model.AddressResponseDto;
+import com.bb.ballBin.address.repository.AddressRepository;
 import com.bb.ballBin.common.exception.NotFoundException;
-import com.bb.ballBin.user.address.entity.Address;
-import com.bb.ballBin.user.address.model.AddressRequestDto;
-import com.bb.ballBin.user.address.model.AddressResponseDto;
-import com.bb.ballBin.user.address.repository.AddressRepository;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -40,20 +40,12 @@ public class AddressService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
-        boolean hasDefault = addressRepository.existsByUser_UserIdAndDefaultAddressIndexIsNotNull(userId);
-
         Address address = Address.builder()
                 .user(user)
                 .receiver(addressRequestDto.getReceiver())
                 .phone(addressRequestDto.getPhone())
-                .postalCode1(addressRequestDto.getPostalCode1())
-                .postalCode2(addressRequestDto.getPostalCode2())
-                .postalCode3(addressRequestDto.getPostalCode3())
-                .address1(addressRequestDto.getAddress1())
-                .address2(addressRequestDto.getAddress2())
-                .address3(addressRequestDto.getAddress3())
-
-                .defaultAddressIndex(hasDefault ? null : 1) // 첫 번째 주소는 기본 배송지로 설정
+                .postalCode(addressRequestDto.getPostalCode())
+                .address(addressRequestDto.getAddress())
                 .build();
 
         addressRepository.save(address);
