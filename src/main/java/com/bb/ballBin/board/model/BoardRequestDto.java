@@ -1,6 +1,6 @@
 package com.bb.ballBin.board.model;
 
-import com.bb.ballBin.board.domain.BoardType;
+import com.bb.ballBin.board.entity.BoardType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 

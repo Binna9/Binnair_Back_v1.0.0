@@ -1,6 +1,6 @@
 package com.bb.ballBin.board.repository;
 
-import com.bb.ballBin.board.domain.BoardType;
+import com.bb.ballBin.board.entity.BoardType;
 import com.bb.ballBin.board.entity.Board;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

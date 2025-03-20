@@ -5,7 +5,6 @@ import com.bb.ballBin.cart.entity.Cart;
 import com.bb.ballBin.common.convert.BooleanToYNConverter;
 import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.role.entity.Role;
-import com.bb.ballBin.user.model.UserResponseDto;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
@@ -14,7 +13,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Data
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -52,15 +51,14 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true, name = "nicK_name")
     private String nickName;
 
-    @Column(name = "file_path")
-    private String filePath;
-
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<Bookmark> bookmarks = new HashSet<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<Cart> carts = new HashSet<>();
 
@@ -81,17 +79,4 @@ public class User extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
-
-    /**
-     * Entity to DTO
-     */
-    public UserResponseDto toDto() {
-        return UserResponseDto.builder()
-                .loginId(this.loginId)
-                .userName(this.userName)
-                .email(this.email)
-                .nickName(this.nickName)
-                .phoneNumber(this.phoneNumber)
-                .build();
-    }
 }

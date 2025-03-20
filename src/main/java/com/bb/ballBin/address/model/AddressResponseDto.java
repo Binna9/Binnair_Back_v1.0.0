@@ -16,12 +16,12 @@ public class AddressResponseDto {
     @Schema(description = "수령인")
     private String receiver;
     @Schema(description = "전화번호")
-    private String phone;
+    private String phoneNumber;
     @Schema(description = "우편번호")
     private String postalCode;
     @Schema(description = "주소")
     private String address;
 
     @Schema(description = "기본 주소 값")
-    private String isDefault;
+    private boolean isDefault;
 }

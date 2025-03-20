@@ -2,8 +2,8 @@ package com.bb.ballBin.product.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @AllArgsConstructor
-@Builder
+@NoArgsConstructor
 public class ProductResponseDto {
 
     @Schema(description = "제품 ID")
@@ -32,11 +32,11 @@ public class ProductResponseDto {
     @Schema(description = "카테고리")
     private String category;
 
-    @Schema(description = "이미지 URL")
-    private String filePath;
-
     @Schema(description = "제품 할인율")
     private int discountRate;
+
+    @Schema(description = "제품 할인 금액")
+    private BigDecimal discountAmount;
 
     @Schema(description = "제품 할인 적용 가격")
     private BigDecimal discountPrice;

@@ -43,7 +43,15 @@ public class AddressController {
         return ResponseEntity.status(HttpStatus.CREATED).body(addressService.addAddress(userId, addressRequestDto));
     }
 
+    @PutMapping("/{addressId}/default")
+    @Operation(summary = "기본 배송지 변경")
+    public ResponseEntity<String> updateDefaultAddress(@PathVariable String addressId) {
 
+        String userId = SecurityUtil.getCurrentUserId();
+        addressService.updateDefaultAddress(userId, addressId);
+
+        return ResponseEntity.ok().build();
+    }
 
     /**
      * 배송지 삭제

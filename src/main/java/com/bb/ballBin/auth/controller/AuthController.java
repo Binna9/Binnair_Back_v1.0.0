@@ -2,6 +2,7 @@ package com.bb.ballBin.auth.controller;
 
 import com.bb.ballBin.auth.service.AuthService;
 import com.bb.ballBin.auth.service.OAuth2UserService;
+import com.bb.ballBin.common.util.SecurityUtil;
 import com.bb.ballBin.security.jwt.model.JwtResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,6 +19,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final OAuth2UserService oAuth2UserService;
+    private final SecurityUtil securityUtil;
 
     /**
      * 로그인
@@ -63,10 +65,5 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
         return authService.refreshAccessToken(refreshToken);
-    }
-
-    @GetMapping("/user")
-    public ResponseEntity<?> getUser() {
-        return authService.getCurrentUser();
     }
 }

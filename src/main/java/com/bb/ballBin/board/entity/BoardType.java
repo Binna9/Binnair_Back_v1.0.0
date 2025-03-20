@@ -1,4 +1,4 @@
-package com.bb.ballBin.board.domain;
+package com.bb.ballBin.board.entity;
 
 import java.util.Arrays;
 

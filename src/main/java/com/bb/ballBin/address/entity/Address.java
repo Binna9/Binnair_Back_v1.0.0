@@ -1,5 +1,6 @@
 package com.bb.ballBin.address.entity;
 
+import com.bb.ballBin.common.convert.BooleanToYNConverter;
 import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.address.model.AddressResponseDto;
@@ -9,6 +10,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 @Entity
 @Data
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -28,8 +30,8 @@ public class Address extends BaseEntity {
     @Column(nullable = false)
     private String receiver;
 
-    @Column(nullable = false)
-    private String phone;
+    @Column(name ="phone_number", nullable = false)
+    private String phoneNumber;
 
     @Column(nullable = false, name = "postal_code")
     private String postalCode;
@@ -37,8 +39,9 @@ public class Address extends BaseEntity {
     @Column(nullable = false)
     private String address;
 
+    @Convert(converter = BooleanToYNConverter.class)
     @Column(nullable = false, name = "is_default")
-    private String isDefault;
+    private boolean isDefault;
 
     /**
      * Entity to DTO 변환
@@ -47,9 +50,10 @@ public class Address extends BaseEntity {
         return AddressResponseDto.builder()
                 .addressId(this.addressId)
                 .receiver(this.receiver)
-                .phone(this.phone)
+                .phoneNumber(this.phoneNumber)
                 .postalCode(this.postalCode)
                 .address(this.address)
+                .isDefault(this.isDefault)
                 .build();
     }
 }

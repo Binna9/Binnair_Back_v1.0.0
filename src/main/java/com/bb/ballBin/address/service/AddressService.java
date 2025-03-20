@@ -40,16 +40,39 @@ public class AddressService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
+        boolean hasExistingAddresses = addressRepository.existsByUserId(userId);
+
         Address address = Address.builder()
                 .user(user)
                 .receiver(addressRequestDto.getReceiver())
-                .phone(addressRequestDto.getPhone())
+                .phoneNumber(addressRequestDto.getPhoneNumber())
                 .postalCode(addressRequestDto.getPostalCode())
                 .address(addressRequestDto.getAddress())
+                .isDefault(!hasExistingAddresses)
                 .build();
 
         addressRepository.save(address);
         return address.toDto();
+    }
+
+    @Transactional
+    public Address updateDefaultAddress(String userId, String addressId) {
+
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
+
+        Address newDefaultAddress = addressRepository.findById(addressId)
+                .orElseThrow(() -> new NotFoundException("해당 배송지가 존재하지 않습니다."));
+
+        addressRepository.findDefaultAddressByUserId(userId)
+                .ifPresent(existingDefault -> {
+                    existingDefault.setDefault(false);
+                    addressRepository.save(existingDefault);
+                });
+
+        // 새로운 기본 배송지 설정
+        newDefaultAddress.setDefault(true);
+        return addressRepository.save(newDefaultAddress);
     }
 
     /**

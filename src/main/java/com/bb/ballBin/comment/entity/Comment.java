@@ -4,10 +4,7 @@ import com.bb.ballBin.board.entity.Board;
 import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.util.ArrayList;
@@ -15,6 +12,7 @@ import java.util.List;
 
 @Entity
 @Data
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -45,6 +43,7 @@ public class Comment extends BaseEntity {
     @Column(name = "content", nullable = false)
     private String content;
 
+    @Builder.Default
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true) // 부모 댓글 삭제시 전부 삭제 , 여러 대댓글 가능
     private List<Comment> replies = new ArrayList<>();
 }

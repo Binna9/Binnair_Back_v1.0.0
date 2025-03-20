@@ -1,16 +1,12 @@
 package com.bb.ballBin.user.model;
 
-import com.bb.ballBin.user.entity.User;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @AllArgsConstructor
-@Builder
+@NoArgsConstructor
 public class UserRequsetDto {
 
     @Schema(description = "사용자 로그인 ID")
@@ -25,14 +21,4 @@ public class UserRequsetDto {
     private String nickName;
     @Schema(description = "핸드폰 번호")
     private String phoneNumber;
-
-    public User toEntity(){
-        return User.builder()
-                .loginId(this.loginId)
-                .userName(this.userName)
-                .email(this.email)
-                .nickName(this.nickName)
-                .phoneNumber(this.phoneNumber)
-                .build();
-    }
 }

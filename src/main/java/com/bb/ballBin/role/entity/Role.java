@@ -4,10 +4,7 @@ import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.permission.entity.Permission;
 import com.bb.ballBin.role.model.RoleResponseDto;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.util.HashSet;
@@ -15,6 +12,7 @@ import java.util.Set;
 
 @Entity
 @Data
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

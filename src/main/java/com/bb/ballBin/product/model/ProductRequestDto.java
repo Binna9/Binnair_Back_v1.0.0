@@ -1,18 +1,14 @@
 package com.bb.ballBin.product.model;
 
-import com.bb.ballBin.product.entity.Product;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 
 @Getter
 @Setter
 @AllArgsConstructor
-@Builder
+@NoArgsConstructor
 public class ProductRequestDto {
 
     @Schema(description = "제품명")
@@ -24,27 +20,12 @@ public class ProductRequestDto {
     @Schema(description = "가격")
     private BigDecimal price;
 
-    @Schema(description = "제품 할인율")
-    private int discountRate;
-
     @Schema(description = "재고 수량")
     private Integer stockQuantity;
 
     @Schema(description = "카테고리")
     private String category;
 
-    @Schema(description = "이미지 URL")
-    private String filePath;
-
-    public Product toEntity() {
-        return Product.builder()
-                .productName(this.productName)
-                .productDescription(this.productDescription)
-                .price(this.price)
-                .discountRate(this.discountRate)
-                .stockQuantity(this.stockQuantity)
-                .category(this.category)
-                .filePath(this.filePath)
-                .build();
-    }
+    @Schema(description = "제품 할인율")
+    private int discountRate;
 }

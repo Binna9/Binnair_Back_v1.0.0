@@ -14,7 +14,6 @@ public class SecurityPolicy {
         return List.of(
                 "/auth/**",
                 "/registers",
-                "/boards/**",
                 "/products/**"
         );
     }
@@ -24,6 +23,7 @@ public class SecurityPolicy {
      */
     public List<String> getAuthenticatedUrls() {
         return List.of(
+                "/boards/**",
                 "/roles/**",
                 "/menus/**",
                 "/bookmarks/**",
@@ -31,7 +31,8 @@ public class SecurityPolicy {
                 "/carts/**",
                 "/addresses/**",
                 "/comments/**",
-                "/likes/**"
+                "/likes/**",
+                "/files/**"
         );
     }
 

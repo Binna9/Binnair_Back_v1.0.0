@@ -1,42 +1,56 @@
 package com.bb.ballBin.product.service;
 
 import com.bb.ballBin.common.util.FileUtil;
+import com.bb.ballBin.file.entity.File;
+import com.bb.ballBin.file.entity.TargetType;
+import com.bb.ballBin.file.repository.FileRepository;
+import com.bb.ballBin.file.service.FileService;
 import com.bb.ballBin.product.entity.Product;
+import com.bb.ballBin.product.mapper.ProductMapper;
 import com.bb.ballBin.product.model.ProductRequestDto;
 import com.bb.ballBin.product.model.ProductResponseDto;
 import com.bb.ballBin.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class ProductService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ProductService.class);
+
     private final ProductRepository productRepository;
+    private final ProductMapper productMapper;
+    private final FileService fileService;
     private final FileUtil fileUtil;
+    private final FileRepository fileRepository;
 
     /**
      * 모든 제품 조회
      */
     public Page<ProductResponseDto> getAllProducts(Pageable pageable) {
         return productRepository.findAll(pageable)
-                .map(Product::toDto);
+                .map(productMapper::toDto);
     }
 
     /**
      * 개별 제품 조회
      */
     public ProductResponseDto getProductById(String productId) {
+
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("error.product.notfound"));
-        return product.toDto();
+
+        return productMapper.toDto(product);
     }
 
     /**
@@ -47,42 +61,70 @@ public class ProductService {
     }
 
     /**
-     * 제품 등록 (파일 포함)
+     * 제품 이미지 반환
      */
-    @Transactional
-    public ProductResponseDto createProduct(ProductRequestDto productRequestDto, MultipartFile file) {
+    public ResponseEntity<Resource> getProductImage(String productId) {
 
-        Product newProduct = productRepository.save(productRequestDto.toEntity());
+        List<File> files = fileRepository.findByTargetIdAndTargetType(productId, TargetType.PRODUCT);
 
-        if (file != null && !file.isEmpty()) {
-            String filePath = fileUtil.saveFile("product", newProduct.getProductId(), file);
-
-            newProduct.setFilePath(filePath);
-
-            productRepository.save(newProduct); // 이미지 경로 포함하여 다시 저장
+        if (files == null || files.isEmpty()) {
+            return ResponseEntity.notFound().build();
         }
 
-        return newProduct.toDto();
+        File fileEntity = files.get(0);
+        String relativePath = fileEntity.getFilePath();
+
+        if (relativePath == null || relativePath.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return fileUtil.getImageResponse("product", relativePath);
+    }
+
+    /**
+     * 제품 등록
+     */
+    @Transactional
+    public void createProduct(ProductRequestDto productRequestDto) {
+        try {
+            Product product = productMapper.toEntity(productRequestDto);
+
+            productRepository.save(product);
+
+        } catch (Exception e) {
+            logger.error("오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("처리 중 오류 발생", e);
+        }
     }
 
     /**
      * 제품 수정
      */
-    public ProductResponseDto updateProduct(String productId, ProductRequestDto productRequestDto) {
+    public void updateProduct(String productId, ProductRequestDto productRequestDto) {
+        try {
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new RuntimeException("error.product.notfound"));
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("error.product.notfound"));
+            productMapper.updateEntity(productRequestDto, product);
 
-        product.updateFromDto(productRequestDto);
-        productRepository.save(product);
+            productRepository.save(product);
 
-        return product.toDto();
+        } catch (Exception e) {
+            logger.error("오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("처리 중 오류 발생", e);
+        }
     }
 
     /**
      * 제품 삭제
      */
     public void deleteProduct(String productId) {
-        productRepository.deleteById(productId);
+        try {
+            productRepository.deleteById(productId);
+            fileService.deleteFilesByTarget(TargetType.PRODUCT, productId);
+        } catch (Exception e) {
+            logger.error("제품 삭제 중 오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("제품 삭제 중 오류 발생", e);
+        }
     }
 }

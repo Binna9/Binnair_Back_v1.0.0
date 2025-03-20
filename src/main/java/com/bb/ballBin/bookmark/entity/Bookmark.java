@@ -10,6 +10,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 @Entity
 @Data
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

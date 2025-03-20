@@ -163,6 +163,9 @@ public class AuthService {
         return ResponseEntity.ok(messageService.getMessage("success.logout"));
     }
 
+    /**
+     * Token Refresh
+     */
     public ResponseEntity<?> refreshAccessToken(String refreshToken) {
 
         if (refreshToken == null || refreshToken.isEmpty()) {
@@ -204,29 +207,6 @@ public class AuthService {
         }
     }
 
-    public ResponseEntity<?> getCurrentUser() {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // ✅ 인증되지 않은 사용자 예외 처리
-        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("ERROR", "Unauthorized"));
-        }
-
-        // ✅ 현재 로그인한 사용자 정보 가져오기
-        BallBinUserDetails userDetails = (BallBinUserDetails) authentication.getPrincipal();
-
-        // ✅ JSON 응답 생성
-        Map<String, Object> response = Map.of(
-                "userId", userDetails.getUserId(),
-                "username", userDetails.getUsername(),
-                "email", userDetails.getEmail(),
-                "loginId", userDetails.getLoginId()
-        );
-
-        return ResponseEntity.ok(response);
-    }
-
     /**
      * ✅ 로그인 실패 횟수 증가 및 계정 잠금 검사
      */
@@ -238,7 +218,7 @@ public class AuthService {
         int failedAttempts = user.getFailedLoginAttempts() + 1;
         user.setFailedLoginAttempts(failedAttempts);
 
-        userRepository.save(user);  // 변경된 값 저장
+        userRepository.save(user);
     }
 
     /**
@@ -249,7 +229,7 @@ public class AuthService {
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
-        user.setFailedLoginAttempts(0);  // 초기화
+        user.setFailedLoginAttempts(0);
         userRepository.save(user);
     }
 }

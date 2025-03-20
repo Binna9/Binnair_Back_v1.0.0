@@ -1,12 +1,11 @@
 package com.bb.ballBin.board.controller;
 
-import com.bb.ballBin.board.domain.BoardType;
+import com.bb.ballBin.board.entity.BoardType;
 import com.bb.ballBin.board.model.BoardRequestDto;
 import com.bb.ballBin.board.model.BoardResponseDto;
 import com.bb.ballBin.board.model.BoardViewRequestDto;
 import com.bb.ballBin.board.service.BoardService;
 import com.bb.ballBin.common.message.annotation.MessageKey;
-import com.bb.ballBin.common.util.FileUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -21,13 +20,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/boards")
 public class BoardController {
 
     private final BoardService boardService;
-    private final FileUtil fileUtil;
 
     @GetMapping
     @Operation(summary = "게시글 전체 조회")
@@ -58,10 +58,11 @@ public class BoardController {
             ))
     public ResponseEntity<String> createBoard(
             @ModelAttribute BoardRequestDto boardRequestDto,
-            @RequestPart(value = "file", required = false) MultipartFile file) {
+            @RequestPart(value = "files", required = false) List<MultipartFile> files) {
 
-        boardService.createBoard(boardRequestDto, file);
-        return ResponseEntity.status(HttpStatus.OK).build();
+        boardService.createBoard(boardRequestDto, files);
+
+        return ResponseEntity.ok().build();
     }
 
 
@@ -76,10 +77,11 @@ public class BoardController {
     public ResponseEntity<String> updateBoard(
             @PathVariable("boardId") String boardId,
             @ModelAttribute BoardRequestDto boardRequestDto,
-            @RequestPart(value = "file", required = false) MultipartFile file) {
+            @RequestPart(value = "files", required = false) List<MultipartFile> files) {
 
-        boardService.updateBoard(boardId, boardRequestDto, file);
-        return ResponseEntity.status(HttpStatus.OK).build();
+        boardService.updateBoard(boardId, boardRequestDto, files);
+
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/views")
@@ -89,24 +91,16 @@ public class BoardController {
 
         boardService.viewUpdateBoard(boardViewRequestDto);
 
-        return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{boardId}")
     @Operation(summary = "게시글 삭제")
     @MessageKey(value = "success.board.delete")
-    public ResponseEntity<Void> deleteBoard(@PathVariable("boardId") String boardId) {
+    public ResponseEntity<String> deleteBoard(@PathVariable("boardId") String boardId) {
 
-        boardService.deleteBoard(boardId);
+        boardService.deleteBoardAndFile(boardId);
 
-        return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.ok().build();
     }
-
-//    @DeleteMapping()
-//    @Operation(summary = "첨부파일 삭제")
-//    @MessageKey(value = "success.file.delete")
-//    public ResponseEntity<Void> deleteFile(@PathVariable("fileId") String fileId) {
-//
-//
-//    }
 }

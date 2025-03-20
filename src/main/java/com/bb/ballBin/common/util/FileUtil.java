@@ -27,9 +27,30 @@ public class FileUtil {
     private String boardUploadDir;
 
     /**
+     * 저장된 파일의 전체 경로 가져오기
+     *
+     * @param type 타입
+     * @param relativePath 저장된 파일의 상대 경로
+     * @return 파일 객체
+     */
+    public File getFilePath(String type, String relativePath) {
+        String baseDir;
+        if ("user".equals(type)) {
+            baseDir = userUploadDir;
+        } else if ("board".equals(type)) {
+            baseDir = boardUploadDir;
+        } else if ("product".equals(type)){
+            baseDir = productUploadDir;
+        } else {
+            throw new IllegalArgumentException("타입이 존재하지 않습니다.");
+        }
+        return new File(Paths.get(baseDir, relativePath).toString());
+    }
+
+    /**
      * 파일 저장 (사용자 또는 제품 이미지 저장)
      *
-     * @param type   "user" 또는 "product" (어떤 유형인지 구분)
+     * @param type   타입
      * @param id     사용자 ID 또는 제품 ID
      * @param file   업로드할 파일
      * @return 저장된 파일의 상대 경로 (예: userId/uuid-filename.png 또는 productId/uuid-filename.png)
@@ -84,30 +105,9 @@ public class FileUtil {
     }
 
     /**
-     * 저장된 파일의 전체 경로 가져오기 (사용자 또는 제품)
+     * 파일 삭제 기능
      *
-     * @param type   "user" 또는 "product"
-     * @param relativePath 저장된 파일의 상대 경로
-     * @return 파일 객체
-     */
-    public File getFilePath(String type, String relativePath) {
-        String baseDir;
-        if ("user".equals(type)) {
-            baseDir = userUploadDir;
-        } else if ("board".equals(type)) {
-            baseDir = boardUploadDir;
-        } else if ("product".equals(type)){
-            baseDir = productUploadDir;
-        } else {
-            throw new IllegalArgumentException("타입이 존재하지 않습니다.");
-        }
-        return new File(Paths.get(baseDir, relativePath).toString());
-    }
-
-    /**
-     * 파일 삭제 기능 (사용자 또는 제품)
-     *
-     * @param type "user" 또는 "product"
+     * @param type "user", "product", "board" 등
      * @param relativePath 삭제할 파일의 상대 경로
      * @return 삭제 성공 여부
      */
@@ -117,9 +117,47 @@ public class FileUtil {
     }
 
     /**
+     * 디렉토리 삭제 기능
+     *
+     * @param type 타입 ("user", "product", "board" 등)
+     * @param id   사용자 또는 제품 ID
+     * @return 삭제 성공 여부
+     */
+    public boolean deleteDirectory(String type, String id) {
+
+        String baseDir;
+
+        if ("user".equals(type)) {
+            baseDir = userUploadDir;
+        } else if ("product".equals(type)) {
+            baseDir = productUploadDir;
+        } else if ("board".equals(type)) {
+            baseDir = boardUploadDir;
+        } else {
+            throw new IllegalArgumentException("잘못된 파일 유형: " + type);
+        }
+
+        File directory = new File(Paths.get(baseDir, id).toString());
+
+        if (directory.exists()) {
+            java.io.File[] files = directory.listFiles();
+            if (files != null) {
+                for (java.io.File file : files) {
+                    if (file.isDirectory()) {
+                        deleteDirectory(type, file.getName());
+                    } else {
+                        file.delete();
+                    }
+                }
+            }
+        }
+        return directory.delete();
+    }
+
+    /**
      * 이미지 반환 (사용자 또는 제품)
      *
-     * @param type "user" 또는 "product"
+     * @param type 타입
      * @param relativePath 저장된 파일의 상대 경로
      * @return 이미지 파일을 ResponseEntity<Resource>로 반환
      */
@@ -144,7 +182,7 @@ public class FileUtil {
     }
 
     /**
-     * 파일 확장자를 기반으로 MIME 타입 반환
+     * 파일 확장자를 기반으로 MIME 타입 반환(이미지 기준)
      */
     private MediaType getMediaType(File file) {
         String filename = file.getName().toLowerCase();

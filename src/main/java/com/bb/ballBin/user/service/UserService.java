@@ -3,30 +3,48 @@ package com.bb.ballBin.user.service;
 import com.bb.ballBin.common.exception.ImmutableFieldException;
 import com.bb.ballBin.common.exception.InvalidPasswordException;
 import com.bb.ballBin.common.exception.NotFoundException;
+import com.bb.ballBin.common.util.FileUtil;
+import com.bb.ballBin.file.entity.File;
+import com.bb.ballBin.file.entity.TargetType;
+import com.bb.ballBin.file.repository.FileRepository;
+import com.bb.ballBin.file.service.FileService;
 import com.bb.ballBin.role.entity.Role;
 import com.bb.ballBin.role.repository.RoleRepository;
 import com.bb.ballBin.security.jwt.model.OAuthUserDto;
 import com.bb.ballBin.user.entity.AuthProvider;
 import com.bb.ballBin.user.entity.User;
+import com.bb.ballBin.user.mapper.UserMapper;
 import com.bb.ballBin.user.model.UserPasswordChangeRequestDto;
 import com.bb.ballBin.user.model.UserRequsetDto;
 import com.bb.ballBin.user.model.UserResponseDto;
 import com.bb.ballBin.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class UserService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final FileService fileService;
+    private final FileUtil fileUtil;
+    private final FileRepository fileRepository;
 
     /**
      * ✅ providerId로 사용자 조회 (OAuth 로그인용) todo: 구현 구체화 필요
@@ -50,7 +68,6 @@ public class UserService {
                 .providerId(userDto.getProviderId()) // ✅ Google 제공 ID
                 .userName(userDto.getUserName()) // ✅ 사용자 이름
                 .email(userDto.getEmail()) // ✅ 이메일
-                .filePath(userDto.getProfileImageUrl()) // ✅ 프로필 이미지
                 .isActive(true) // ✅ 기본 활성 상태
                 .roles(roles) // ✅ 기본 역할 설정
                 .build();
@@ -61,11 +78,9 @@ public class UserService {
     /**
      * 사용자 전체 조회
      */
-    public List<UserResponseDto> getAllUsers() {
-
-        return userRepository.findAll().stream()
-                .map(User::toDto)
-                .collect(Collectors.toList());
+    public Page<UserResponseDto> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(userMapper::toDto);
     }
 
     /**
@@ -76,8 +91,32 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
-        return user.toDto();
+        return userMapper.toDto(user);
     }
+
+    /**
+     * 사용자 이미지 반환
+     */
+    public ResponseEntity<Resource> getUserImage(String userId) {
+
+        userRepository.findById(userId).orElseThrow(() -> new NotFoundException("error.user.notfound"));
+
+        List<File> files = fileRepository.findByTargetIdAndTargetType(userId, TargetType.USER);
+
+        if (files == null || files.isEmpty()) {
+            throw new NotFoundException("error.file.notfound");
+        }
+
+        File fileEntity = files.get(0);
+        String relativePath = fileEntity.getFilePath();
+
+        if (relativePath == null || relativePath.isEmpty()) {
+            throw new NotFoundException("error.path.notfound");
+        }
+
+        return fileUtil.getImageResponse("user", relativePath);
+    }
+
 
     /**
      * 사용자 수정
@@ -87,26 +126,23 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
+        // 로그인 ID 변경 불가
         if (!Objects.equals(user.getLoginId(), userRequsetDto.getLoginId())) {
             throw new ImmutableFieldException("error.user.loginId.immutable");
         }
-        // OAuth 사용자일 경우 provider 및 providerId 변경 방지
+
         if (user.getProvider() != null && user.getProviderId() != null) {
             if (!Objects.equals(user.getProvider(), AuthProvider.GOOGLE)) {
                 throw new ImmutableFieldException("error.user.provider.immutable");
             }
         }
 
-        user.setUserName(userRequsetDto.getUserName());
-        user.setEmail(userRequsetDto.getEmail());
-        user.setNickName(userRequsetDto.getNickName());
-        user.setPhoneNumber(userRequsetDto.getPhoneNumber());
+        userMapper.updateEntity(userRequsetDto, user);
 
         if (userRequsetDto.getLoginPassword() != null && !userRequsetDto.getLoginPassword().isEmpty()) {
             user.setLoginPassword(passwordEncoder.encode(userRequsetDto.getLoginPassword()));
         }
 
-        // 저장
         userRepository.save(user);
     }
 
@@ -114,12 +150,13 @@ public class UserService {
      * 사용자 삭제
      */
     public void deleteUser(String userId) {
-        userRepository.deleteById(userId);
-    }
-
-
-    public Set<String> getUserRoles(String userId) {
-        return Set.of("ROLE_USER"); // todo :: 기본값으로 ROLE_USER 반환 (실제 DB 조회 필요)
+        try {
+            userRepository.deleteById(userId);
+            fileService.deleteFilesByTarget(TargetType.PRODUCT, userId);
+        } catch (Exception e) {
+            logger.error("삭제 중 오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("삭제 중 오류 발생", e);
+        }
     }
 
     /**
@@ -175,5 +212,12 @@ public class UserService {
         if (!password.matches(".*[!@#$%^&*()_+=-].*")) {
             throw new InvalidPasswordException("error.password4");
         }
+    }
+
+    /**
+     * 사용자 역할 반환 todo :: 기본값으로 ROLE_USER 반환 (실제 DB 조회 필요)
+     */
+    public Set<String> getUserRoles(String userId) {
+        return Set.of("ROLE_USER");
     }
 }

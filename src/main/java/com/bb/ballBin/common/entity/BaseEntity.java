@@ -1,6 +1,7 @@
 package com.bb.ballBin.common.entity;
 
 import com.bb.ballBin.user.entity.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -31,11 +32,13 @@ public class BaseEntity {
 
     @CreatedBy
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "creator_id", referencedColumnName = "user_id")
     private User createdByUser;
 
     @LastModifiedBy
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "modifier_id", referencedColumnName = "user_id")
     private User modifiedByUser;
 
