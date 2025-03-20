@@ -14,7 +14,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -29,13 +28,13 @@ public class ProductController {
     @Operation(summary = "모든 제품 조회")
     public ResponseEntity<Page<ProductResponseDto>> getAllProducts(
             @PageableDefault(page = 0, size = 9, sort = "createDatetime", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(productService.getAllProducts(pageable));
+        return ResponseEntity.ok(productService.allProducts(pageable));
     }
 
     @GetMapping("/{productId}")
     @Operation(summary = "개별 제품 조회")
     public ResponseEntity<ProductResponseDto> getProductById(@PathVariable String productId) {
-        return ResponseEntity.ok(productService.getProductById(productId));
+        return ResponseEntity.ok(productService.productById(productId));
     }
 
     @GetMapping("/list")
@@ -56,18 +55,18 @@ public class ProductController {
 
     @PostMapping("")
     @Operation(summary = "제품 등록")
-    @MessageKey(value = "success.create")
-    public ResponseEntity<String> createProduct(@ModelAttribute ProductRequestDto productRequestDto) {
+    @MessageKey(value = "success.product.create")
+    public ResponseEntity<Void> createProduct(@ModelAttribute ProductRequestDto productRequestDto) {
 
-        productService.createProduct(productRequestDto);
+        productService.addProduct(productRequestDto);
 
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{productId}")
     @Operation(summary = "제품 수정")
-    @MessageKey(value = "success.update")
-    public ResponseEntity<String> updateProduct(
+    @MessageKey(value = "success.product.update")
+    public ResponseEntity<Void> updateProduct(
             @PathVariable String productId,
             @RequestBody ProductRequestDto productRequestDto) {
 
@@ -78,7 +77,7 @@ public class ProductController {
 
     @DeleteMapping("/{productId}")
     @Operation(summary = "제품 삭제")
-    @MessageKey(value = "success.delete")
+    @MessageKey(value = "success.product.delete")
     public ResponseEntity<Void> deleteProduct(@PathVariable String productId) {
 
         productService.deleteProduct(productId);

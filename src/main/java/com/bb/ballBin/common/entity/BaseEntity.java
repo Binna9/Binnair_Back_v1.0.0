@@ -71,9 +71,13 @@ public class BaseEntity {
             initializeFieldIfExists("unlikes", 0);
         }
 
+        // 사용자 정보가 없는 경우 처리
         if (createdByUser != null) {
             this.creatorLoginId = createdByUser.getLoginId();
             this.creatorName = createdByUser.getUserName();
+        } else {
+            this.creatorLoginId = "system";
+            this.creatorName = "System";
         }
 
         this.modifiedByUser = null;

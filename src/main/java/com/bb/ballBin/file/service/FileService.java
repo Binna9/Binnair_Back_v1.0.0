@@ -28,7 +28,7 @@ public class FileService {
     }
 
     /**
-     * 다중 파일 업로드
+     * 파일 업로드
      */
     public void uploadFiles(TargetType targetType, String targetId, List<MultipartFile> files) {
 

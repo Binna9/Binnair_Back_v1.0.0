@@ -33,19 +33,4 @@ public class Cart extends BaseEntity {
 
     @Column(nullable = false, name = "quantity")
     private Integer quantity;
-
-    /**
-     * Entity to DTO 변환
-     */
-    public CartResponseDto toDto() {
-        return CartResponseDto.builder()
-                .cartId(this.cartId)
-                .userId(this.user.getUserId())
-                .productId(this.product.getProductId())
-                .productName(this.product.getProductName())
-                .productDescription(this.product.getProductDescription())
-                .price(this.product.getPrice())
-                .quantity(this.quantity)
-                .build();
-    }
 }

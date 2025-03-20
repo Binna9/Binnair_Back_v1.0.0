@@ -23,20 +23,7 @@ public class FileController {
             @ModelAttribute FileRequestDto fileRequestDto,
             @RequestPart(value = "files", required = false) List<MultipartFile> files) {
 
-        if (files == null || files.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-
         fileService.uploadFiles(fileRequestDto.getTargetType(), fileRequestDto.getTargetId(), files);
-
-        return ResponseEntity.ok().build();
-    }
-
-    @DeleteMapping("/delete")
-    @Operation(summary = "파일 삭제")
-    public ResponseEntity<Void> deleteFilesByTarget(@ModelAttribute FileRequestDto fileRequestDto) {
-
-        fileService.deleteFilesByTarget(fileRequestDto.getTargetType(), fileRequestDto.getTargetId());
 
         return ResponseEntity.ok().build();
     }

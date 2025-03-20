@@ -2,9 +2,9 @@ package com.bb.ballBin.user.controller;
 
 import com.bb.ballBin.common.message.annotation.MessageKey;
 import com.bb.ballBin.common.util.SecurityUtil;
-import com.bb.ballBin.user.model.UserRequsetDto;
 import com.bb.ballBin.user.model.UserResponseDto;
 import com.bb.ballBin.user.model.UserPasswordChangeRequestDto;
+import com.bb.ballBin.user.model.UserUpdateRequestDto;
 import com.bb.ballBin.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -50,9 +50,9 @@ public class UserController {
     @PutMapping("/{userId}")
     @Operation(summary = "사용자 수정")
     @MessageKey(value = "success.update")
-    public ResponseEntity<String> modifyUser(@PathVariable String userId, @RequestBody UserRequsetDto userRequsetDto) {
+    public ResponseEntity<Void> modifyUser(@PathVariable String userId, @RequestBody UserUpdateRequestDto userUpdateRequestDto) {
 
-        userService.updateUser(userId, userRequsetDto);
+        userService.updateUser(userId, userUpdateRequestDto);
 
         return ResponseEntity.ok().build();
     }
@@ -60,7 +60,7 @@ public class UserController {
     @DeleteMapping("/{userId}")
     @Operation(summary = "사용자 삭제")
     @MessageKey(value = "success.delete")
-    public ResponseEntity<String> removeUser(@PathVariable String userId) {
+    public ResponseEntity<Void> removeUser(@PathVariable String userId) {
 
         userService.deleteUser(userId);
 
@@ -86,7 +86,7 @@ public class UserController {
     @PutMapping("/change-password")
     @Operation(summary = "사용자 비밀번호 변경")
     @MessageKey(value = "success.user.password.change")
-    public ResponseEntity<String> changePassword(@RequestBody UserPasswordChangeRequestDto passwordChangeDto) {
+    public ResponseEntity<Void> changePassword(@RequestBody UserPasswordChangeRequestDto passwordChangeDto) {
 
         String userId = SecurityUtil.getCurrentUserId();
         userService.changePassword(userId, passwordChangeDto);

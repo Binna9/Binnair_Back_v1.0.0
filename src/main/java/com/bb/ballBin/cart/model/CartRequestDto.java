@@ -1,15 +1,12 @@
 package com.bb.ballBin.cart.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @AllArgsConstructor
-@Builder
+@NoArgsConstructor
 public class CartRequestDto {
 
     @Schema(description = "장바구니에 추가할 제품 ID")

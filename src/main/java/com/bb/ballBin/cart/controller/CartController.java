@@ -1,19 +1,22 @@
 package com.bb.ballBin.cart.controller;
 
+import com.bb.ballBin.cart.model.CartPriceResponseDto;
 import com.bb.ballBin.cart.model.CartRequestDto;
 import com.bb.ballBin.cart.model.CartResponseDto;
 import com.bb.ballBin.cart.service.CartService;
+import com.bb.ballBin.common.message.annotation.MessageKey;
 import com.bb.ballBin.common.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 
 @EqualsAndHashCode
 @RestController
@@ -24,33 +27,34 @@ public class CartController {
     private final CartService cartService;
 
     @GetMapping("")
-    @Operation(summary = "현재 로그인한 사용자의 장바구니 조회")
-    public ResponseEntity<Map<String , Object>> getUserCarts() {
-
+    @Operation(summary = "사용자 장바구니 조회")
+    public ResponseEntity<Page<CartResponseDto>> getAllCarts(
+            @PageableDefault(page = 0, size = 9, sort = "createDatetime", direction = Sort.Direction.DESC) Pageable pageable) {
         String userId = SecurityUtil.getCurrentUserId();
+        return ResponseEntity.ok(cartService.allCart(userId, pageable));
+    }
 
-        return ResponseEntity.ok(cartService.getUserCarts(userId));
+    @GetMapping("/{cartId}")
+    @Operation(summary = "개별 제품 조회")
+    public ResponseEntity<CartResponseDto> getCartById(@PathVariable String cartId) {
+        return ResponseEntity.ok(cartService.cartById(cartId));
     }
 
     @PostMapping("")
     @Operation(summary = "장바구니 추가")
-    public ResponseEntity<CartResponseDto> addCart(@RequestBody CartRequestDto cartRequestDto) {
+    @MessageKey(value = "success.cart.create")
+    public ResponseEntity<CartResponseDto> createCart(@RequestBody CartRequestDto cartRequestDto) {
+
         String userId = SecurityUtil.getCurrentUserId();
-        return ResponseEntity.status(HttpStatus.CREATED).body(cartService.addCart(userId, cartRequestDto));
-    }
 
-    @PutMapping("/{cartId}/change-product")
-    @Operation(summary = "장바구니 제품 옵션 변경")
-    public ResponseEntity<CartResponseDto> changeProduct(
-            @PathVariable("cartId") String cartId,
-            @RequestParam("productId") String productId) {
+        cartService.addCart(userId, cartRequestDto);
 
-        CartResponseDto updatedCart = cartService.changeProduct(cartId, productId);
-        return ResponseEntity.ok(updatedCart);
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/update-quantity")
     @Operation(summary = "장바구니 수량 변경")
+    @MessageKey(value = "success.cart.quantity")
     public ResponseEntity<Void> updateCartQuantity(@RequestParam String cartId, @RequestParam int quantity) {
 
         cartService.updateCartQuantity(cartId, quantity);
@@ -58,21 +62,32 @@ public class CartController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/discounted-total")
-    public ResponseEntity<Map<String, BigDecimal>> calculateDiscountedTotal(
-            @RequestBody Map<String, List<String>> request) { // ✅ JSON 객체로 받음
+    @PutMapping("/{cartId}/change-product")
+    @Operation(summary = "장바구니 제품 옵션 변경")
+    @MessageKey(value = "success.cart.option")
+    public ResponseEntity<Void> changeProduct(
+            @PathVariable("cartId") String cartId,
+            @RequestParam("productId") String productId) {
 
-        List<String> cartIds = request.get("cartIds"); // JSON 에서 cartIds 추출
+        cartService.changeProduct(cartId, productId);
 
-        Map<String, BigDecimal> result = cartService.calculateDiscountedTotal(cartIds);
+        return ResponseEntity.ok().build();
+    }
 
+    @PostMapping("/cart/calculate")
+    @Operation(summary = "선택된 장바구니 아이템 할인 금액 계산")
+    public ResponseEntity<CartPriceResponseDto> calculateDiscountedTotal(@RequestBody List<String> cartIds) {
+        CartPriceResponseDto result = cartService.calculateDiscountedTotal(cartIds);
         return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/{cartId}")
     @Operation(summary = "장바구니 삭제")
-    public ResponseEntity<Void> removeCart(@PathVariable String cartId) {
+    @MessageKey(value = "success.cart.delete")
+    public ResponseEntity<Void> deleteCart(@PathVariable String cartId) {
+
         cartService.removeCart(cartId);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+
+        return ResponseEntity.ok().build();
     }
 }

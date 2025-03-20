@@ -37,7 +37,7 @@ public class ProductService {
     /**
      * 모든 제품 조회
      */
-    public Page<ProductResponseDto> getAllProducts(Pageable pageable) {
+    public Page<ProductResponseDto> allProducts(Pageable pageable) {
         return productRepository.findAll(pageable)
                 .map(productMapper::toDto);
     }
@@ -45,7 +45,7 @@ public class ProductService {
     /**
      * 개별 제품 조회
      */
-    public ProductResponseDto getProductById(String productId) {
+    public ProductResponseDto productById(String productId) {
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("error.product.notfound"));
@@ -85,7 +85,7 @@ public class ProductService {
      * 제품 등록
      */
     @Transactional
-    public void createProduct(ProductRequestDto productRequestDto) {
+    public void addProduct(ProductRequestDto productRequestDto) {
         try {
             Product product = productMapper.toEntity(productRequestDto);
 
@@ -123,8 +123,8 @@ public class ProductService {
             productRepository.deleteById(productId);
             fileService.deleteFilesByTarget(TargetType.PRODUCT, productId);
         } catch (Exception e) {
-            logger.error("제품 삭제 중 오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("제품 삭제 중 오류 발생", e);
+            logger.error("삭제 중 오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("삭제 중 오류 발생", e);
         }
     }
 }

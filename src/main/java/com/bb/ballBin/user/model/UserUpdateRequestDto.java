@@ -1,18 +1,17 @@
 package com.bb.ballBin.user.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserResponseDto {
+public class UserUpdateRequestDto {
 
-    @Schema(description = "사용자 ID")
-    private String userId;
-    @Schema(description = "사용자 로그인 ID")
-    private String loginId;
     @Schema(description = "사용자 명")
     private String userName;
     @Schema(description = "사용자 이메일")

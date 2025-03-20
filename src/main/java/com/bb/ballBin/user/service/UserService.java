@@ -15,8 +15,8 @@ import com.bb.ballBin.user.entity.AuthProvider;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.user.mapper.UserMapper;
 import com.bb.ballBin.user.model.UserPasswordChangeRequestDto;
-import com.bb.ballBin.user.model.UserRequsetDto;
 import com.bb.ballBin.user.model.UserResponseDto;
+import com.bb.ballBin.user.model.UserUpdateRequestDto;
 import com.bb.ballBin.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -121,15 +121,11 @@ public class UserService {
     /**
      * 사용자 수정
      */
-    public void updateUser(String userId, UserRequsetDto userRequsetDto) {
+    public void updateUser(String userId, UserUpdateRequestDto userUpdateRequestDto) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
-        // 로그인 ID 변경 불가
-        if (!Objects.equals(user.getLoginId(), userRequsetDto.getLoginId())) {
-            throw new ImmutableFieldException("error.user.loginId.immutable");
-        }
 
         if (user.getProvider() != null && user.getProviderId() != null) {
             if (!Objects.equals(user.getProvider(), AuthProvider.GOOGLE)) {
@@ -137,11 +133,7 @@ public class UserService {
             }
         }
 
-        userMapper.updateEntity(userRequsetDto, user);
-
-        if (userRequsetDto.getLoginPassword() != null && !userRequsetDto.getLoginPassword().isEmpty()) {
-            user.setLoginPassword(passwordEncoder.encode(userRequsetDto.getLoginPassword()));
-        }
+        userMapper.updateEntity(userUpdateRequestDto, user);
 
         userRepository.save(user);
     }
