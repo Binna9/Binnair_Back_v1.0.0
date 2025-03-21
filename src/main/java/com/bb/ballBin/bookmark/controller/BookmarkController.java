@@ -3,14 +3,16 @@ package com.bb.ballBin.bookmark.controller;
 import com.bb.ballBin.bookmark.model.BookmarkRequestDto;
 import com.bb.ballBin.bookmark.model.BookmarkResponseDto;
 import com.bb.ballBin.bookmark.service.BookmarkService;
+import com.bb.ballBin.common.message.annotation.MessageKey;
 import com.bb.ballBin.common.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,33 +21,33 @@ public class BookmarkController {
 
     private final BookmarkService bookmarkService;
 
-    /**
-     * 특정 사용자의 즐겨찾기 목록 조회
-     */
     @GetMapping("")
-    @Operation(summary = "현재 로그인한 사용자의 즐겨찾기 목록 조회")
-    public ResponseEntity<List<BookmarkResponseDto>> getUserBookmarks() {
+    @Operation(summary = "즐겨찾기 목록 조회")
+    public ResponseEntity<Page<BookmarkResponseDto>> getAllBookmarks(
+            @PageableDefault(page = 0, size = 9, sort = "createDatetime", direction = Sort.Direction.DESC) Pageable pageable) {
         String userId = SecurityUtil.getCurrentUserId();
-        return ResponseEntity.ok(bookmarkService.getUserBookmarks(userId));
+        return ResponseEntity.ok(bookmarkService.allBookmarks(userId, pageable));
     }
 
-    /**
-     * 즐겨찾기 추가 (로그인한 사용자 정보 자동 적용)
-     */
     @PostMapping("")
     @Operation(summary = "즐겨찾기 추가")
-    public ResponseEntity<BookmarkResponseDto> addBookmark(@RequestBody BookmarkRequestDto bookmarkRequestDto) {
-        String userId = SecurityUtil.getCurrentUserId(); // ✅ 로그인한 사용자의 ID 가져오기
-        return ResponseEntity.status(HttpStatus.CREATED).body(bookmarkService.addBookmark(userId, bookmarkRequestDto));
+    @MessageKey(value = "success.bookmark.create")
+    public ResponseEntity<BookmarkResponseDto> createBookmark(@RequestBody BookmarkRequestDto bookmarkRequestDto) {
+
+        String userId = SecurityUtil.getCurrentUserId();
+
+        bookmarkService.addBookmark(userId, bookmarkRequestDto);
+
+        return ResponseEntity.ok().build();
     }
 
-    /**
-     * 즐겨찾기 삭제
-     */
     @DeleteMapping("/{bookmarkId}")
     @Operation(summary = "즐겨찾기 삭제")
+    @MessageKey(value = "success.bookmark.delete")
     public ResponseEntity<Void> removeBookmark(@PathVariable String bookmarkId) {
+
         bookmarkService.removeBookmark(bookmarkId);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+
+        return ResponseEntity.ok().build();
     }
 }

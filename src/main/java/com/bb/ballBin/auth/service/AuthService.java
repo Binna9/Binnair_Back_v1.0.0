@@ -1,5 +1,6 @@
 package com.bb.ballBin.auth.service;
 
+import com.bb.ballBin.board.service.BoardService;
 import com.bb.ballBin.common.exception.InvalidPasswordException;
 import com.bb.ballBin.common.exception.NotFoundException;
 import com.bb.ballBin.common.message.Service.MessageService;
@@ -35,6 +36,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
+
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final JwtBlacklistService jwtBlacklistService;
@@ -42,14 +45,12 @@ public class AuthService {
     private final MessageService messageService;
     private final UserService userService;
     private final UserRepository userRepository;
+    private final DefaultAuthenticationEventPublisher authenticationEventPublisher;
 
     /**
      * 로그인 처리
      */
     public ResponseEntity<?> login(String loginId, String loginPassword, HttpServletResponse response) {
-
-        Logger logger = LoggerFactory.getLogger(this.getClass());
-
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginId, loginPassword)
@@ -124,43 +125,47 @@ public class AuthService {
      * 로그아웃 처리
      */
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            String authorizationHeader = request.getHeader("Authorization");
 
-        String authorizationHeader = request.getHeader("Authorization");
+            if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(messageService.getMessage("error.token.invalid"));
+            }
 
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(messageService.getMessage("error.token.invalid"));
+            String token = authorizationHeader.substring(7);
+
+            boolean isOAuth2Token = request.getRequestURI().startsWith("/oauth2/"); // ✅ OAuth2 토큰 여부 체크
+
+            // ✅ 1. 토큰 유효성 검증
+            Claims claims = jwtUtil.validateToken(token, false, isOAuth2Token);
+            if (claims == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(messageService.getMessage("error.token.invalid"));
+            }
+
+            // ✅ 2. 만료 시간 확인
+            Date expirationTime = claims.getExpiration();
+            if (expirationTime != null) {
+                jwtBlacklistService.addToBlacklist(token, expirationTime); // ✅ 블랙리스트 추가
+            }
+
+            // ✅ 3. 시큐리티 컨텍스트 초기화
+            SecurityContextHolder.clearContext();
+
+            ResponseCookie deleteCookie = ResponseCookie.from("refreshToken", "")
+                    .httpOnly(true)
+                    .secure(false) // 로컬 개발 시 false, 프로덕션에서는 true
+                    .sameSite("Lax")
+                    .path("/")
+                    .maxAge(0) // ✅ 쿠키 즉시 만료
+                    .build();
+
+            response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
+
+            return ResponseEntity.ok(messageService.getMessage("success.logout"));
+        } catch (Exception e){
+            logger.error(e.getMessage());
+            throw new RuntimeException("ERROR",e);
         }
-
-        String token = authorizationHeader.substring(7);
-
-        boolean isOAuth2Token = request.getRequestURI().startsWith("/oauth2/"); // ✅ OAuth2 토큰 여부 체크
-
-        // ✅ 1. 토큰 유효성 검증
-        Claims claims = jwtUtil.validateToken(token, false, isOAuth2Token);
-        if (claims == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(messageService.getMessage("error.token.invalid"));
-        }
-
-        // ✅ 2. 만료 시간 확인
-        Date expirationTime = claims.getExpiration();
-        if (expirationTime != null) {
-            jwtBlacklistService.addToBlacklist(token, expirationTime); // ✅ 블랙리스트 추가
-        }
-
-        // ✅ 3. 시큐리티 컨텍스트 초기화
-        SecurityContextHolder.clearContext();
-
-        ResponseCookie deleteCookie = ResponseCookie.from("refreshToken", "")
-                .httpOnly(true)
-                .secure(false) // 로컬 개발 시 false, 프로덕션에서는 true
-                .sameSite("Lax")
-                .path("/")
-                .maxAge(0) // ✅ 쿠키 즉시 만료
-                .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
-
-        return ResponseEntity.ok(messageService.getMessage("success.logout"));
     }
 
     /**

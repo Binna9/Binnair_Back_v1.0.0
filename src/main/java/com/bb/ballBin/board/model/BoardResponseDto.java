@@ -48,25 +48,4 @@ public class BoardResponseDto {
 
     @Schema(name = "게시판 파일")
     private List<File> files;
-
-    /**
-     * ✅ `Board` 엔티티 → `BoardResponseDto` 변환
-     */
-    public static BoardResponseDto from(Board board, List<CommentResponseDto> comments, List<File> files) {
-        return BoardResponseDto.builder()
-                .boardId(board.getBoardId())
-                .boardType(board.getBoardType())
-                .title(board.getTitle())
-                .content(board.getContent())
-                .views(board.getViews())
-                .likes(board.getLikes())
-                .unlikes(board.getUnlikes())
-                .writerId(board.getWriter().getUserId()) // ✅ writer 에서 userId 가져오기
-                .writerName(board.getWriterName())
-                .createDatetime(board.getCreateDatetime())
-                .modifyDatetime(board.getModifyDatetime())
-                .comments(comments)
-                .files(files)
-                .build();
-    }
 }

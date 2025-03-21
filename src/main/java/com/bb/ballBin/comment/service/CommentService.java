@@ -6,16 +6,23 @@ import com.bb.ballBin.comment.entity.Comment;
 import com.bb.ballBin.comment.model.CommentRequestDto;
 import com.bb.ballBin.comment.model.CommentUpdateRequestDto;
 import com.bb.ballBin.comment.repository.CommentRepository;
+import com.bb.ballBin.common.exception.NotFoundException;
 import com.bb.ballBin.common.util.SecurityUtil;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.nio.file.AccessDeniedException;
 
 @Service
 @RequiredArgsConstructor
 public class CommentService {
+
+    private static final Logger logger = LoggerFactory.getLogger(CommentService.class);
 
     private final CommentRepository commentRepository;
     private final BoardRepository boardRepository;
@@ -26,33 +33,38 @@ public class CommentService {
      */
     @Transactional
     public void createComment(CommentRequestDto commentRequestDto) {
+        try {
+            User writer = userRepository.findById(SecurityUtil.getCurrentUserId())
+                    .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
-        User writer = userRepository.findById(SecurityUtil.getCurrentUserId())
-                .orElseThrow(() -> new RuntimeException("❌ 사용자 정보를 찾을 수 없습니다."));
+            Board board = boardRepository.findById(commentRequestDto.getBoardId())
+                    .orElseThrow(() -> new NotFoundException("error.board.notfound"));
 
-        Board board = boardRepository.findById(commentRequestDto.getBoardId())
-                .orElseThrow(() -> new RuntimeException("❌ 댓글을 작성할 게시글을 찾을 수 없습니다."));
+            Comment parentComment = null;
 
-        Comment parentComment = null;
+            if (commentRequestDto.getParentId() != null && !commentRequestDto.getParentId().trim().isEmpty()) {
+                parentComment = commentRepository.findById(commentRequestDto.getParentId())
+                        .orElse(null);
 
-        if (commentRequestDto.getParentId() != null && !commentRequestDto.getParentId().trim().isEmpty()) {
-            parentComment = commentRepository.findById(commentRequestDto.getParentId())
-                    .orElse(null);
-
-            if (parentComment == null) {
-                throw new RuntimeException("❌ 부모 댓글을 찾을 수 없습니다. (parentId: " + commentRequestDto.getParentId() + ")");
+                if (parentComment == null) {
+                    throw new NotFoundException("error.comment.notfound");
+                }
             }
+
+            Comment comment = Comment.builder()
+                    .board(board)
+                    .parent(parentComment)
+                    .writer(writer)
+                    .writerName(writer.getNickName())
+                    .content(commentRequestDto.getContent())
+                    .build();
+
+            commentRepository.save(comment);
+
+        } catch(Exception e){
+            logger.error(e.getMessage());
+            throw new RuntimeException("처리중 오류 발생", e);
         }
-
-        Comment comment = Comment.builder()
-                .board(board)
-                .parent(parentComment)
-                .writer(writer)
-                .writerName(writer.getNickName())
-                .content(commentRequestDto.getContent())
-                .build();
-
-        commentRepository.save(comment);
     }
 
     /**
@@ -60,15 +72,22 @@ public class CommentService {
      */
     @Transactional
     public void updateComment(String commentId, CommentUpdateRequestDto commentUpdateRequestDto) {
+        try {
+            Comment comment = commentRepository.findById(commentId)
+                    .orElseThrow(() -> new NotFoundException("error.comment.notfound"));
 
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("❌ 수정할 댓글을 찾을 수 없습니다."));
+            if (!SecurityUtil.getCurrentUserId().equals(comment.getWriter().getUserId())) {
+                throw new AccessDeniedException("error.comment.access");
+            }
 
-        if (!SecurityUtil.getCurrentUserId().equals(comment.getWriter().getUserId())) {
-            throw new RuntimeException("❌ 댓글 수정 권한이 없습니다.");
+            comment.setContent(commentUpdateRequestDto.getContent());
+
+            commentRepository.save(comment);
+
+        } catch (Exception e) {
+            logger.error("오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("처리 중 오류 발생", e);
         }
-
-        comment.setContent(commentUpdateRequestDto.getContent());
     }
 
     /**
@@ -76,14 +95,19 @@ public class CommentService {
      */
     @Transactional
     public void deleteComment(String commentId) {
+        try {
+            Comment comment = commentRepository.findById(commentId)
+                    .orElseThrow(() -> new RuntimeException("error.comment.notfound"));
 
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("❌ 삭제할 댓글을 찾을 수 없습니다."));
+            if (!SecurityUtil.getCurrentUserId().equals(comment.getWriter().getUserId())) {
+                throw new AccessDeniedException("error.comment.access");
+            }
 
-        if (!SecurityUtil.getCurrentUserId().equals(comment.getWriter().getUserId())) {
-            throw new RuntimeException("❌ 댓글 삭제 권한이 없습니다.");
+            commentRepository.delete(comment);
+
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw new RuntimeException("삭제 중 오류 발생", e);
         }
-
-        commentRepository.delete(comment);
     }
 }

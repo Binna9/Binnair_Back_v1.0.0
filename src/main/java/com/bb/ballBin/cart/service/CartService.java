@@ -2,15 +2,14 @@ package com.bb.ballBin.cart.service;
 
 import com.bb.ballBin.cart.entity.Cart;
 import com.bb.ballBin.cart.mapper.CartMapper;
+import com.bb.ballBin.cart.model.CartChangeRequestDto;
 import com.bb.ballBin.cart.model.CartPriceResponseDto;
 import com.bb.ballBin.cart.model.CartRequestDto;
 import com.bb.ballBin.cart.model.CartResponseDto;
 import com.bb.ballBin.cart.repository.CartRepository;
 import com.bb.ballBin.common.exception.NotFoundException;
 import com.bb.ballBin.common.util.SecurityUtil;
-import com.bb.ballBin.file.entity.TargetType;
 import com.bb.ballBin.product.entity.Product;
-import com.bb.ballBin.product.model.ProductResponseDto;
 import com.bb.ballBin.product.repository.ProductRepository;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.user.repository.UserRepository;
@@ -23,9 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +40,7 @@ public class CartService {
      * 사용자 장바구니 전체 조회
      */
     @Transactional
-    public Page<CartResponseDto> allCart(String userId, Pageable pageable) {
+    public Page<CartResponseDto> allCarts(String userId, Pageable pageable) {
         return cartRepository.findByUserUserId(userId, pageable)
                 .map(cartMapper::toDto);
     }
@@ -99,17 +96,17 @@ public class CartService {
     /**
      * 장바구니 제품 옵션 변경
      */
-    public void changeProduct(String cartId, String newProductId) {
+    public void changeProduct(CartChangeRequestDto requestDto) {
         try {
             String userId = SecurityUtil.getCurrentUserId();
 
-            Cart cart = cartRepository.findByCartIdAndUser_UserId(cartId, userId)
+            Cart cart = cartRepository.findByCartIdAndUser_UserId(requestDto.getCartId(), userId)
                     .orElseThrow(() -> new RuntimeException("error.cart.notfound"));
 
-            Product newProduct = productRepository.findById(newProductId)
+            Product product = productRepository.findById(requestDto.getProductId())
                     .orElseThrow(() -> new IllegalArgumentException("선택한 옵션이 유효하지 않음"));
 
-            cart.setProduct(newProduct);
+            cart.setProduct(product);
 
             cartRepository.save(cart);
         } catch (Exception e) {
@@ -135,7 +132,6 @@ public class CartService {
      */
     public CartPriceResponseDto calculateDiscountedTotal(List<String> cartIds) {
         try {
-
             List<Object[]> result = cartRepository.calculateTotalAndDiscount(cartIds);
 
             if (result.isEmpty() || result.get(0)[0] == null) {
@@ -144,6 +140,7 @@ public class CartService {
 
             BigDecimal totalAmount = (BigDecimal) result.get(0)[0]; // 할인 전 총 금액
             BigDecimal totalDiscountAmount = (BigDecimal) result.get(0)[1]; // 총 할인 금액
+
             BigDecimal discountedTotal = totalAmount.subtract(totalDiscountAmount); // 할인 후 총 금액
 
             return new CartPriceResponseDto(
@@ -151,7 +148,7 @@ public class CartService {
                     totalDiscountAmount.toString(),
                     discountedTotal.toString()
             );
-        }catch (Exception e) {
+        } catch (Exception e) {
             logger.error("오류 발생: {}", e.getMessage(), e);
             throw new RuntimeException("오류 발생", e);
         }

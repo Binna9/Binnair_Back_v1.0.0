@@ -6,6 +6,10 @@ import com.bb.ballBin.role.model.RoleResponseDto;
 import com.bb.ballBin.role.service.RoleService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,45 +25,44 @@ public class RoleController {
 
     @GetMapping("")
     @Operation(summary = "역할 전체 조회")
-    public ResponseEntity<List<RoleResponseDto>> roleList(){
-
-        return ResponseEntity.ok(roleService.getAllRoles());
+    public ResponseEntity<Page<RoleResponseDto>> getAllRoles(
+            @PageableDefault(page = 0, size = 8, sort = "createDatetime", direction = Sort.Direction.DESC) Pageable pageable){
+        return ResponseEntity.ok(roleService.allRoles(pageable));
     }
 
     @GetMapping("/{roleId}")
     @Operation(summary = "역할 개별 조회")
-    public ResponseEntity<RoleResponseDto> roleDetail(@PathVariable("roleId") String roleId){
-
-        return ResponseEntity.ok(roleService.getRoleById(roleId));
+    public ResponseEntity<RoleResponseDto> getRoleById(@PathVariable("roleId") String roleId){
+        return ResponseEntity.ok(roleService.roleById(roleId));
     }
 
     @PostMapping("")
     @Operation(summary = "역할 생성")
     @MessageKey(value = "success.role.create")
-    public ResponseEntity<String> addRole(@RequestBody RoleRequestDto roleRequestDto){
+    public ResponseEntity<Void> addRole(@RequestBody RoleRequestDto roleRequestDto){
 
         roleService.createRole(roleRequestDto);
 
-        return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{roleId}")
     @Operation(summary = "역할 수정")
     @MessageKey(value = "success.role.update")
-    public ResponseEntity<String> modifyRole(@PathVariable("roleId") String roleId, @RequestBody RoleRequestDto roleRequestDto){
+    public ResponseEntity<Void> modifyRole(@PathVariable("roleId") String roleId, @RequestBody RoleRequestDto roleRequestDto){
 
         roleService.updateRole(roleId ,roleRequestDto);
 
-        return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{roleId}")
     @Operation(summary = "역할 삭제")
     @MessageKey(value = "success.role.delete")
-    public ResponseEntity<String> removeRole(@PathVariable("roleId") String roleId){
+    public ResponseEntity<Void> removeRole(@PathVariable("roleId") String roleId){
 
         roleService.deleteRole(roleId);
 
-        return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.ok().build();
     }
 }

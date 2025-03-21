@@ -19,7 +19,7 @@ public class CommentController {
     @PostMapping("")
     @Operation(description = "댓글 생성")
     @MessageKey(value = "success.comment.create")
-    public ResponseEntity<String> createComment(@RequestBody CommentRequestDto commentRequestDto) {
+    public ResponseEntity<Void> createComment(@RequestBody CommentRequestDto commentRequestDto) {
         commentService.createComment(commentRequestDto);
         return ResponseEntity.ok().build();
     }
@@ -27,7 +27,7 @@ public class CommentController {
     @PutMapping("/{commentId}")
     @Operation(description = "댓글 수정")
     @MessageKey(value = "success.comment.update")
-    public ResponseEntity<String> updateComment(@PathVariable String commentId, @RequestBody CommentUpdateRequestDto commentUpdateRequestDto) {
+    public ResponseEntity<Void> updateComment(@PathVariable String commentId, @RequestBody CommentUpdateRequestDto commentUpdateRequestDto) {
         commentService.updateComment(commentId, commentUpdateRequestDto);
         return ResponseEntity.ok().build();
     }
@@ -35,7 +35,7 @@ public class CommentController {
     @DeleteMapping("/{commentId}")
     @Operation(description = "댓글 삭제")
     @MessageKey(value = "success.comment.delete")
-    public ResponseEntity<String> deleteComment(@PathVariable String commentId) {
+    public ResponseEntity<Void> deleteComment(@PathVariable String commentId) {
         commentService.deleteComment(commentId);
         return ResponseEntity.ok().build();
     }

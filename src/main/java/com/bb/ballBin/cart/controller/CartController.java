@@ -1,5 +1,6 @@
 package com.bb.ballBin.cart.controller;
 
+import com.bb.ballBin.cart.model.CartChangeRequestDto;
 import com.bb.ballBin.cart.model.CartPriceResponseDto;
 import com.bb.ballBin.cart.model.CartRequestDto;
 import com.bb.ballBin.cart.model.CartResponseDto;
@@ -31,11 +32,11 @@ public class CartController {
     public ResponseEntity<Page<CartResponseDto>> getAllCarts(
             @PageableDefault(page = 0, size = 9, sort = "createDatetime", direction = Sort.Direction.DESC) Pageable pageable) {
         String userId = SecurityUtil.getCurrentUserId();
-        return ResponseEntity.ok(cartService.allCart(userId, pageable));
+        return ResponseEntity.ok(cartService.allCarts(userId, pageable));
     }
 
     @GetMapping("/{cartId}")
-    @Operation(summary = "개별 제품 조회")
+    @Operation(summary = "개별 장바구니 조회")
     public ResponseEntity<CartResponseDto> getCartById(@PathVariable String cartId) {
         return ResponseEntity.ok(cartService.cartById(cartId));
     }
@@ -52,29 +53,27 @@ public class CartController {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/update-quantity")
+    @PutMapping("/{cartId}/quantity")
     @Operation(summary = "장바구니 수량 변경")
     @MessageKey(value = "success.cart.quantity")
-    public ResponseEntity<Void> updateCartQuantity(@RequestParam String cartId, @RequestParam int quantity) {
+    public ResponseEntity<Void> updateCartQuantity( @PathVariable("cartId") String cartId, @RequestParam int quantity) {
 
         cartService.updateCartQuantity(cartId, quantity);
 
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/{cartId}/change-product")
+    @PutMapping("/change")
     @Operation(summary = "장바구니 제품 옵션 변경")
     @MessageKey(value = "success.cart.option")
-    public ResponseEntity<Void> changeProduct(
-            @PathVariable("cartId") String cartId,
-            @RequestParam("productId") String productId) {
+    public ResponseEntity<Void> changeProduct(@RequestBody CartChangeRequestDto cartChangeRequestDto) {
 
-        cartService.changeProduct(cartId, productId);
+        cartService.changeProduct(cartChangeRequestDto);
 
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/cart/calculate")
+    @PostMapping("/calculate")
     @Operation(summary = "선택된 장바구니 아이템 할인 금액 계산")
     public ResponseEntity<CartPriceResponseDto> calculateDiscountedTotal(@RequestBody List<String> cartIds) {
         CartPriceResponseDto result = cartService.calculateDiscountedTotal(cartIds);

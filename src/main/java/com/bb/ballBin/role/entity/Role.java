@@ -39,14 +39,4 @@ public class Role extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
     private Set<Permission> permissions = new HashSet<>();
-
-    /**
-     * Entity to DTO
-     */
-    public RoleResponseDto toDto() {
-        return RoleResponseDto.builder()
-                .roleName(this.roleName)
-                .roleDescription(this.roleDescription)
-                .build();
-    }
 }

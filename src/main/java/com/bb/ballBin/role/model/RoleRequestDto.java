@@ -14,11 +14,4 @@ public class RoleRequestDto {
     private String roleName;
     @Schema(description = "역할 설명")
     private String roleDescription;
-
-    public Role toEntity() {
-        return Role.builder()
-                .roleName(this.roleName)
-                .roleDescription(this.roleDescription)
-                .build();
-    }
 }

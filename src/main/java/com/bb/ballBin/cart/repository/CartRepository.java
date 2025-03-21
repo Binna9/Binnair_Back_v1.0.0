@@ -16,9 +16,10 @@ public interface CartRepository extends JpaRepository<Cart, String> {
 
     Optional<Cart> findByCartIdAndUser_UserId(String cartId, String userId);
 
-    @Query("SELECT SUM(p.price * c.quantity), SUM((p.price * c.quantity) * (p.discountRate / 100.0)) " +
+    @Query("SELECT COALESCE(SUM(p.price * c.quantity), 0), COALESCE(SUM(p.discountPrice * c.quantity), 0), COALESCE(SUM(p.discountAmount * c.quantity), 0) " +
             "FROM Cart c JOIN c.product p " +
             "WHERE c.cartId IN :cartIds")
     List<Object[]> calculateTotalAndDiscount(@Param("cartIds") List<String> cartIds);
+
 }
 

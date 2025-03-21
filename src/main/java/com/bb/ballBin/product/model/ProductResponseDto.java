@@ -1,5 +1,6 @@
 package com.bb.ballBin.product.model;
 
+import com.bb.ballBin.file.entity.File;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Getter
 @Setter
@@ -40,4 +42,7 @@ public class ProductResponseDto {
 
     @Schema(description = "제품 할인 적용 가격")
     private BigDecimal discountPrice;
+
+    @Schema(description = "제품 관련 파일")
+    private List<File> files;
 }

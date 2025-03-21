@@ -1,5 +1,6 @@
 package com.bb.ballBin.file.Controller;
 
+import com.bb.ballBin.common.message.annotation.MessageKey;
 import com.bb.ballBin.file.model.FileRequestDto;
 import com.bb.ballBin.file.service.FileService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,7 +20,8 @@ public class FileController {
 
     @PostMapping("/upload")
     @Operation(summary = "파일 업로드")
-    public ResponseEntity<String> uploadFiles(
+    @MessageKey(value = "success.file.upload")
+    public ResponseEntity<Void> uploadFiles(
             @ModelAttribute FileRequestDto fileRequestDto,
             @RequestPart(value = "files", required = false) List<MultipartFile> files) {
 

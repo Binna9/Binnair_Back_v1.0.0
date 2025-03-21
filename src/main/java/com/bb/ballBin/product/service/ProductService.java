@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -50,7 +51,12 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("error.product.notfound"));
 
-        return productMapper.toDto(product);
+        List<File> files = fileService.getFilesByTarget(TargetType.PRODUCT, productId);
+
+        ProductResponseDto productResponseDto = productMapper.toDto(product);
+        productResponseDto.setFiles(files);
+
+        return productResponseDto;
     }
 
     /**
@@ -85,11 +91,15 @@ public class ProductService {
      * 제품 등록
      */
     @Transactional
-    public void addProduct(ProductRequestDto productRequestDto) {
+    public void addProduct(ProductRequestDto productRequestDto, List<MultipartFile> files) {
         try {
             Product product = productMapper.toEntity(productRequestDto);
 
-            productRepository.save(product);
+            product = productRepository.save(product);
+
+            if (files != null && !files.isEmpty()) {
+                fileService.uploadFiles(TargetType.PRODUCT, product.getProductId(), files);
+            }
 
         } catch (Exception e) {
             logger.error("오류 발생: {}", e.getMessage(), e);

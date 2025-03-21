@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -28,6 +29,7 @@ public class RegisterService {
     private final UserMapper userMapper;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
+    @Transactional
     public void registerAccount(RegisterRequestDto registerRequestDto, List<MultipartFile> files) {
         try {
             userService.validatePassword(registerRequestDto.getLoginPassword());

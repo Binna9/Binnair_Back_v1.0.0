@@ -1,76 +1,95 @@
 package com.bb.ballBin.role.service;
 
+import com.bb.ballBin.board.service.BoardService;
 import com.bb.ballBin.common.exception.NotFoundException;
+import com.bb.ballBin.file.entity.TargetType;
 import com.bb.ballBin.role.entity.Role;
+import com.bb.ballBin.role.mapper.RoleMapper;
 import com.bb.ballBin.role.model.RoleRequestDto;
 import com.bb.ballBin.role.model.RoleResponseDto;
 import com.bb.ballBin.role.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class RoleService {
 
+    private static final Logger logger = LoggerFactory.getLogger(RoleService.class);
+
+    private final RoleMapper roleMapper;
     private final RoleRepository roleRepository;
 
     /**
      * 역할 전체 조회
      */
-    public List<RoleResponseDto> getAllRoles() {
-
-        return roleRepository.findAll().stream()
-                .map(Role::toDto)
-                .collect(Collectors.toList());
+    public Page<RoleResponseDto> allRoles(Pageable pageable) {
+        return roleRepository.findAll(pageable).map(roleMapper::toDto);
     }
 
     /**
      * 역할 개별 조회
      */
-    public RoleResponseDto getRoleById(String roleId) {
+    public RoleResponseDto roleById(String roleId) {
 
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new NotFoundException("error.role.notfound"));
 
-        return role.toDto();
+        return roleMapper.toDto(role);
     }
 
     /**
      * 역할 생성
      */
     public void createRole(RoleRequestDto roleRequestDto) {
+        try {
+            if (roleRequestDto.getRoleName() == null || roleRequestDto.getRoleName().isEmpty()) {
+                throw new RuntimeException("error.role.valid_role_name");
+            }
 
-        if (roleRequestDto.getRoleName() == null || roleRequestDto.getRoleName().isEmpty()) {
-            throw new RuntimeException("error.role.valid_role_name");
+            Role role = roleMapper.toEntity(roleRequestDto);
+
+            roleRepository.save(role);
+
+        } catch (Exception e) {
+            logger.error("오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("처리 중 오류 발생", e);
         }
-
-        Role role = roleRequestDto.toEntity();
-        roleRepository.save(role);
     }
 
     /**
      * 역할 수정
      */
     public void updateRole(String roleId, RoleRequestDto roleRequestDto) {
+        try {
+            Role role = roleRepository.findById(roleId)
+                    .orElseThrow(() -> new NotFoundException("error.role.notfound"));
 
-        Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new NotFoundException("error.role.notfound"));
+            roleMapper.updateEntity(roleRequestDto, role);
 
-        role.setRoleName(roleRequestDto.getRoleName());
-        role.setRoleDescription(roleRequestDto.getRoleDescription());
+            roleRepository.save(role);
 
-        roleRepository.save(role);
+        } catch (Exception e) {
+            logger.error("오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("처리 중 오류 발생", e);
+        }
     }
 
     /**
      * 역할 삭제
      */
     public void deleteRole(String roleId) {
-        roleRepository.deleteById(roleId);
+        try {
+            roleRepository.deleteById(roleId);
+        } catch (Exception e) {
+            logger.error("삭제 중 오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("삭제 중 오류 발생", e);
+        }
     }
 }

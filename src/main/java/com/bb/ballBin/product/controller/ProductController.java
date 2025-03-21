@@ -1,11 +1,14 @@
 package com.bb.ballBin.product.controller;
 
+import com.bb.ballBin.board.model.BoardRequestDto;
 import com.bb.ballBin.common.message.annotation.MessageKey;
 import com.bb.ballBin.common.util.SecurityUtil;
 import com.bb.ballBin.product.model.ProductRequestDto;
 import com.bb.ballBin.product.model.ProductResponseDto;
 import com.bb.ballBin.product.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -14,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -54,11 +58,18 @@ public class ProductController {
     }
 
     @PostMapping("")
-    @Operation(summary = "제품 등록")
     @MessageKey(value = "success.product.create")
-    public ResponseEntity<Void> createProduct(@ModelAttribute ProductRequestDto productRequestDto) {
+    @Operation(summary = "제품 등록",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "multipart/form-data",
+                            schema = @Schema(implementation = ProductResponseDto.class)
+                    )
+            ))
+    public ResponseEntity<Void> createProduct(@ModelAttribute ProductRequestDto productRequestDto,
+                                              @RequestPart(value = "files", required = false) List<MultipartFile> files) {
 
-        productService.addProduct(productRequestDto);
+        productService.addProduct(productRequestDto, files);
 
         return ResponseEntity.ok().build();
     }
@@ -66,9 +77,7 @@ public class ProductController {
     @PutMapping("/{productId}")
     @Operation(summary = "제품 수정")
     @MessageKey(value = "success.product.update")
-    public ResponseEntity<Void> updateProduct(
-            @PathVariable String productId,
-            @RequestBody ProductRequestDto productRequestDto) {
+    public ResponseEntity<Void> modifyProduct(@PathVariable String productId, @RequestBody ProductRequestDto productRequestDto) {
 
         productService.updateProduct(productId, productRequestDto);
 
@@ -78,7 +87,7 @@ public class ProductController {
     @DeleteMapping("/{productId}")
     @Operation(summary = "제품 삭제")
     @MessageKey(value = "success.product.delete")
-    public ResponseEntity<Void> deleteProduct(@PathVariable String productId) {
+    public ResponseEntity<Void> removeProduct(@PathVariable String productId) {
 
         productService.deleteProduct(productId);
 

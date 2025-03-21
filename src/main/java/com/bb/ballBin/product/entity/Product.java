@@ -40,9 +40,9 @@ public class Product extends BaseEntity {
     @Column(name = "discount_rate", nullable = false)
     private int discountRate = 0;
 
-    @Column(name = "discount_amount")
+    @Column(name = "discount_amount", insertable = false, updatable = false)
     private BigDecimal discountAmount;
 
-    @Column(name = "discount_price")
+    @Column(name = "discount_price", insertable = false, updatable = false)
     private BigDecimal discountPrice;
 }

@@ -38,7 +38,7 @@ public class Board extends BaseEntity {
     @Column(nullable = false)
     private int unlikes;
 
-    @ManyToOne(fetch = FetchType.LAZY) // ✅ N:1 관계 설정 (지연 로딩 적용)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "writer_id", referencedColumnName = "user_id", nullable = false)
     private User writer;
 

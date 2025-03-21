@@ -3,7 +3,6 @@ package com.bb.ballBin.cart.entity;
 import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.product.entity.Product;
 import com.bb.ballBin.user.entity.User;
-import com.bb.ballBin.cart.model.CartResponseDto;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
@@ -20,7 +19,7 @@ public class Cart extends BaseEntity {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
-    @Column(updatable = false, nullable = false, unique = true, name = "cart_id", length = 36)
+    @Column(updatable = false, nullable = false, unique = true, name = "cart_id")
     private String cartId;
 
     @ManyToOne(fetch = FetchType.LAZY)
