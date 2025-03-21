@@ -8,6 +8,7 @@ import com.bb.ballBin.file.entity.File;
 import com.bb.ballBin.file.entity.TargetType;
 import com.bb.ballBin.file.repository.FileRepository;
 import com.bb.ballBin.file.service.FileService;
+import com.bb.ballBin.register.service.RegisterService;
 import com.bb.ballBin.role.entity.Role;
 import com.bb.ballBin.role.repository.RoleRepository;
 import com.bb.ballBin.security.jwt.model.OAuthUserDto;
@@ -38,6 +39,7 @@ public class UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
+    private final RegisterService registerService;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final RoleRepository roleRepository;
@@ -142,13 +144,13 @@ public class UserService {
      * 사용자 삭제
      */
     public void deleteUser(String userId) {
-        try {
-            userRepository.deleteById(userId);
-            fileService.deleteFilesByTarget(TargetType.PRODUCT, userId);
-        } catch (Exception e) {
-            logger.error("삭제 중 오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("삭제 중 오류 발생", e);
-        }
+
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("error.user.notfound"));
+
+        userRepository.deleteById(userId);
+
+        fileService.deleteFilesByTarget(TargetType.PRODUCT, userId);
     }
 
     /**
@@ -176,7 +178,7 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
-        validatePassword(passwordChangeDto.getNewPassword());
+        registerService.validatePassword(passwordChangeDto.getNewPassword());
 
         if (!passwordChangeDto.getNewPassword().equals(passwordChangeDto.getConfirmPassword())) {
             throw new InvalidPasswordException("error.password.mismatch");
@@ -186,24 +188,6 @@ public class UserService {
 
         user.setLoginPassword(bcryptHashedPassword);
         userRepository.save(user);
-    }
-
-    /**
-     * 비밀번호 검증 및 검증 실패 시 상세 메시지 반환
-     */
-    public void validatePassword(String password) {
-        if (password.length() < 8) {
-            throw new InvalidPasswordException("error.password1");
-        }
-        if (!password.matches(".*[0-9].*")) {
-            throw new InvalidPasswordException("error.password2");
-        }
-        if (!password.matches(".*[a-zA-Z].*")) {
-            throw new InvalidPasswordException("error.password3");
-        }
-        if (!password.matches(".*[!@#$%^&*()_+=-].*")) {
-            throw new InvalidPasswordException("error.password4");
-        }
     }
 
     /**

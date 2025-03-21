@@ -1,5 +1,6 @@
 package com.bb.ballBin.common.aop.aspect;
 
+import com.bb.ballBin.common.exception.model.ErrorResponse;
 import com.bb.ballBin.common.message.annotation.MessageKey;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -8,6 +9,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -28,12 +30,21 @@ public class MessageAspect {
 
         String key = messageKey.value();
         Object proceed = joinPoint.proceed();
+
         String message = messageSource.getMessage(key, null, Locale.KOREAN);
 
         if (proceed instanceof ResponseEntity<?> response) {
+            HttpStatus status = HttpStatus.resolve(response.getStatusCode().value());
+
+            if (status == null) {
+                status = HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+
+            ErrorResponse errorResponse = ErrorResponse.of(status, message);
+
             return ResponseEntity
-                    .status(response.getStatusCode())
-                    .body(message);
+                    .status(status)
+                    .body(errorResponse);
         }
 
         return proceed;

@@ -92,18 +92,13 @@ public class ProductService {
      */
     @Transactional
     public void addProduct(ProductRequestDto productRequestDto, List<MultipartFile> files) {
-        try {
-            Product product = productMapper.toEntity(productRequestDto);
 
-            product = productRepository.save(product);
+        Product product = productMapper.toEntity(productRequestDto);
 
-            if (files != null && !files.isEmpty()) {
-                fileService.uploadFiles(TargetType.PRODUCT, product.getProductId(), files);
-            }
+        product = productRepository.save(product);
 
-        } catch (Exception e) {
-            logger.error("오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("처리 중 오류 발생", e);
+        if (files != null && !files.isEmpty()) {
+            fileService.uploadFiles(TargetType.PRODUCT, product.getProductId(), files);
         }
     }
 
@@ -111,30 +106,25 @@ public class ProductService {
      * 제품 수정
      */
     public void updateProduct(String productId, ProductRequestDto productRequestDto) {
-        try {
-            Product product = productRepository.findById(productId)
-                    .orElseThrow(() -> new RuntimeException("error.product.notfound"));
 
-            productMapper.updateEntity(productRequestDto, product);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("error.product.notfound"));
 
-            productRepository.save(product);
+        productMapper.updateEntity(productRequestDto, product);
 
-        } catch (Exception e) {
-            logger.error("오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("처리 중 오류 발생", e);
-        }
+        productRepository.save(product);
     }
 
     /**
      * 제품 삭제
      */
     public void deleteProduct(String productId) {
-        try {
-            productRepository.deleteById(productId);
-            fileService.deleteFilesByTarget(TargetType.PRODUCT, productId);
-        } catch (Exception e) {
-            logger.error("삭제 중 오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("삭제 중 오류 발생", e);
-        }
+
+        productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("error.product.notfound"));
+
+        productRepository.deleteById(productId);
+
+        fileService.deleteFilesByTarget(TargetType.PRODUCT, productId);
     }
 }

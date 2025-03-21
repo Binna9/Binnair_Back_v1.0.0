@@ -17,6 +17,8 @@ public class RegisterRequestDto {
     private String loginId;
     @Schema(description = "사용자 비밀번호")
     private String loginPassword;
+    @Schema(description = "사용자 비밀번호 확인")
+    private String confirmPassword;
     @Schema(description = "사용자 명")
     private String userName;
     @Schema(description = "사용자 이메일")
@@ -25,7 +27,4 @@ public class RegisterRequestDto {
     private String nickName;
     @Schema(description = "핸드폰 번호")
     private String phoneNumber;
-
-    @Schema(description = "사용자 이미지 파일")
-    private MultipartFile userFile;
 }

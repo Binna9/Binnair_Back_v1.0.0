@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,11 +30,11 @@ public class RegisterController {
                             schema = @Schema(implementation = RegisterRequestDto.class)
                     )
             ))
-    public ResponseEntity<String> registerUser(@ModelAttribute RegisterRequestDto registerRequestDto,
+    public ResponseEntity<Void> registerUser(@ModelAttribute RegisterRequestDto registerRequestDto,
                                                @RequestPart(value = "files", required = false) List<MultipartFile> files) {
 
         registerService.registerAccount(registerRequestDto, files);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

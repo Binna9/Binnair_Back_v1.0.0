@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -54,7 +55,7 @@ public class UserController {
 
         userService.updateUser(userId, userUpdateRequestDto);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @DeleteMapping("/{userId}")
@@ -64,7 +65,7 @@ public class UserController {
 
         userService.deleteUser(userId);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @PostMapping("/verify-password")
@@ -91,6 +92,6 @@ public class UserController {
         String userId = SecurityUtil.getCurrentUserId();
         userService.changePassword(userId, passwordChangeDto);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

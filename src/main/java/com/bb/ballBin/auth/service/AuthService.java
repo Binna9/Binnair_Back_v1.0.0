@@ -45,7 +45,6 @@ public class AuthService {
     private final MessageService messageService;
     private final UserService userService;
     private final UserRepository userRepository;
-    private final DefaultAuthenticationEventPublisher authenticationEventPublisher;
 
     /**
      * 로그인 처리

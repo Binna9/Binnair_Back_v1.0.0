@@ -48,16 +48,17 @@ dependencies {
 	// ✅ Thymeleaf + Spring Security
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 
-	// ✅ postGre
-	implementation 'org.postgresql:postgresql:42.5.4'
+	// ✅ PostGre
+	implementation 'org.postgresql:postgresql:42.6.0'
 
-	// ✅ Swagger
+	// ✅ Swagger (SpringDoc OpenAPI for Spring Boot 3.x)
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
 
-	// ✅ Lombok(First), MapStruct
-	implementation 'org.projectlombok:lombok:1.18.28'
+	// ✅ Lombok
+	compileOnly 'org.projectlombok:lombok:1.18.28'
 	annotationProcessor 'org.projectlombok:lombok:1.18.28'
 
+	// ✅ MapStruct
 	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
@@ -67,7 +68,19 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = "UTF-8"
+}
+
+tasks.withType(Test).configureEach {
+	systemProperty 'file.encoding', 'UTF-8'
+}
+
+bootRun {
+	jvmArgs = ["-Dfile.encoding=UTF-8"]
+}
+

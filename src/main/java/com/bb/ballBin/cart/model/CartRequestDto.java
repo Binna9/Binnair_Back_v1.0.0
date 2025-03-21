@@ -9,7 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 public class CartRequestDto {
 
-    @Schema(description = "장바구니에 추가할 제품 ID")
+    @Schema(description = "제품 ID")
     private String productId;
 
     @Schema(description = "수량")

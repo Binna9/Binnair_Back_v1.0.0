@@ -6,7 +6,6 @@ import org.springframework.http.HttpStatus;
 public record ErrorResponse(
         @Schema(description = "HTTP 상태 코드")
         int status,
-
         @Schema(description = "에러 메시지")
         String message
 ) {

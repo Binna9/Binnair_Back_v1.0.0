@@ -1,5 +1,6 @@
 package com.bb.ballBin.common.util;
 
+import com.bb.ballBin.common.exception.NotFoundException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -42,7 +43,7 @@ public class FileUtil {
         } else if ("product".equals(type)){
             baseDir = productUploadDir;
         } else {
-            throw new IllegalArgumentException("타입이 존재하지 않습니다.");
+            throw new IllegalArgumentException("error.file.type");
         }
         return new File(Paths.get(baseDir, relativePath).toString());
     }
@@ -58,13 +59,12 @@ public class FileUtil {
     public String saveFile(String type, String id, MultipartFile file) {
 
         if (id == null || id.isEmpty()) {
-            throw new IllegalArgumentException("ID가 null 또는 비어 있습니다.");
+            throw new IllegalArgumentException("error.file.notfound");
         }
 
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("파일이 비어 있습니다.");
+            throw new IllegalArgumentException("error.file.notfound");
         }
-
         try {
             String baseDir;
             if ("user".equals(type)) {
@@ -74,7 +74,7 @@ public class FileUtil {
             } else if ("board".equals(type)) {
                 baseDir = boardUploadDir;
             } else {
-                throw new IllegalArgumentException("잘못된 파일 유형: " + type);
+                throw new IllegalArgumentException("error.file.type");
             }
 
             String targetDir = Paths.get(baseDir, id).toString();
@@ -86,7 +86,7 @@ public class FileUtil {
 
             String originalFilename = file.getOriginalFilename();
             if (originalFilename == null || originalFilename.isEmpty()) {
-                throw new IllegalArgumentException("파일 이름이 없습니다.");
+                throw new IllegalArgumentException("error.file.name");
             }
 
             String extension = "";
@@ -100,7 +100,7 @@ public class FileUtil {
 
             return Paths.get(id, fileName).toString();
         } catch (IOException e) {
-            throw new RuntimeException("파일 저장 중 오류 발생", e);
+            throw new RuntimeException("error.file", e);
         }
     }
 
@@ -134,7 +134,7 @@ public class FileUtil {
         } else if ("board".equals(type)) {
             baseDir = boardUploadDir;
         } else {
-            throw new IllegalArgumentException("잘못된 파일 유형: " + type);
+            throw new IllegalArgumentException("error.file.type");
         }
 
         File directory = new File(Paths.get(baseDir, id).toString());
@@ -164,7 +164,7 @@ public class FileUtil {
     public ResponseEntity<Resource> getImageResponse(String type, String relativePath) {
 
         if (relativePath == null) {
-            return ResponseEntity.notFound().build();
+            throw new NotFoundException("error.path.notfound");
         }
 
         File imageFile = getFilePath(type, relativePath);
@@ -185,6 +185,7 @@ public class FileUtil {
      * 파일 확장자를 기반으로 MIME 타입 반환(이미지 기준)
      */
     private MediaType getMediaType(File file) {
+
         String filename = file.getName().toLowerCase();
 
         if (filename.endsWith(".png")) return MediaType.IMAGE_PNG;

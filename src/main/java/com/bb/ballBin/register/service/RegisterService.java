@@ -1,15 +1,13 @@
 package com.bb.ballBin.register.service;
 
+import com.bb.ballBin.common.exception.InvalidPasswordException;
 import com.bb.ballBin.file.entity.TargetType;
 import com.bb.ballBin.file.service.FileService;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.register.model.RegisterRequestDto;
 import com.bb.ballBin.user.mapper.UserMapper;
 import com.bb.ballBin.user.repository.UserRepository;
-import com.bb.ballBin.user.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,9 +19,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RegisterService {
 
-    private static final Logger logger = LoggerFactory.getLogger(RegisterService.class);
-
-    private final UserService userService;
     private final FileService fileService;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
@@ -31,24 +26,47 @@ public class RegisterService {
 
     @Transactional
     public void registerAccount(RegisterRequestDto registerRequestDto, List<MultipartFile> files) {
-        try {
-            userService.validatePassword(registerRequestDto.getLoginPassword());
 
-            String encodedPassword = bCryptPasswordEncoder.encode(registerRequestDto.getLoginPassword());
-            registerRequestDto.setLoginPassword(encodedPassword);
+        validatePasswordMatch(registerRequestDto.getLoginPassword(), registerRequestDto.getConfirmPassword());
+        validatePassword(registerRequestDto.getLoginPassword());
 
-            User user = userMapper.toEntity(registerRequestDto);
-            userRepository.save(user);
+        String encodedPassword = bCryptPasswordEncoder.encode(registerRequestDto.getLoginPassword());
+        registerRequestDto.setLoginPassword(encodedPassword);
 
-            String userId = user.getUserId();
+        User user = userMapper.toEntity(registerRequestDto);
+        userRepository.save(user);
 
-            if (files != null && !files.isEmpty()) {
-                fileService.uploadFiles(TargetType.USER, userId, files);
-            }
+        String userId = user.getUserId();
 
-        } catch (Exception e) {
-            logger.error("오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("처리 중 오류 발생", e);
+        if (files != null && !files.isEmpty()) {
+            fileService.uploadFiles(TargetType.USER, userId, files);
+        }
+    }
+
+    /**
+     * 비밀번호 검증 및 검증 실패 시 상세 메시지 반환
+     */
+    public void validatePassword(String password) {
+        if (password.length() < 8) {
+            throw new InvalidPasswordException("error.password1");
+        }
+        if (!password.matches(".*[0-9].*")) {
+            throw new InvalidPasswordException("error.password2");
+        }
+        if (!password.matches(".*[a-zA-Z].*")) {
+            throw new InvalidPasswordException("error.password3");
+        }
+        if (!password.matches(".*[!@#$%^&*()_+=-].*")) {
+            throw new InvalidPasswordException("error.password4");
+        }
+    }
+
+    /**
+     * Password Confirm
+     */
+    public void validatePasswordMatch(String password, String confirmPassword) {
+        if (!password.equals(confirmPassword)) {
+            throw new InvalidPasswordException("error.password.mismatch");
         }
     }
 }

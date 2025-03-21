@@ -14,7 +14,10 @@ public class SecurityPolicy {
         return List.of(
                 "/auth/**",
                 "/registers",
-                "/products/**"
+                "/products/**",
+                "/swagger-ui/**",
+                "/api-docs/**",
+                "/v3/api-docs/**"
         );
     }
 
