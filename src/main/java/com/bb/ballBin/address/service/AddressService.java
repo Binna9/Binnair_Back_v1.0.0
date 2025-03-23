@@ -1,6 +1,7 @@
 package com.bb.ballBin.address.service;
 
 import com.bb.ballBin.address.entity.Address;
+import com.bb.ballBin.address.mapper.AddressMapper;
 import com.bb.ballBin.address.model.AddressRequestDto;
 import com.bb.ballBin.address.model.AddressResponseDto;
 import com.bb.ballBin.address.repository.AddressRepository;
@@ -21,45 +22,43 @@ public class AddressService {
 
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
+    private final AddressMapper addressMapper;
 
     /**
      * 특정 사용자의 배송지 목록 조회
      */
     public List<AddressResponseDto> getUserAddresses(String userId) {
         return addressRepository.findByUserUserId(userId).stream()
-                .map(Address::toDto)
+                .map(addressMapper::toDto)
                 .collect(Collectors.toList());
     }
+
 
     /**
      * 배송지 추가
      */
-    @Transactional
-    public AddressResponseDto addAddress(String userId, AddressRequestDto addressRequestDto) {
+    public void addAddress(String userId, AddressRequestDto addressRequestDto) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
+        if (addressRepository.existsByUserUserIdAndAddress(userId, addressRequestDto.getAddress())) {
+            throw new RuntimeException("error.address.duplicate");
+        }
+
         boolean hasExistingAddresses = addressRepository.existsByUserId(userId);
 
-        Address address = Address.builder()
-                .user(user)
-                .receiver(addressRequestDto.getReceiver())
-                .phoneNumber(addressRequestDto.getPhoneNumber())
-                .postalCode(addressRequestDto.getPostalCode())
-                .address(addressRequestDto.getAddress())
-                .isDefault(!hasExistingAddresses)
-                .build();
+        Address address = addressMapper.toEntity(addressRequestDto);
+        address.setUser(user);
+        address.setDefault(!hasExistingAddresses);
 
         addressRepository.save(address);
-        return address.toDto();
     }
 
-    @Transactional
-    public Address updateDefaultAddress(String userId, String addressId) {
+    public void defaultAddress(String userId, String addressId) {
 
         userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
         Address newDefaultAddress = addressRepository.findById(addressId)
                 .orElseThrow(() -> new NotFoundException("해당 배송지가 존재하지 않습니다."));
@@ -70,15 +69,26 @@ public class AddressService {
                     addressRepository.save(existingDefault);
                 });
 
-        // 새로운 기본 배송지 설정
         newDefaultAddress.setDefault(true);
-        return addressRepository.save(newDefaultAddress);
+
+        addressRepository.save(newDefaultAddress);
     }
 
     /**
      * 배송지 삭제
      */
     public void removeAddress(String addressId) {
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(() -> new NotFoundException("해당 주소가 존재하지 않습니다."));
+
         addressRepository.deleteById(addressId);
+
+        if (address.isDefault()) {
+            addressRepository.findFirstByUserUserIdOrderByCreateDatetimeDesc(address.getUser().getUserId())
+                    .ifPresent(nextDefaultAddress -> {
+                        nextDefaultAddress.setDefault(true);
+                        addressRepository.save(nextDefaultAddress);
+                    });
+        }
     }
 }

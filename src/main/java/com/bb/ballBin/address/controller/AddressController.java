@@ -20,9 +20,6 @@ public class AddressController {
 
     private final AddressService addressService;
 
-    /**
-     * 현재 로그인한 사용자의 배송지 조회
-     */
     @GetMapping("")
     @Operation(summary = "현재 로그인한 사용자의 배송지 조회")
     public ResponseEntity<List<AddressResponseDto>> getUserAddresses() {
@@ -30,37 +27,32 @@ public class AddressController {
         return ResponseEntity.ok(addressService.getUserAddresses(userId));
     }
 
-    /**
-     * 배송지 추가 (현재 로그인한 사용자)
-     */
     @PostMapping("")
     @Operation(summary = "배송지 추가")
     @MessageKey(value = "success.address.create")
-    public ResponseEntity<AddressResponseDto> addAddress(@RequestBody AddressRequestDto addressRequestDto) {
+    public ResponseEntity<Void> createAddress(@RequestBody AddressRequestDto addressRequestDto) {
 
         String userId = SecurityUtil.getCurrentUserId();
+        addressService.addAddress(userId, addressRequestDto);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(addressService.addAddress(userId, addressRequestDto));
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @PutMapping("/{addressId}/default")
     @Operation(summary = "기본 배송지 변경")
-    public ResponseEntity<String> updateDefaultAddress(@PathVariable String addressId) {
+    public ResponseEntity<Void> updateDefaultAddress(@PathVariable String addressId) {
 
         String userId = SecurityUtil.getCurrentUserId();
-        addressService.updateDefaultAddress(userId, addressId);
+        addressService.defaultAddress(userId, addressId);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
-    /**
-     * 배송지 삭제
-     */
     @DeleteMapping("/{addressId}")
     @Operation(summary = "배송지 삭제")
     @MessageKey(value = "success.address.delete")
     public ResponseEntity<Void> removeAddress(@PathVariable String addressId) {
         addressService.removeAddress(addressId);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

@@ -17,4 +17,8 @@ public interface AddressRepository extends JpaRepository<Address, String> {
 
     @Query("SELECT COUNT(a) > 0 FROM Address a WHERE a.user.userId = :userId")
     boolean existsByUserId(@Param("userId") String userId);
+
+    boolean existsByUserUserIdAndAddress(String userId, String address);
+
+    Optional<Address> findFirstByUserUserIdOrderByCreateDatetimeDesc(String userId);
 }

@@ -3,7 +3,6 @@ package com.bb.ballBin.address.entity;
 import com.bb.ballBin.common.convert.BooleanToYNConverter;
 import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.user.entity.User;
-import com.bb.ballBin.address.model.AddressResponseDto;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
@@ -42,18 +41,4 @@ public class Address extends BaseEntity {
     @Convert(converter = BooleanToYNConverter.class)
     @Column(nullable = false, name = "is_default")
     private boolean isDefault;
-
-    /**
-     * Entity to DTO 변환
-     */
-    public AddressResponseDto toDto() {
-        return AddressResponseDto.builder()
-                .addressId(this.addressId)
-                .receiver(this.receiver)
-                .phoneNumber(this.phoneNumber)
-                .postalCode(this.postalCode)
-                .address(this.address)
-                .isDefault(this.isDefault)
-                .build();
-    }
 }
