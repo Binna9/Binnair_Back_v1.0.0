@@ -1,6 +1,5 @@
 package com.bb.ballBin.product.controller;
 
-import com.bb.ballBin.board.model.BoardRequestDto;
 import com.bb.ballBin.common.message.annotation.MessageKey;
 import com.bb.ballBin.common.util.SecurityUtil;
 import com.bb.ballBin.product.model.ProductRequestDto;

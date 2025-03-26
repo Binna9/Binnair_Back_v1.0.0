@@ -1,6 +1,7 @@
 package com.bb.ballBin.common.util;
 
 import com.bb.ballBin.security.jwt.BallBinUserDetails;
+import com.bb.ballBin.user.model.UserResponseDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -41,11 +42,13 @@ public class SecurityUtil {
 
         BallBinUserDetails userDetails = (BallBinUserDetails) authentication.getPrincipal();
 
-        Map<String, Object> response = Map.of(
-                "userId", userDetails.getUserId(),
-                "username", userDetails.getUsername(),
-                "email", userDetails.getEmail(),
-                "loginId", userDetails.getLoginId()
+        UserResponseDto response = new UserResponseDto(
+                userDetails.getUserId(),
+                userDetails.getLoginId(),
+                userDetails.getUsername(),
+                userDetails.getEmail(),
+                userDetails.getNickName(),
+                userDetails.getPhoneNumber()
         );
 
         return ResponseEntity.ok(response);

@@ -27,8 +27,10 @@ public class RegisterService {
     @Transactional
     public void registerAccount(RegisterRequestDto registerRequestDto, List<MultipartFile> files) {
 
+        // 유효성 검사
         validatePasswordMatch(registerRequestDto.getLoginPassword(), registerRequestDto.getConfirmPassword());
         validatePassword(registerRequestDto.getLoginPassword());
+        validateUniqueFields(registerRequestDto);
 
         String encodedPassword = bCryptPasswordEncoder.encode(registerRequestDto.getLoginPassword());
         registerRequestDto.setLoginPassword(encodedPassword);
@@ -62,11 +64,26 @@ public class RegisterService {
     }
 
     /**
-     * Password Confirm
+     * 비밀번호 일치 여부 확인
      */
     public void validatePasswordMatch(String password, String confirmPassword) {
         if (!password.equals(confirmPassword)) {
             throw new InvalidPasswordException("error.password.mismatch");
+        }
+    }
+
+    /**
+     * 필드 중복 검사
+     */
+    public void validateUniqueFields(RegisterRequestDto registerRequestDto) {
+        if (userRepository.existsByLoginId(registerRequestDto.getLoginId())) {
+            throw new InvalidPasswordException("error.loginId.duplicate");
+        }
+        if (userRepository.existsByEmail(registerRequestDto.getEmail())) {
+            throw new InvalidPasswordException("error.email.duplicate");
+        }
+        if (userRepository.existsByNickName(registerRequestDto.getNickName())) {
+            throw new InvalidPasswordException("error.nickname.duplicate");
         }
     }
 }

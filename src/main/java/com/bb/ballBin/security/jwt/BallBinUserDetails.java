@@ -30,17 +30,13 @@ public class BallBinUserDetails implements UserDetails {
     public String getUsername() {
         return user.getUserName();
     }
-
     public String getUserId() {
         return user.getUserId();
     }
-
-    public String getLoginId(){
-        return user.getLoginId();
-    }
-
+    public String getLoginId(){ return user.getLoginId(); }
     public String getEmail() {return user.getEmail();}
-
+    public String getNickName() {return user.getNickName(); }
+    public String getPhoneNumber() {return user.getPhoneNumber(); }
     @Override
     public String getPassword() {
         return user.getLoginPassword();
@@ -52,14 +48,6 @@ public class BallBinUserDetails implements UserDetails {
     @Override
     public boolean isAccountNonExpired() {
         return true;
-    }
-
-    /**
-     * 계정 잠금 여부 (5회)
-     */
-    @Override
-    public boolean isAccountNonLocked() {
-        return user.getFailedLoginAttempts() < 5;
     }
 
     /**

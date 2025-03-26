@@ -18,7 +18,7 @@ public class FileController {
 
     private final FileService fileService;
 
-    @PostMapping("/upload")
+    @PostMapping("")
     @Operation(summary = "파일 업로드")
     @MessageKey(value = "success.file.upload")
     public ResponseEntity<Void> uploadFiles(
@@ -26,6 +26,16 @@ public class FileController {
             @RequestPart(value = "files", required = false) List<MultipartFile> files) {
 
         fileService.uploadFiles(fileRequestDto.getTargetType(), fileRequestDto.getTargetId(), files);
+
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{fileId}")
+    @Operation(summary = "파일 삭제")
+    @MessageKey(value = "success.file.delete")
+    public ResponseEntity<Void> removeFile(@PathVariable("fileId") String fileId) {
+
+        fileService.deleteFile(fileId);
 
         return ResponseEntity.ok().build();
     }

@@ -101,22 +101,13 @@ public class AuthService {
                     throw new InvalidPasswordException("error.security.login.lock"); // 🚨 5회 이상 틀리면 예외 발생
                 }
             }
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("ERROR", messageService.getMessage("error.security.password")));
+            throw new RuntimeException("error.security.password");
         } catch (DisabledException e) {
-            logger.warn("로그인 실패 - 계정 비활성화됨 (ID: {})", loginId);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("ERROR", messageService.getMessage("error.security.user.lock")));
-
+            throw new RuntimeException("error.security.user.lock");
         } catch (LockedException e) {
-            logger.warn("로그인 실패 - 계정 잠김 (ID: {})", loginId);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("ERROR", messageService.getMessage("error.security.login.lock")));
-
+            throw new RuntimeException("error.security.login.lock");
         } catch (Exception e) {
-            logger.error("로그인 실패 - 예기치 않은 오류 발생 (ID: {})", loginId, e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("ERROR", messageService.getMessage("error.security.password")));
+            throw new RuntimeException("error.security.password");
         }
     }
 
@@ -176,7 +167,6 @@ public class AuthService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("ERROR", "No Refresh Token provided"));
         }
-
         try {
             // ✅ 1. Refresh Token 검증
             Claims claims = jwtUtil.validateToken(refreshToken, true, false);

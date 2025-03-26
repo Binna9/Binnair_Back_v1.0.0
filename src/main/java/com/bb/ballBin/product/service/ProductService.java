@@ -11,8 +11,6 @@ import com.bb.ballBin.product.model.ProductRequestDto;
 import com.bb.ballBin.product.model.ProductResponseDto;
 import com.bb.ballBin.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,8 +24,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ProductService {
-
-    private static final Logger logger = LoggerFactory.getLogger(ProductService.class);
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;

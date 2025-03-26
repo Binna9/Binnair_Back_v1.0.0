@@ -25,6 +25,13 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final SecurityUtil securityUtil;
+
+    @GetMapping("/fetch")
+    @Operation(summary = "현재 로그인한 사용자 조회")
+    public ResponseEntity<?> fetchUser() {
+        return securityUtil.getCurrentUser();
+    }
 
     @GetMapping("")
     @Operation(summary = "사용자 전체 조회")

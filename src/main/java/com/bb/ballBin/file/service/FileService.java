@@ -42,6 +42,11 @@ public class FileService {
         }
     }
 
+    public void createFiles(TargetType targetType, List<MultipartFile> files){
+        List<File> savedFiles = new ArrayList<>();
+
+    }
+
     /**
      * 파일 메타데이터 저장
      */
@@ -75,6 +80,17 @@ public class FileService {
         }
 
         fileUtil.deleteDirectory(targetType.name().toLowerCase(), targetId);
+    }
+
+    /**
+     * 파일 단일 삭제
+     */
+    public void deleteFile(String fileId){
+        try {
+            fileRepository.deleteById(fileId);
+        } catch (Exception e) {
+            throw new RuntimeException("삭제 중 오류 발생", e);
+        }
     }
 
     /**
