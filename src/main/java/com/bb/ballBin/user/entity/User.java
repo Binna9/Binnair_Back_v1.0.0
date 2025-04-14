@@ -1,7 +1,6 @@
 package com.bb.ballBin.user.entity;
 
 import com.bb.ballBin.bookmark.entity.Bookmark;
-import com.bb.ballBin.cart.entity.Cart;
 import com.bb.ballBin.common.convert.BooleanToYNConverter;
 import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.role.entity.Role;
@@ -58,9 +57,9 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<Bookmark> bookmarks = new HashSet<>();
 
-    @Builder.Default
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private Set<Cart> carts = new HashSet<>();
+//    @Builder.Default
+//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+//    private Set<Cart> carts = new HashSet<>();
 
     @Builder.Default
     @Convert(converter = BooleanToYNConverter.class)

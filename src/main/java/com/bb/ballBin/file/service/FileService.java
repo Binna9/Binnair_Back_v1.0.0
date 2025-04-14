@@ -7,6 +7,7 @@ import com.bb.ballBin.file.entity.FileType;
 import com.bb.ballBin.file.repository.FileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class FileService {
 
 
@@ -32,13 +34,14 @@ public class FileService {
      */
     public void uploadFiles(TargetType targetType, String targetId, List<MultipartFile> files) {
 
-        List<File> savedFiles = new ArrayList<>();
+        if (targetType == TargetType.USER) {
+            deleteFilesByTarget(targetType, targetId);
+        }
 
         for (MultipartFile file : files) {
-            String savedPath = fileUtil.saveFile(targetType.name().toLowerCase(), targetId, file); // 소문자로 변환
-            File fileEntity = saveFileMetadata(targetType, targetId, savedPath, file);
+            String savedPath = fileUtil.saveFile(targetType.name().toLowerCase(), targetId, file);
+            saveFileMetadata(targetType, targetId, savedPath, file);
 
-            savedFiles.add(fileEntity);
         }
     }
 

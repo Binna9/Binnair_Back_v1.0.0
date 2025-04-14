@@ -2,6 +2,7 @@ package com.bb.ballBin.menu.entity;
 
 import com.bb.ballBin.common.convert.BooleanToYNConverter;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
@@ -11,6 +12,7 @@ import java.util.Set;
 @Entity
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "menus")
 public class Menu {
 

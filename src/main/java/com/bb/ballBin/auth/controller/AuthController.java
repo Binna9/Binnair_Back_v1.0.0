@@ -50,16 +50,6 @@ public class AuthController {
         return ResponseEntity.ok(new JwtResponse(accessToken));
     }
 
-//    @PostMapping("/kakao/login")
-//    public ResponseEntity<JwtResponse> kakaoLogin(@RequestBody Map<String, String> request) {
-//
-//        String code = request.get("code");
-//         ✅ Google OAuth 로그인 및 회원가입 처리 후 JWT 발급
-//        String accessToken = oAuth2UserService.handleGoogleLogin(code);
-//
-//        return ResponseEntity.ok(new JwtResponse(accessToken));
-//    }
-
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
         return authService.refreshAccessToken(refreshToken);

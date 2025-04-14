@@ -5,7 +5,6 @@ import com.bb.ballBin.bookmark.mapper.BookmarkMapper;
 import com.bb.ballBin.bookmark.model.BookmarkRequestDto;
 import com.bb.ballBin.bookmark.model.BookmarkResponseDto;
 import com.bb.ballBin.bookmark.repository.BookmarkRepository;
-import com.bb.ballBin.cart.service.CartService;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class BookmarkService {
 
-    private static final Logger logger = LoggerFactory.getLogger(CartService.class);
+    private static final Logger logger = LoggerFactory.getLogger(BookmarkService.class);
 
     private final BookmarkMapper bookmarkMapper;
     private final BookmarkRepository bookmarkRepository;
