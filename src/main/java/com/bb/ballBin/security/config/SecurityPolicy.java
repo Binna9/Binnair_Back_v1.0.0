@@ -17,7 +17,8 @@ public class SecurityPolicy {
                 "/products/**",
                 "/swagger-ui/**",
                 "/api-docs/**",
-                "/v3/api-docs/**"
+                "/v3/api-docs/**",
+                "/websocket"
         );
     }
 
