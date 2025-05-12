@@ -57,7 +57,7 @@ public class UserController {
 
     @PutMapping("/{userId}")
     @Operation(summary = "사용자 수정")
-    @MessageKey(value = "success.update")
+    @MessageKey(value = "success.user.update")
     public ResponseEntity<Void> modifyUser(@PathVariable String userId, @RequestBody UserUpdateRequestDto userUpdateRequestDto) {
 
         userService.updateUser(userId, userUpdateRequestDto);
@@ -67,7 +67,7 @@ public class UserController {
 
     @DeleteMapping("/{userId}")
     @Operation(summary = "사용자 삭제")
-    @MessageKey(value = "success.delete")
+    @MessageKey(value = "success.user.delete")
     public ResponseEntity<Void> removeUser(@PathVariable String userId) {
 
         userService.deleteUser(userId);
