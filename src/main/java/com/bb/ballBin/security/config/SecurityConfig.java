@@ -81,8 +81,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "http://51.20.125.47:5173",
-                "https://51.20.125.47:5173",  // ✅ HTTPS 로 변경
+                "http://13.60.7.35:5173",
+                "https://13.60.7.35:5173",  // ✅ HTTPS 로 변경
                 "https://binnair.com",
                 "https://www.binnair.com"
         ));
