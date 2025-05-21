@@ -1,6 +1,8 @@
 package com.bb.ballBin.common.config;
 
 import com.bb.ballBin.security.jwt.util.JwtUtil;
+import com.bb.ballBin.user.repository.UserRepository;
+import com.bb.ballBin.websocket.repository.ChatRepository;
 import com.bb.ballBin.websocket.util.JwtHandshakeInterceptor;
 import com.bb.ballBin.websocket.util.MyWebSocketHandler;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,8 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 public class WebSocketConfig implements WebSocketConfigurer {
 
     private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
+    private final ChatRepository chatRepository;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
@@ -27,6 +31,6 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Bean
     public WebSocketHandler myHandler() {
-        return new MyWebSocketHandler();
+        return new MyWebSocketHandler(userRepository, chatRepository);
     }
 }

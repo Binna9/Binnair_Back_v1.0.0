@@ -36,7 +36,8 @@ public class SecurityPolicy {
                 "/addresses/**",
                 "/comments/**",
                 "/likes/**",
-                "/files/**"
+                "/files/**",
+                "/chats/**"
         );
     }
 
