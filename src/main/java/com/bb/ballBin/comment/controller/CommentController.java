@@ -3,7 +3,7 @@ package com.bb.ballBin.comment.controller;
 import com.bb.ballBin.comment.model.CommentRequestDto;
 import com.bb.ballBin.comment.model.CommentUpdateRequestDto;
 import com.bb.ballBin.comment.service.CommentService;
-import com.bb.ballBin.common.message.annotation.MessageKey;
+import com.bb.ballBin.common.annotation.MessageKey;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

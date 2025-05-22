@@ -20,8 +20,6 @@ import com.bb.ballBin.user.model.UserResponseDto;
 import com.bb.ballBin.user.model.UserUpdateRequestDto;
 import com.bb.ballBin.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
@@ -36,8 +34,6 @@ import java.util.*;
 @RequiredArgsConstructor
 @Transactional
 public class UserService {
-
-    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private final RegisterService registerService;
     private final UserRepository userRepository;
@@ -195,5 +191,20 @@ public class UserService {
      */
     public Set<String> getUserRoles(String userId) {
         return Set.of("ROLE_USER");
+    }
+
+    /**
+     * 사용자 역할 부여
+     */
+    public void roleToUser(String userId, String roleName) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("error.user.notfound"));
+
+        Role role = roleRepository.findByRoleName(roleName)
+                .orElseThrow(() -> new NotFoundException("error.role.notfound"));
+
+        user.getRoles().add(role);
+        userRepository.save(user);
     }
 }

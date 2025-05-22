@@ -1,16 +1,24 @@
 package com.bb.ballBin.permission.entity;
 
+import com.bb.ballBin.common.entity.BaseEntity;
+import com.bb.ballBin.role.entity.Role;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.UuidGenerator;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "permissions")
-public class Permission {
+public class Permission extends BaseEntity {
 
     @Id
     @GeneratedValue(generator = "uuid2")
@@ -23,4 +31,7 @@ public class Permission {
 
     @Column(name = "permission_description")
     private String permissionDescription;
+
+    @ManyToMany(mappedBy = "permissions")
+    private Set<Role> roles = new HashSet<>();
 }

@@ -1,6 +1,6 @@
 package com.bb.ballBin.menu.controller;
 
-import com.bb.ballBin.common.message.annotation.MessageKey;
+import com.bb.ballBin.common.annotation.MessageKey;
 import com.bb.ballBin.menu.model.MenuRequest;
 import com.bb.ballBin.menu.service.MenuService;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,9 +1,8 @@
 package com.bb.ballBin.auth.service;
 
-import com.bb.ballBin.board.service.BoardService;
 import com.bb.ballBin.common.exception.InvalidPasswordException;
 import com.bb.ballBin.common.exception.NotFoundException;
-import com.bb.ballBin.common.message.Service.MessageService;
+import com.bb.ballBin.common.Service.MessageService;
 import com.bb.ballBin.security.jwt.BallBinUserDetails;
 import com.bb.ballBin.security.jwt.service.JwtBlacklistService;
 import com.bb.ballBin.security.jwt.service.RefreshTokenService;

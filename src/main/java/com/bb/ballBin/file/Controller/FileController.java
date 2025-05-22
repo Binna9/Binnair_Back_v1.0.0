@@ -1,6 +1,6 @@
 package com.bb.ballBin.file.Controller;
 
-import com.bb.ballBin.common.message.annotation.MessageKey;
+import com.bb.ballBin.common.annotation.MessageKey;
 import com.bb.ballBin.file.model.FileRequestDto;
 import com.bb.ballBin.file.service.FileService;
 import io.swagger.v3.oas.annotations.Operation;

@@ -3,7 +3,7 @@ package com.bb.ballBin.bookmark.controller;
 import com.bb.ballBin.bookmark.model.BookmarkRequestDto;
 import com.bb.ballBin.bookmark.model.BookmarkResponseDto;
 import com.bb.ballBin.bookmark.service.BookmarkService;
-import com.bb.ballBin.common.message.annotation.MessageKey;
+import com.bb.ballBin.common.annotation.MessageKey;
 import com.bb.ballBin.common.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;

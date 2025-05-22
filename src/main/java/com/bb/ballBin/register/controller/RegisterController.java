@@ -1,6 +1,6 @@
 package com.bb.ballBin.register.controller;
 
-import com.bb.ballBin.common.message.annotation.MessageKey;
+import com.bb.ballBin.common.annotation.MessageKey;
 import com.bb.ballBin.register.model.RegisterRequestDto;
 import com.bb.ballBin.register.service.RegisterService;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,6 +1,7 @@
 package com.bb.ballBin.role.controller;
 
-import com.bb.ballBin.common.message.annotation.MessageKey;
+import com.bb.ballBin.common.annotation.CurrentUserId;
+import com.bb.ballBin.common.annotation.MessageKey;
 import com.bb.ballBin.role.model.RoleRequestDto;
 import com.bb.ballBin.role.model.RoleResponseDto;
 import com.bb.ballBin.role.service.RoleService;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -61,5 +63,15 @@ public class RoleController {
         roleService.deleteRole(roleId);
 
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/assign-permission")
+    @Operation(summary = "역할 권한 부여")
+    @MessageKey(value = "success.permission.assign")
+    public ResponseEntity<Void> assignRoleToUser(@RequestBody String roleId, @RequestBody String permissionName) {
+
+        roleService.permissionToRole(roleId, permissionName);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

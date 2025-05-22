@@ -1,4 +1,4 @@
-package com.bb.ballBin.common.message.annotation;
+package com.bb.ballBin.common.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

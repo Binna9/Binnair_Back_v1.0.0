@@ -1,6 +1,7 @@
 package com.bb.ballBin.user.controller;
 
-import com.bb.ballBin.common.message.annotation.MessageKey;
+import com.bb.ballBin.common.annotation.CurrentUserId;
+import com.bb.ballBin.common.annotation.MessageKey;
 import com.bb.ballBin.common.util.SecurityUtil;
 import com.bb.ballBin.user.model.UserResponseDto;
 import com.bb.ballBin.user.model.UserPasswordChangeRequestDto;
@@ -48,10 +49,7 @@ public class UserController {
 
     @GetMapping("/image")
     @Operation(summary = "사용자 이미지 반환")
-    public ResponseEntity<Resource> getProfileImage() {
-
-        String userId = SecurityUtil.getCurrentUserId();
-
+    public ResponseEntity<Resource> getProfileImage(@CurrentUserId String userId) {
         return userService.getUserImage(userId);
     }
 
@@ -77,8 +75,7 @@ public class UserController {
 
     @PostMapping("/verify-password")
     @Operation(summary = "현재 비밀번호 검증")
-    public ResponseEntity<Boolean> verifyPassword(@RequestBody Map<String, String> requestBody) {
-        String userId = SecurityUtil.getCurrentUserId();
+    public ResponseEntity<Boolean> verifyPassword(@CurrentUserId String userId, @RequestBody Map<String, String> requestBody) {
 
         String currentPassword = requestBody.get("password");
 
@@ -94,10 +91,19 @@ public class UserController {
     @PutMapping("/change-password")
     @Operation(summary = "사용자 비밀번호 변경")
     @MessageKey(value = "success.user.password.change")
-    public ResponseEntity<Void> changePassword(@RequestBody UserPasswordChangeRequestDto passwordChangeDto) {
+    public ResponseEntity<Void> changePassword(@CurrentUserId String userId, @RequestBody UserPasswordChangeRequestDto passwordChangeDto) {
 
-        String userId = SecurityUtil.getCurrentUserId();
         userService.changePassword(userId, passwordChangeDto);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @PostMapping("/assign-role")
+    @Operation(summary = "사용자 역할 부여")
+    @MessageKey(value = "success.role.assign")
+    public ResponseEntity<Void> assignRoleToUser(@CurrentUserId String userId, @RequestBody String roleName) {
+
+        userService.roleToUser(userId, roleName);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }

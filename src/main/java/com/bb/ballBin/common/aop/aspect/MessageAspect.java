@@ -1,7 +1,7 @@
 package com.bb.ballBin.common.aop.aspect;
 
 import com.bb.ballBin.common.exception.model.ErrorResponse;
-import com.bb.ballBin.common.message.annotation.MessageKey;
+import com.bb.ballBin.common.annotation.MessageKey;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterThrowing;

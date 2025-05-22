@@ -3,6 +3,7 @@ package com.bb.ballBin.role.entity;
 import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.permission.entity.Permission;
 import com.bb.ballBin.role.model.RoleResponseDto;
+import com.bb.ballBin.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
@@ -30,6 +31,9 @@ public class Role extends BaseEntity {
 
     @Column(name = "role_description")
     private String roleDescription;
+
+    @ManyToMany(mappedBy = "roles")
+    private Set<User> users = new HashSet<>();
 
     @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)

@@ -1,4 +1,4 @@
-package com.bb.ballBin.common.message.Service;
+package com.bb.ballBin.common.Service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;

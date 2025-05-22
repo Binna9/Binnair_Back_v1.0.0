@@ -6,9 +6,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public interface RoleRepository extends JpaRepository<Role, String> {
+
+    Optional<Role> findByRoleId(String name);
+
+    Optional<Role> findByRoleName(String roleName);
+
     @Query("SELECT r FROM Role r WHERE r.roleName IN :roleNames")
     Set<Role> findByRoleNameIn(@Param("roleNames") List<String> roleNames);
 }

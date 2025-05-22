@@ -1,8 +1,8 @@
 package com.bb.ballBin.role.service;
 
-import com.bb.ballBin.board.service.BoardService;
 import com.bb.ballBin.common.exception.NotFoundException;
-import com.bb.ballBin.file.entity.TargetType;
+import com.bb.ballBin.permission.entity.Permission;
+import com.bb.ballBin.permission.repository.PermissionRepository;
 import com.bb.ballBin.role.entity.Role;
 import com.bb.ballBin.role.mapper.RoleMapper;
 import com.bb.ballBin.role.model.RoleRequestDto;
@@ -25,6 +25,7 @@ public class RoleService {
 
     private final RoleMapper roleMapper;
     private final RoleRepository roleRepository;
+    private final PermissionRepository permissionRepository;
 
     /**
      * 역할 전체 조회
@@ -91,5 +92,20 @@ public class RoleService {
             logger.error("삭제 중 오류 발생: {}", e.getMessage(), e);
             throw new RuntimeException("삭제 중 오류 발생", e);
         }
+    }
+
+    /**
+     * 역할 권한 부여
+     */
+    public void permissionToRole(String roleId, String permissionName) {
+
+        Role role = roleRepository.findByRoleId(roleId)
+                .orElseThrow(() -> new NotFoundException("error.role.notfound"));
+
+        Permission permission = permissionRepository.findByPermissionName(permissionName)
+                .orElseThrow(() -> new NotFoundException("error.role.notfound"));
+
+        role.getPermissions().add(permission);
+        roleRepository.save(role);
     }
 }
