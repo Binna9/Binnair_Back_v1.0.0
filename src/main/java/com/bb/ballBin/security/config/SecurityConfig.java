@@ -1,14 +1,18 @@
 package com.bb.ballBin.security.config;
 
+import com.bb.ballBin.role.repository.RoleRepository;
+import com.bb.ballBin.role.service.RoleService;
 import com.bb.ballBin.security.filter.JwtFilter;
 import com.bb.ballBin.security.jwt.BallBinUserDetailsService;
 import com.bb.ballBin.security.jwt.service.JwtBlacklistService;
 import com.bb.ballBin.security.jwt.util.JwtUtil;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -24,6 +28,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -31,6 +36,8 @@ public class SecurityConfig {
     private final JwtUtil jwtUtil;
     private final BallBinUserDetailsService ballBinUserDetailsService;
     private final JwtBlacklistService jwtBlacklistService;
+    private final RoleService roleService;
+    private final RoleRepository roleRepository;
 
     /**
      * Password 암호화
@@ -54,7 +61,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        JwtFilter jwtFilter = new JwtFilter(jwtUtil, ballBinUserDetailsService, jwtBlacklistService);
+        JwtFilter jwtFilter = new JwtFilter(jwtUtil, ballBinUserDetailsService, roleService, roleRepository, jwtBlacklistService);
 
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ CORS 설정 추가
@@ -64,8 +71,19 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(securityPolicy.getPermittedUrls().toArray(String[]::new)).permitAll() // ✅ 인증 없이 접근 가능
                         .requestMatchers(securityPolicy.getAuthenticatedUrls().toArray(String[]::new)).authenticated() // ✅ 인증 필요
-                        .requestMatchers(securityPolicy.getAdminUrls().toArray(String[]::new)).hasRole("ADMIN") // ✅ 관리자 권한 필요
                                 .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\":\"권한이 없습니다.\"}");
+                        })
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\":\"인증이 필요합니다.\"}");
+                        })
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class) // ✅ 필터 순서 변경
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

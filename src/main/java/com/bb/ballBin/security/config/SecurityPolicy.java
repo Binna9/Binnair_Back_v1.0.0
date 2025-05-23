@@ -29,6 +29,7 @@ public class SecurityPolicy {
         return List.of(
                 "/boards/**",
                 "/roles/**",
+                "/permissions/**",
                 "/menus/**",
                 "/bookmarks/**",
                 "/users/**",
@@ -38,15 +39,6 @@ public class SecurityPolicy {
                 "/likes/**",
                 "/files/**",
                 "/chats/**"
-        );
-    }
-
-    /**
-     * 관리자만 접근 가능
-     */
-    public List<String> getAdminUrls() {
-        return List.of(
-                "/admin/**"
         );
     }
 }

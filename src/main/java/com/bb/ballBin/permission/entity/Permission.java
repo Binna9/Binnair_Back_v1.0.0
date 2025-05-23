@@ -3,11 +3,7 @@ package com.bb.ballBin.permission.entity;
 import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.role.entity.Role;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.hibernate.annotations.GenericGenerator;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -15,14 +11,15 @@ import java.util.Set;
 @Entity
 @Getter
 @Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true , callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "permissions")
 public class Permission extends BaseEntity {
 
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @EqualsAndHashCode.Include
+    @org.hibernate.annotations.UuidGenerator(style = org.hibernate.annotations.UuidGenerator.Style.TIME)
     @Column(updatable = false, nullable = false, unique = true, name = "permission_id")
     private String permissionId;
 

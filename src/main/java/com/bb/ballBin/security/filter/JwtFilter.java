@@ -1,5 +1,7 @@
 package com.bb.ballBin.security.filter;
 
+import com.bb.ballBin.role.repository.RoleRepository;
+import com.bb.ballBin.role.service.RoleService;
 import com.bb.ballBin.security.jwt.BallBinUserDetails;
 import com.bb.ballBin.security.jwt.BallBinUserDetailsService;
 import com.bb.ballBin.security.jwt.service.JwtBlacklistService;
@@ -11,17 +13,23 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final BallBinUserDetailsService ballBinUserDetailsService;
+    private final RoleService roleService;
+    private final RoleRepository roleRepository;
     private final JwtBlacklistService jwtBlacklistService;
 
     @Override
@@ -55,12 +63,25 @@ public class JwtFilter extends OncePerRequestFilter {
         String userId = jwtUtil.getUserIdFromToken(token, isOAuth2Token);
 
         if (userId != null) {
-            BallBinUserDetails ballBinUserDetails = (BallBinUserDetails) ballBinUserDetailsService.loadUserById(userId);
+            // ✅ 1. JWT 에서 roles 꺼내기
+            Set<String> roleNames = jwtUtil.getRolesFromToken(token, isOAuth2Token);
+
+            Set<String> roleIds = roleRepository.findRoleIdsByRoleNames(roleNames);
+            // ✅ 2. roles 기반으로 permissions 조회
+            Set<String> permissionNames = roleService.getPermissionsByRoles(roleIds);
+
+            // ✅ 3. permissions 를 GrantedAuthority 로 변환
+            Set<GrantedAuthority> authorities = permissionNames.stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toSet());
+
+            // ✅ 4. UserDetails 로드 (권한은 무시)
+            BallBinUserDetails userDetails = (BallBinUserDetails) ballBinUserDetailsService.loadUserById(userId);
 
             Authentication authToken = new UsernamePasswordAuthenticationToken(
-                    ballBinUserDetails,
+                    userDetails,
                     null,
-                    ballBinUserDetails.getAuthorities()
+                    authorities // ✅ 실제 권한 기반으로 설정
             );
 
             SecurityContextHolder.getContext().setAuthentication(authToken);

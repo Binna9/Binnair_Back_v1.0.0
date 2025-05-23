@@ -99,11 +99,14 @@ public class JwtUtil {
 
     /** ✅ JWT 토큰에서 권한 정보 추출 */
     public Set<String> getRolesFromToken(String token, boolean isOAuth2) {
+
         Claims claims = parseToken(token, isOAuth2);
+
         List<String> roles = claims != null ? claims.get("roles", List.class) : null;
         return roles != null ? Set.copyOf(roles) : Set.of();
     }
 
+    /** ✅ JWT 토큰 Validation */
     public Claims validateToken(String token, boolean isRefreshToken, boolean isOAuth2) {
         try {
             Claims claims = parseToken(token, isOAuth2);

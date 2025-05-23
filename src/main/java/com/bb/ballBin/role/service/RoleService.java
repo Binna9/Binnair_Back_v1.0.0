@@ -5,6 +5,7 @@ import com.bb.ballBin.permission.entity.Permission;
 import com.bb.ballBin.permission.repository.PermissionRepository;
 import com.bb.ballBin.role.entity.Role;
 import com.bb.ballBin.role.mapper.RoleMapper;
+import com.bb.ballBin.role.model.RolePermissionRequestDto;
 import com.bb.ballBin.role.model.RoleRequestDto;
 import com.bb.ballBin.role.model.RoleResponseDto;
 import com.bb.ballBin.role.repository.RoleRepository;
@@ -15,6 +16,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -95,15 +101,34 @@ public class RoleService {
     }
 
     /**
+     * 역할 권한 조회
+     */
+    @Transactional(readOnly = true)
+    public Set<String> getPermissionsByRoles(Set<String> roleIds) {
+
+        List<Role> roles = roleRepository.findAllWithPermissionsByRoleIdIn(List.copyOf(roleIds));
+
+        for (Role r : roles) {
+            System.out.println("Role: " + r.getRoleName());
+            r.getPermissions().forEach(p -> System.out.println(" - Permission: " + p.getPermissionName()));
+        }
+
+        return roles.stream()
+                .flatMap(role -> role.getPermissions().stream())
+                .map(Permission::getPermissionName)
+                .collect(Collectors.toSet());
+    }
+
+    /**
      * 역할 권한 부여
      */
-    public void permissionToRole(String roleId, String permissionName) {
+    public void permissionToRole(RolePermissionRequestDto rolePermissionRequestDto) {
 
-        Role role = roleRepository.findByRoleId(roleId)
+        Role role = roleRepository.findByRoleId(rolePermissionRequestDto.getRoleId())
                 .orElseThrow(() -> new NotFoundException("error.role.notfound"));
 
-        Permission permission = permissionRepository.findByPermissionName(permissionName)
-                .orElseThrow(() -> new NotFoundException("error.role.notfound"));
+        Permission permission = permissionRepository.findByPermissionName(rolePermissionRequestDto.getPermissionName())
+                .orElseThrow(() -> new NotFoundException("error.permission.notfound"));
 
         role.getPermissions().add(permission);
         roleRepository.save(role);

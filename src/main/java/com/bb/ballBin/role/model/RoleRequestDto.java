@@ -1,6 +1,5 @@
 package com.bb.ballBin.role.model;
 
-import com.bb.ballBin.role.entity.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 

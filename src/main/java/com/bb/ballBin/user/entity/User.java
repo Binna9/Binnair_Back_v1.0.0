@@ -6,7 +6,6 @@ import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.role.entity.Role;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -23,20 +22,12 @@ import java.util.Set;
 public class User extends BaseEntity {
 
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @org.hibernate.annotations.UuidGenerator(style = org.hibernate.annotations.UuidGenerator.Style.TIME)
     @Column(updatable = false, nullable = false, unique = true, name = "user_id")
     private String userId;
 
     @Column(nullable = false, unique = true, name = "login_id")
     private String loginId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private AuthProvider provider; // ✅ 로그인 제공자
-
-    @Column(nullable = false, unique = true, name = "provider_id")
-    private String providerId; // ✅ 플랫폼별 유일한 식별자
 
     @Column(nullable = false, name = "login_password")
     private String loginPassword;
@@ -57,10 +48,6 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<Bookmark> bookmarks = new HashSet<>();
 
-//    @Builder.Default
-//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-//    private Set<Cart> carts = new HashSet<>();
-
     @Builder.Default
     @Convert(converter = BooleanToYNConverter.class)
     @Column(name = "is_active")
@@ -78,4 +65,11 @@ public class User extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AuthProvider provider; // ✅ 로그인 제공자
+
+    @Column(nullable = false, unique = true, name = "provider_id")
+    private String providerId; // ✅ 플랫폼별 유일한 식별자
 }

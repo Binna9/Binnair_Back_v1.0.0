@@ -1,7 +1,7 @@
 package com.bb.ballBin.role.controller;
 
-import com.bb.ballBin.common.annotation.CurrentUserId;
 import com.bb.ballBin.common.annotation.MessageKey;
+import com.bb.ballBin.role.model.RolePermissionRequestDto;
 import com.bb.ballBin.role.model.RoleRequestDto;
 import com.bb.ballBin.role.model.RoleResponseDto;
 import com.bb.ballBin.role.service.RoleService;
@@ -68,9 +68,9 @@ public class RoleController {
     @PostMapping("/assign-permission")
     @Operation(summary = "역할 권한 부여")
     @MessageKey(value = "success.permission.assign")
-    public ResponseEntity<Void> assignRoleToUser(@RequestBody String roleId, @RequestBody String permissionName) {
+    public ResponseEntity<Void> assignRoleToUser(@RequestBody RolePermissionRequestDto rolePermissionRequestDto) {
 
-        roleService.permissionToRole(roleId, permissionName);
+        roleService.permissionToRole(rolePermissionRequestDto);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }

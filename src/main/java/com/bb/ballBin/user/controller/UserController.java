@@ -5,6 +5,7 @@ import com.bb.ballBin.common.annotation.MessageKey;
 import com.bb.ballBin.common.util.SecurityUtil;
 import com.bb.ballBin.user.model.UserResponseDto;
 import com.bb.ballBin.user.model.UserPasswordChangeRequestDto;
+import com.bb.ballBin.user.model.UserRoleRequestDto;
 import com.bb.ballBin.user.model.UserUpdateRequestDto;
 import com.bb.ballBin.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -101,9 +102,9 @@ public class UserController {
     @PostMapping("/assign-role")
     @Operation(summary = "사용자 역할 부여")
     @MessageKey(value = "success.role.assign")
-    public ResponseEntity<Void> assignRoleToUser(@CurrentUserId String userId, @RequestBody String roleName) {
+    public ResponseEntity<Void> assignRoleToUser(@CurrentUserId String userId, @RequestBody UserRoleRequestDto userRoleRequestDto) {
 
-        userService.roleToUser(userId, roleName);
+        userService.roleToUser(userId, userRoleRequestDto);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }

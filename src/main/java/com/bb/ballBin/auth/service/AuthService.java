@@ -59,9 +59,7 @@ public class AuthService {
 
             String userId = userDetails.getUserId();
 
-            Set<String> roles = authentication.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .collect(Collectors.toSet());
+            Set<String> roles = userService.getUserRoleNames(userId);
 
             resetFailedAttempts(loginId);
 
@@ -185,7 +183,7 @@ public class AuthService {
             }
 
             // ✅ 3. 새로운 Access Token 발급
-            Set<String> roles = userService.getUserRoles(userId);
+            Set<String> roles = userService.getUserRoleNames(userId);
 
             String newAccessToken = jwtUtil.createJwtToken(userId, roles, false);
 

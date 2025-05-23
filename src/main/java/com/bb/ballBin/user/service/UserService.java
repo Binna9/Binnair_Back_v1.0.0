@@ -17,9 +17,11 @@ import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.user.mapper.UserMapper;
 import com.bb.ballBin.user.model.UserPasswordChangeRequestDto;
 import com.bb.ballBin.user.model.UserResponseDto;
+import com.bb.ballBin.user.model.UserRoleRequestDto;
 import com.bb.ballBin.user.model.UserUpdateRequestDto;
 import com.bb.ballBin.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
@@ -29,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -194,14 +197,29 @@ public class UserService {
     }
 
     /**
+     * 사용자 역할 조회
+     */
+    public Set<String> getUserRoleNames(String userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        return user.getRoles().stream()
+                .map(Role::getRoleName) // 또는 getRoleId()
+                .collect(Collectors.toSet());
+    }
+
+    /**
      * 사용자 역할 부여
      */
-    public void roleToUser(String userId, String roleName) {
+    public void roleToUser(String userId, UserRoleRequestDto userRoleRequestDto) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
-        Role role = roleRepository.findByRoleName(roleName)
+        Hibernate.initialize(user.getRoles());
+
+        Role role = roleRepository.findByRoleNameIgnoreCase(userRoleRequestDto.getRoleName())
                 .orElseThrow(() -> new NotFoundException("error.role.notfound"));
 
         user.getRoles().add(role);

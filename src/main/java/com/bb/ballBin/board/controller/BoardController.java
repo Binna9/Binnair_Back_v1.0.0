@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,6 +29,7 @@ public class BoardController {
     private final BoardService boardService;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('BOARD_READ')")
     @Operation(summary = "게시글 전체 조회")
     public ResponseEntity<Page<BoardResponseDto>> getAllBoards(
             @RequestParam("boardType") BoardType boardType,
@@ -37,12 +39,14 @@ public class BoardController {
     }
 
     @GetMapping("/{boardId}")
+    @PreAuthorize("hasAuthority('BOARD_READ')")
     @Operation(summary = "게시글 개별 조회")
     public ResponseEntity<BoardResponseDto> getBoardById(@PathVariable("boardId") String boardId) {
         return ResponseEntity.ok(boardService.boardById(boardId));
     }
 
     @PostMapping("")
+    @PreAuthorize("hasAuthority('BOARD_CREATE')")
     @MessageKey(value = "success.board.create")
     @Operation(summary = "게시글 생성",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -61,6 +65,7 @@ public class BoardController {
 
 
     @PutMapping("/{boardId}")
+    @PreAuthorize("hasAuthority('BOARD_UPDATE')")
     @Operation(summary = "게시글 수정")
     @MessageKey(value = "success.board.update")
     public ResponseEntity<Void> modifyBoard(@PathVariable("boardId") String boardId, @ModelAttribute BoardRequestDto boardRequestDto) {
@@ -71,6 +76,7 @@ public class BoardController {
     }
 
     @DeleteMapping("/{boardId}")
+    @PreAuthorize("hasAuthority('BOARD_DELETE')")
     @Operation(summary = "게시글 삭제")
     @MessageKey(value = "success.board.delete")
     public ResponseEntity<Void> removeBoard(@PathVariable("boardId") String boardId) {

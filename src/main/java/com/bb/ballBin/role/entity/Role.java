@@ -2,17 +2,16 @@ package com.bb.ballBin.role.entity;
 
 import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.permission.entity.Permission;
-import com.bb.ballBin.role.model.RoleResponseDto;
 import com.bb.ballBin.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
 
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Data
+@Getter
+@Setter
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,8 +20,7 @@ import java.util.Set;
 public class Role extends BaseEntity {
 
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @org.hibernate.annotations.UuidGenerator(style = org.hibernate.annotations.UuidGenerator.Style.TIME)
     @Column(updatable = false, nullable = false, unique = true, name ="role_id")
     private String roleId;
 
@@ -35,7 +33,6 @@ public class Role extends BaseEntity {
     @ManyToMany(mappedBy = "roles")
     private Set<User> users = new HashSet<>();
 
-    @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "role_permissions",
