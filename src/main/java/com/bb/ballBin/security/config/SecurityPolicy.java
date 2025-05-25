@@ -14,7 +14,6 @@ public class SecurityPolicy {
         return List.of(
                 "/auth/**",
                 "/registers",
-                "/products/**",
                 "/swagger-ui/**",
                 "/api-docs/**",
                 "/v3/api-docs/**",
@@ -32,6 +31,7 @@ public class SecurityPolicy {
                 "/permissions/**",
                 "/menus/**",
                 "/bookmarks/**",
+                "/products/**",
                 "/users/**",
                 "/carts/**",
                 "/addresses/**",

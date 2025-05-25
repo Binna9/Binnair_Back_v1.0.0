@@ -53,9 +53,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
         logger.error(ex.getMessage(), ex);
+
+        // ✅ 권한 거부일 경우 명확히 처리
+        if (ex instanceof org.springframework.security.authorization.AuthorizationDeniedException) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ErrorResponse.of(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."));
+        }
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.of(HttpStatus.BAD_REQUEST, messageSource.getMessage(ex.getMessage(), null, LocaleContextHolder.getLocale())));
+                .body(ErrorResponse.of(HttpStatus.BAD_REQUEST, ex.getMessage()));
     }
+
 
     // ✅ 400 Bad Request - 잘못된 필드 값 오류 
     @ExceptionHandler(IllegalArgumentException.class)

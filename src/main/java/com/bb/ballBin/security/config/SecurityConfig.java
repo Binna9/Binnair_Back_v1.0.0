@@ -6,7 +6,6 @@ import com.bb.ballBin.security.filter.JwtFilter;
 import com.bb.ballBin.security.jwt.BallBinUserDetailsService;
 import com.bb.ballBin.security.jwt.service.JwtBlacklistService;
 import com.bb.ballBin.security.jwt.util.JwtUtil;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -61,6 +60,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
+        System.out.println("✅ 내 SecurityFilterChain 적용됨");
+
         JwtFilter jwtFilter = new JwtFilter(jwtUtil, ballBinUserDetailsService, roleService, roleRepository, jwtBlacklistService);
 
         http
@@ -68,22 +69,11 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
+                .oauth2Login(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(securityPolicy.getPermittedUrls().toArray(String[]::new)).permitAll() // ✅ 인증 없이 접근 가능
                         .requestMatchers(securityPolicy.getAuthenticatedUrls().toArray(String[]::new)).authenticated() // ✅ 인증 필요
                                 .anyRequest().authenticated()
-                )
-                .exceptionHandling(ex -> ex
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"error\":\"권한이 없습니다.\"}");
-                        })
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"error\":\"인증이 필요합니다.\"}");
-                        })
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class) // ✅ 필터 순서 변경
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

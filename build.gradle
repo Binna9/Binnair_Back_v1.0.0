@@ -29,9 +29,6 @@ repositories {
 
 dependencies {
 
-	// ✅ DevTools
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-
 	// ✅ Elasticsearch 8.14.3
 	implementation 'co.elastic.clients:elasticsearch-java:8.14.3'
 
