@@ -103,7 +103,6 @@ public class RoleService {
     /**
      * 역할 권한 조회
      */
-    @Transactional(readOnly = true)
     public Set<String> getPermissionsByRoles(Set<String> roleIds) {
 
         List<Role> roles = roleRepository.findAllWithPermissionsByRoleIdIn(List.copyOf(roleIds));
@@ -131,6 +130,21 @@ public class RoleService {
                 .orElseThrow(() -> new NotFoundException("error.permission.notfound"));
 
         role.getPermissions().add(permission);
+        roleRepository.save(role);
+    }
+
+    /**
+     * 역할 권한 삭제
+     */
+    public void removeToRole(RolePermissionRequestDto rolePermissionRequestDto) {
+
+        Role role = roleRepository.findByRoleId(rolePermissionRequestDto.getRoleId())
+                .orElseThrow(() -> new NotFoundException("error.role.notfound"));
+
+        Permission permission = permissionRepository.findByPermissionName(rolePermissionRequestDto.getPermissionName())
+                .orElseThrow(() -> new NotFoundException("error.permission.notfound"));
+
+        role.getPermissions().remove(permission);
         roleRepository.save(role);
     }
 }

@@ -61,7 +61,7 @@ public class OAuth2UserService {
         }
 
         // ✅ 6. JWT 발급 후 반환
-        Set<String> roles = userService.getUserRoles(user.getUserId());
+        Set<String> roles = userService.getUserRoleNames(user.getUserId());
 
         return jwtUtil.createJwtToken(user.getUserId(), roles, false);
     }

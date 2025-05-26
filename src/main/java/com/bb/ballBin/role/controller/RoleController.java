@@ -1,5 +1,6 @@
 package com.bb.ballBin.role.controller;
 
+import com.bb.ballBin.common.annotation.CurrentUserId;
 import com.bb.ballBin.common.annotation.MessageKey;
 import com.bb.ballBin.role.model.RolePermissionRequestDto;
 import com.bb.ballBin.role.model.RoleRequestDto;
@@ -14,6 +15,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -57,7 +60,7 @@ public class RoleController {
 
     @DeleteMapping("/{roleId}")
     @Operation(summary = "역할 삭제")
-    @MessageKey(value = "success.role.delete")
+    @MessageKey(value = "success.role.permission.remove")
     public ResponseEntity<Void> removeRole(@PathVariable("roleId") String roleId){
 
         roleService.deleteRole(roleId);
@@ -65,12 +68,31 @@ public class RoleController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/permission")
+    @Operation(summary = "역할 권한 조회")
+    public ResponseEntity<Set<String>> getRolePermissions(@RequestParam("roleIds") Set<String> roleIds) {
+
+        Set<String> permissions = roleService.getPermissionsByRoles(roleIds);
+
+        return ResponseEntity.ok(permissions);
+    }
+
     @PostMapping("/assign-permission")
     @Operation(summary = "역할 권한 부여")
-    @MessageKey(value = "success.permission.assign")
-    public ResponseEntity<Void> assignRoleToUser(@RequestBody RolePermissionRequestDto rolePermissionRequestDto) {
+    @MessageKey(value = "success.role.permission.assign")
+    public ResponseEntity<Void> assignPermissionToRole(@RequestBody RolePermissionRequestDto rolePermissionRequestDto) {
 
         roleService.permissionToRole(rolePermissionRequestDto);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @DeleteMapping("/remove-permission")
+    @Operation(summary = "역할 권한 삭제")
+    @MessageKey(value = "success.role.permission.remove")
+    public ResponseEntity<Void> removePermissionToRole(@RequestBody RolePermissionRequestDto rolePermissionRequestDto) {
+
+        roleService.removeToRole(rolePermissionRequestDto);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }

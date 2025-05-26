@@ -6,6 +6,7 @@ import com.bb.ballBin.file.service.FileService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,6 +20,7 @@ public class FileController {
     private final FileService fileService;
 
     @PostMapping("")
+    @PreAuthorize("hasAuthority('FILE_UPLOAD')")
     @Operation(summary = "파일 업로드")
     @MessageKey(value = "success.file.upload")
     public ResponseEntity<Void> uploadFiles(
@@ -31,6 +33,7 @@ public class FileController {
     }
 
     @DeleteMapping("/{fileId}")
+    @PreAuthorize("hasAuthority('FILE_DELETE')")
     @Operation(summary = "파일 삭제")
     @MessageKey(value = "success.file.delete")
     public ResponseEntity<Void> removeFile(@PathVariable("fileId") String fileId) {

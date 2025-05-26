@@ -55,12 +55,10 @@ public class SecurityConfig {
     }
 
     /**
-     * Security 설정
+     * ✅ Security 설정
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-        System.out.println("✅ 내 SecurityFilterChain 적용됨");
 
         JwtFilter jwtFilter = new JwtFilter(jwtUtil, ballBinUserDetailsService, roleService, roleRepository, jwtBlacklistService);
 
@@ -82,7 +80,7 @@ public class SecurityConfig {
     }
 
     /**
-     * ✅ CORS 정책 설정 (프론트엔드 5173 포트 허용)
+     * ✅ CORS 정책 설정
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

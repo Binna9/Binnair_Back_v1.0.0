@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -99,12 +100,32 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
+    @GetMapping("/role")
+    @Operation(summary = "사용자 역할 조회")
+    public ResponseEntity<Set<String>> getUserRoles(@CurrentUserId String userId) {
+
+        Set<String> roles = userService.getUserRoleNames(userId);
+
+        return ResponseEntity.ok(roles);
+    }
+
+
     @PostMapping("/assign-role")
     @Operation(summary = "사용자 역할 부여")
-    @MessageKey(value = "success.role.assign")
+    @MessageKey(value = "success.user.role.assign")
     public ResponseEntity<Void> assignRoleToUser(@CurrentUserId String userId, @RequestBody UserRoleRequestDto userRoleRequestDto) {
 
         userService.roleToUser(userId, userRoleRequestDto);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @DeleteMapping("/remove-role")
+    @Operation(summary = "사용자 역할 제거")
+    @MessageKey(value = "success.user.role.remove")
+    public ResponseEntity<Void> removeRoleFromUser(@CurrentUserId String userId, @RequestBody UserRoleRequestDto userRoleRequestDto) {
+
+        userService.removeRoleFromUser(userId, userRoleRequestDto.getRoleName());
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }

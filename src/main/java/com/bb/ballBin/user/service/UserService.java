@@ -190,13 +190,6 @@ public class UserService {
     }
 
     /**
-     * 사용자 역할 반환 todo :: 기본값으로 ROLE_USER 반환 (실제 DB 조회 필요)
-     */
-    public Set<String> getUserRoles(String userId) {
-        return Set.of("ROLE_USER");
-    }
-
-    /**
      * 사용자 역할 조회
      */
     public Set<String> getUserRoleNames(String userId) {
@@ -223,6 +216,21 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("error.role.notfound"));
 
         user.getRoles().add(role);
+        userRepository.save(user);
+    }
+
+    /**
+     * 사용자 역할 삭제
+     */
+    public void removeRoleFromUser(String userId, String roleName) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        Role role = roleRepository.findByRoleNameIgnoreCase(roleName)
+                .orElseThrow(() -> new NotFoundException("Role not found"));
+
+        user.getRoles().remove(role);
         userRepository.save(user);
     }
 }
