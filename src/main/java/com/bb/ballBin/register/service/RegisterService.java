@@ -3,6 +3,7 @@ package com.bb.ballBin.register.service;
 import com.bb.ballBin.common.exception.InvalidPasswordException;
 import com.bb.ballBin.file.entity.TargetType;
 import com.bb.ballBin.file.service.FileService;
+import com.bb.ballBin.user.entity.AuthProvider;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.register.model.RegisterRequestDto;
 import com.bb.ballBin.user.mapper.UserMapper;
@@ -36,6 +37,9 @@ public class RegisterService {
         registerRequestDto.setLoginPassword(encodedPassword);
 
         User user = userMapper.toEntity(registerRequestDto);
+        user.setProvider(AuthProvider.LOCAL);
+        user.setProviderId(registerRequestDto.getLoginId());
+
         userRepository.save(user);
 
         String userId = user.getUserId();

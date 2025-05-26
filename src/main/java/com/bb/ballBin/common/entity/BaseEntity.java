@@ -56,29 +56,19 @@ public class BaseEntity {
     @PrePersist
     public void prePersist() {
 
-        this.modifyDatetime = null;
-
         if (hasField("views")) {
             initializeFieldIfExists("views", 0);
         }
-
         if (hasField("likes")) {
             initializeFieldIfExists("likes", 0);
         }
-
         if (hasField("unlikes")) {
             initializeFieldIfExists("unlikes", 0);
         }
 
-        // 사용자 정보가 없는 경우 처리  todo: 시스템 계정 처리 필요
-        if (createdByUser != null) {
-            this.creatorLoginId = createdByUser.getLoginId();
-            this.creatorName = createdByUser.getUserName();
-        } else {
-            this.creatorLoginId = "system";
-            this.creatorName = "system";
-        }
-
+        this.creatorLoginId = createdByUser.getLoginId();
+        this.creatorName = createdByUser.getUserName();
+        this.modifyDatetime = null;
         this.modifiedByUser = null;
     }
 
