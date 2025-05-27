@@ -66,8 +66,13 @@ public class BaseEntity {
             initializeFieldIfExists("unlikes", 0);
         }
 
-        this.creatorLoginId = createdByUser.getLoginId();
-        this.creatorName = createdByUser.getUserName();
+        if (this.createdByUser != null) {
+            this.creatorLoginId = createdByUser.getLoginId();
+            this.creatorName = createdByUser.getUserName();
+        } else {
+            this.creatorLoginId = "system";
+            this.creatorName = "system";
+        }
         this.modifyDatetime = null;
         this.modifiedByUser = null;
     }

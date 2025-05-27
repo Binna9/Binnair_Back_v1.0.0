@@ -6,6 +6,7 @@ import com.bb.ballBin.common.entity.BaseEntity;
 import com.bb.ballBin.role.entity.Role;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -14,6 +15,7 @@ import java.util.Set;
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@DynamicUpdate
 @Builder
 @EqualsAndHashCode(callSuper = false, exclude = {"bookmarks", "carts", "roles"})
 @Table(name = "users", uniqueConstraints = {

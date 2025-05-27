@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Set;
@@ -26,6 +27,7 @@ public class RoleController {
     private final RoleService roleService;
 
     @GetMapping("")
+    @PreAuthorize("hasAuthority('ROLE_READ')")
     @Operation(summary = "역할 전체 조회")
     public ResponseEntity<Page<RoleResponseDto>> getAllRoles(
             @PageableDefault(page = 0, size = 8, sort = "createDatetime", direction = Sort.Direction.DESC) Pageable pageable){
@@ -33,12 +35,14 @@ public class RoleController {
     }
 
     @GetMapping("/{roleId}")
+    @PreAuthorize("hasAuthority('ROLE_READ')")
     @Operation(summary = "역할 개별 조회")
     public ResponseEntity<RoleResponseDto> getRoleById(@PathVariable("roleId") String roleId){
         return ResponseEntity.ok(roleService.roleById(roleId));
     }
 
     @PostMapping("")
+    @PreAuthorize("hasAuthority('ROLE_CREATE')")
     @Operation(summary = "역할 생성")
     @MessageKey(value = "success.role.create")
     public ResponseEntity<Void> addRole(@RequestBody RoleRequestDto roleRequestDto){
@@ -49,6 +53,7 @@ public class RoleController {
     }
 
     @PutMapping("/{roleId}")
+    @PreAuthorize("hasAuthority('ROLE_UPDATE')")
     @Operation(summary = "역할 수정")
     @MessageKey(value = "success.role.update")
     public ResponseEntity<Void> modifyRole(@PathVariable("roleId") String roleId, @RequestBody RoleRequestDto roleRequestDto){
@@ -59,6 +64,7 @@ public class RoleController {
     }
 
     @DeleteMapping("/{roleId}")
+    @PreAuthorize("hasAuthority('ROLE_DELETE')")
     @Operation(summary = "역할 삭제")
     @MessageKey(value = "success.role.permission.remove")
     public ResponseEntity<Void> removeRole(@PathVariable("roleId") String roleId){

@@ -1,5 +1,6 @@
 package com.bb.ballBin.user.service;
 
+import com.bb.ballBin.common.annotation.CheckUserRegisterValid;
 import com.bb.ballBin.common.exception.ImmutableFieldException;
 import com.bb.ballBin.common.exception.InvalidPasswordException;
 import com.bb.ballBin.common.exception.NotFoundException;
@@ -8,7 +9,6 @@ import com.bb.ballBin.file.entity.File;
 import com.bb.ballBin.file.entity.TargetType;
 import com.bb.ballBin.file.repository.FileRepository;
 import com.bb.ballBin.file.service.FileService;
-import com.bb.ballBin.register.service.RegisterService;
 import com.bb.ballBin.role.entity.Role;
 import com.bb.ballBin.role.repository.RoleRepository;
 import com.bb.ballBin.security.jwt.model.OAuthUserDto;
@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 @Transactional
 public class UserService {
 
-    private final RegisterService registerService;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final RoleRepository roleRepository;
@@ -172,12 +171,11 @@ public class UserService {
     /**
      * 비밀번호 변경
      */
+    @CheckUserRegisterValid
     public void changePassword(String userId, UserPasswordChangeRequestDto passwordChangeDto) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("error.user.notfound"));
-
-        registerService.validatePassword(passwordChangeDto.getNewPassword());
 
         if (!passwordChangeDto.getNewPassword().equals(passwordChangeDto.getConfirmPassword())) {
             throw new InvalidPasswordException("error.password.mismatch");

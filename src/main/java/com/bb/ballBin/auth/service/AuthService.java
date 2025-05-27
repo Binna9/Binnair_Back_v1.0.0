@@ -1,8 +1,8 @@
 package com.bb.ballBin.auth.service;
 
 import com.bb.ballBin.common.exception.InvalidPasswordException;
-import com.bb.ballBin.common.exception.NotFoundException;
 import com.bb.ballBin.common.Service.MessageService;
+import com.bb.ballBin.common.exception.IsActiveAccountException;
 import com.bb.ballBin.security.jwt.BallBinUserDetails;
 import com.bb.ballBin.security.jwt.service.JwtBlacklistService;
 import com.bb.ballBin.security.jwt.service.RefreshTokenService;
@@ -17,22 +17,22 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AuthService {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
@@ -44,11 +44,13 @@ public class AuthService {
     private final MessageService messageService;
     private final UserService userService;
     private final UserRepository userRepository;
+    private final AuthHelper authHelper;
 
     /**
      * 로그인 처리
      */
     public ResponseEntity<?> login(String loginId, String loginPassword, HttpServletResponse response) {
+
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginId, loginPassword)
@@ -57,11 +59,16 @@ public class AuthService {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             BallBinUserDetails userDetails = (BallBinUserDetails) authentication.getPrincipal();
 
-            String userId = userDetails.getUserId();
+            User user = userDetails.getUser();
 
+            if (!user.isActive()) {
+                throw new IsActiveAccountException("error.login.assign");
+            }
+
+            String userId = user.getUserId();
             Set<String> roles = userService.getUserRoleNames(userId);
 
-            resetFailedAttempts(loginId);
+            authHelper.resetFailedAttempts(user.getLoginId());
 
             // ✅ Access Token (1시간)
             String accessToken = jwtUtil.createJwtToken(userId, roles, false);
@@ -89,22 +96,13 @@ public class AuthService {
                     .body(Map.of("accessToken", accessToken));
 
         } catch (BadCredentialsException e) {
-
-            Optional<User> optionalUser = userRepository.findByLoginId(loginId);
-            if (optionalUser.isPresent()) {
-                increaseFailedAttempts(loginId);
-                User user = optionalUser.get();
+            userRepository.findByLoginId(loginId).ifPresent(user -> {
+                authHelper.increaseFailedAttempts(loginId);
                 if (user.getFailedLoginAttempts() >= 5) {
                     throw new InvalidPasswordException("error.security.login.lock"); // 🚨 5회 이상 틀리면 예외 발생
                 }
-            }
-            throw new RuntimeException("error.security.password");
-        } catch (DisabledException e) {
-            throw new RuntimeException("error.security.user.lock");
-        } catch (LockedException e) {
-            throw new RuntimeException("error.security.login.lock");
-        } catch (Exception e) {
-            throw new RuntimeException("error.security.password");
+            });
+            throw new InvalidPasswordException("error.security.password");
         }
     }
 
@@ -196,31 +194,5 @@ public class AuthService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("ERROR", "Invalid Refresh Token"));
         }
-    }
-
-    /**
-     * ✅ 로그인 실패 횟수 증가 및 계정 잠금 검사
-     */
-    public void increaseFailedAttempts(String loginId) {
-
-        User user = userRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new NotFoundException("error.user.notfound"));
-
-        int failedAttempts = user.getFailedLoginAttempts() + 1;
-        user.setFailedLoginAttempts(failedAttempts);
-
-        userRepository.save(user);
-    }
-
-    /**
-     * ✅ 로그인 성공 시 실패 횟수 초기화
-     */
-    public void resetFailedAttempts(String loginId) {
-
-        User user = userRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new NotFoundException("error.user.notfound"));
-
-        user.setFailedLoginAttempts(0);
-        userRepository.save(user);
     }
 }
