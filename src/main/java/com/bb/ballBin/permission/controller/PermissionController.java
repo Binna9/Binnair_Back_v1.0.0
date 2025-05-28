@@ -37,7 +37,6 @@ public class PermissionController {
     }
 
     @PostMapping("")
-    @PreAuthorize("hasAuthority('PERMISSION_CREATE')")
     @Operation(summary = "권한 생성")
     @MessageKey(value = "success.permission.create")
     public ResponseEntity<Void> addPermission(@RequestBody PermissionRequestDto permissionRequestDto){

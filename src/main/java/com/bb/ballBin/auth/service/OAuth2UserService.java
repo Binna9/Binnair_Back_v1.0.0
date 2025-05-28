@@ -1,5 +1,6 @@
 package com.bb.ballBin.auth.service;
 
+import com.bb.ballBin.register.service.RegisterService;
 import com.bb.ballBin.security.jwt.model.OAuthUserDto;
 import com.bb.ballBin.security.jwt.util.JwtUtil;
 import com.bb.ballBin.user.entity.User;
@@ -21,6 +22,7 @@ import java.util.Set;
 public class OAuth2UserService {
 
     private final UserService userService;
+    private final RegisterService registerService;
     private final JwtUtil jwtUtil;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -44,19 +46,16 @@ public class OAuth2UserService {
     public String handleGoogleLogin(String code) {
         // ✅ 1. Google 서버에서 AccessToken 요청
         String accessToken = getGoogleAccessToken(code);
-
         // ✅ 2. AccessToken 으로 Google 사용자 정보 가져오기
         OAuthUserDto userDto = fetchGoogleUserProfile(accessToken);
-
         // ✅ 3. DB 에서 사용자 조회 (providerId 기준)
         Optional<User> existingUser = userService.findByProviderId(userDto.getProviderId());
 
         User user;
+
         if (existingUser.isEmpty()) {
-            // ✅ 4. 신규 사용자 회원가입
-            user = userService.registerOAuthUser(userDto);
+            user = registerService.registerOAuthUser(userDto);
         } else {
-            // ✅ 5. 기존 사용자 로그인 처리
             user = existingUser.get();
         }
 

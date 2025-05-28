@@ -1,8 +1,8 @@
 package com.bb.ballBin.bookmark.entity;
 
 import com.bb.ballBin.common.entity.BaseEntity;
-import com.bb.ballBin.product.entity.Product;
 import com.bb.ballBin.user.entity.User;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
@@ -26,7 +26,6 @@ public class Bookmark extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    @Column(nullable = false, name = "target_id")
+    private String targetId;
 }

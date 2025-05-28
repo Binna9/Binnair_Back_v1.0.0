@@ -42,7 +42,7 @@ public class BallBinUserDetails implements UserDetails {
     }
 
     /**
-     * 계정 만료 여부
+     * 계정 만료 여부 _ 비활성
      */
     @Override
     public boolean isAccountNonExpired() {
@@ -50,7 +50,7 @@ public class BallBinUserDetails implements UserDetails {
     }
 
     /**
-     * 자격 증명 만료 여부
+     * 자격 증명 만료 여부 _ 비활성
      */
     @Override
     public boolean isCredentialsNonExpired() {
@@ -58,10 +58,10 @@ public class BallBinUserDetails implements UserDetails {
     }
 
     /**
-     * 계정 활성화 여부
+     * 계정 활성화 여부 _ 비활성
      */
     @Override
     public boolean isEnabled() {
-        return user.isActive();
+        return true;
     }
 }

@@ -75,13 +75,13 @@ public class JwtFilter extends OncePerRequestFilter {
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toSet());
 
-            // ✅ 4. UserDetails 로드 (권한은 무시)
+            // ✅ 4. UserDetails 로드
             BallBinUserDetails userDetails = (BallBinUserDetails) ballBinUserDetailsService.loadUserById(userId);
 
             Authentication authToken = new UsernamePasswordAuthenticationToken(
                     userDetails,
                     null,
-                    authorities // ✅ 실제 권한 기반으로 설정
+                    authorities
             );
 
             SecurityContextHolder.getContext().setAuthentication(authToken);

@@ -9,6 +9,8 @@ import lombok.*;
 @Builder
 public class RoleResponseDto {
 
+    @Schema(description = "역할 ID")
+    private String roleId;
     @Schema(description = "역할 명")
     private String roleName;
     @Schema(description = "역할 설명")

@@ -3,10 +3,7 @@ package com.bb.ballBin.user.controller;
 import com.bb.ballBin.common.annotation.CurrentUserId;
 import com.bb.ballBin.common.annotation.MessageKey;
 import com.bb.ballBin.common.util.SecurityUtil;
-import com.bb.ballBin.user.model.UserResponseDto;
-import com.bb.ballBin.user.model.UserPasswordChangeRequestDto;
-import com.bb.ballBin.user.model.UserRoleRequestDto;
-import com.bb.ballBin.user.model.UserUpdateRequestDto;
+import com.bb.ballBin.user.model.*;
 import com.bb.ballBin.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -100,6 +97,16 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
+    @PutMapping("/change-active")
+    @Operation(summary = "사용자 활성화")
+    @MessageKey(value = "success.user.active.change")
+    public ResponseEntity<Void> changeActive(@RequestBody UserActiveRequestDto userActiveRequestDto) {
+
+        userService.updateUserActivation(userActiveRequestDto);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
     @GetMapping("/role")
     @Operation(summary = "사용자 역할 조회")
     public ResponseEntity<Set<String>> getUserRoles(@CurrentUserId String userId) {
@@ -108,7 +115,6 @@ public class UserController {
 
         return ResponseEntity.ok(roles);
     }
-
 
     @PostMapping("/assign-role")
     @Operation(summary = "사용자 역할 부여")

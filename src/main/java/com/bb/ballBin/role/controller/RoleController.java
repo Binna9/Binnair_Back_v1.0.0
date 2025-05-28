@@ -1,6 +1,5 @@
 package com.bb.ballBin.role.controller;
 
-import com.bb.ballBin.common.annotation.CurrentUserId;
 import com.bb.ballBin.common.annotation.MessageKey;
 import com.bb.ballBin.role.model.RolePermissionRequestDto;
 import com.bb.ballBin.role.model.RoleRequestDto;
@@ -66,7 +65,7 @@ public class RoleController {
     @DeleteMapping("/{roleId}")
     @PreAuthorize("hasAuthority('ROLE_DELETE')")
     @Operation(summary = "역할 삭제")
-    @MessageKey(value = "success.role.permission.remove")
+    @MessageKey(value = "success.role.delete")
     public ResponseEntity<Void> removeRole(@PathVariable("roleId") String roleId){
 
         roleService.deleteRole(roleId);

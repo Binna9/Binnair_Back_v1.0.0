@@ -17,7 +17,7 @@ import java.util.Set;
 @AllArgsConstructor
 @DynamicUpdate
 @Builder
-@EqualsAndHashCode(callSuper = false, exclude = {"bookmarks", "carts", "roles"})
+@EqualsAndHashCode(callSuper = false, exclude = {"bookmarks", "roles"})
 @Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"provider", "providerId"})
 })

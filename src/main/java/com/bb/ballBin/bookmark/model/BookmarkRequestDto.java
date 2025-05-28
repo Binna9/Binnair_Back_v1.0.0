@@ -12,6 +12,6 @@ import lombok.Setter;
 @Builder
 public class BookmarkRequestDto {
 
-    @Schema(description = "즐겨찾기할 제품 ID")
-    private String productId;
+    @Schema(description = "타켓 ID")
+    private String targetId;
 }

@@ -3,6 +3,8 @@ package com.bb.ballBin.user.model;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+import java.util.Set;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -21,4 +23,8 @@ public class UserResponseDto {
     private String nickName;
     @Schema(description = "핸드폰 번호")
     private String phoneNumber;
+    @Schema(description = "계정 활성화 상태")
+    private boolean isActive;
+    @Schema(description = "사용자 역할")
+    private Set<String> roles;
 }

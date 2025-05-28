@@ -1,7 +1,10 @@
 package com.bb.ballBin.common.util;
 
 import com.bb.ballBin.security.jwt.BallBinUserDetails;
+import com.bb.ballBin.user.entity.User;
+import com.bb.ballBin.user.mapper.UserMapper;
 import com.bb.ballBin.user.model.UserResponseDto;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -12,7 +15,10 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 @Component
+@RequiredArgsConstructor
 public class SecurityUtil {
+
+    private final UserMapper userMapper;
 
     /**
      * 사용자 ID
@@ -42,14 +48,8 @@ public class SecurityUtil {
 
         BallBinUserDetails userDetails = (BallBinUserDetails) authentication.getPrincipal();
 
-        UserResponseDto response = new UserResponseDto(
-                userDetails.getUserId(),
-                userDetails.getLoginId(),
-                userDetails.getUsername(),
-                userDetails.getEmail(),
-                userDetails.getNickName(),
-                userDetails.getPhoneNumber()
-        );
+        User user = userDetails.getUser();
+        UserResponseDto response = userMapper.toDto(user);
 
         return ResponseEntity.ok(response);
     }

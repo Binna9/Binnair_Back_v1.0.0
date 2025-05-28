@@ -20,15 +20,6 @@ public class BookmarkResponseDto {
     @Schema(description = "사용자 ID")
     private String userId;
 
-    @Schema(description = "제품 ID")
-    private String productId;
-
-    @Schema(description = "제품명")
-    private String productName;
-
-    @Schema(description = "제품 설명")
-    private String productDescription;
-
-    @Schema(description = "제품 가격")
-    private BigDecimal price;
+    @Schema(description = "타겟 ID")
+    private String targetId;
 }

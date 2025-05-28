@@ -11,14 +11,10 @@ import com.bb.ballBin.file.repository.FileRepository;
 import com.bb.ballBin.file.service.FileService;
 import com.bb.ballBin.role.entity.Role;
 import com.bb.ballBin.role.repository.RoleRepository;
-import com.bb.ballBin.security.jwt.model.OAuthUserDto;
 import com.bb.ballBin.user.entity.AuthProvider;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.user.mapper.UserMapper;
-import com.bb.ballBin.user.model.UserPasswordChangeRequestDto;
-import com.bb.ballBin.user.model.UserResponseDto;
-import com.bb.ballBin.user.model.UserRoleRequestDto;
-import com.bb.ballBin.user.model.UserUpdateRequestDto;
+import com.bb.ballBin.user.model.*;
 import com.bb.ballBin.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
@@ -47,32 +43,10 @@ public class UserService {
     private final FileRepository fileRepository;
 
     /**
-     * ✅ providerId로 사용자 조회 (OAuth 로그인용) todo: 구현 구체화 필요
+     * providerId로 사용자 조회
      */
     public Optional<User> findByProviderId(String providerId) {
         return userRepository.findByProviderId(providerId);
-    }
-
-    /**
-     * ✅ OAuth2 신규 사용자 회원가입 처리 todo: 구현 구체화 필요
-     */
-    public User registerOAuthUser(OAuthUserDto userDto) {
-
-        Set<Role> roles = new HashSet<>(roleRepository.findByRoleNameIn(List.of("ROLE_USER")));
-        String dummyPassword = passwordEncoder.encode(UUID.randomUUID().toString());
-
-        User newUser = User.builder()
-                .loginId(userDto.getEmail()) // ✅ 이메일을 로그인 ID로 사용
-                .loginPassword(dummyPassword)
-                .provider(AuthProvider.GOOGLE) // ✅ 로그인 제공자 (GOOGLE)
-                .providerId(userDto.getProviderId()) // ✅ Google 제공 ID
-                .userName(userDto.getUserName()) // ✅ 사용자 이름
-                .email(userDto.getEmail()) // ✅ 이메일
-                .isActive(true) // ✅ 기본 활성 상태
-                .roles(roles) // ✅ 기본 역할 설정
-                .build();
-
-        return userRepository.save(newUser);
     }
 
     /**
@@ -126,7 +100,6 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
-
         if (user.getProvider() != null && user.getProviderId() != null) {
             if (!Objects.equals(user.getProvider(), AuthProvider.GOOGLE)) {
                 throw new ImmutableFieldException("error.user.provider.immutable");
@@ -152,7 +125,7 @@ public class UserService {
     }
 
     /**
-     * 비밀번호 검증
+     * 사용자 비밀번호 검증
      */
     public boolean verifyCurrentPassword(String userId, String currentPassword) {
 
@@ -169,7 +142,7 @@ public class UserService {
     }
 
     /**
-     * 비밀번호 변경
+     * 사용자 비밀번호 변경
      */
     @CheckUserRegisterValid
     public void changePassword(String userId, UserPasswordChangeRequestDto passwordChangeDto) {
@@ -184,6 +157,18 @@ public class UserService {
         String bcryptHashedPassword = passwordEncoder.encode(passwordChangeDto.getNewPassword());
 
         user.setLoginPassword(bcryptHashedPassword);
+        userRepository.save(user);
+    }
+
+    /**
+     * 사용자 계정 활성/비활성화
+     */
+    public void updateUserActivation(UserActiveRequestDto userActiveRequestDto) {
+
+        User user = userRepository.findById(userActiveRequestDto.getUserId())
+                .orElseThrow(() -> new NotFoundException("error.user.notfound"));
+
+        user.setActive(userActiveRequestDto.isActive());
         userRepository.save(user);
     }
 
