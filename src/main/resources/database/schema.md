@@ -66,8 +66,8 @@ VALUES (
     'system',
     'system',
     'Y',
-    'system',
-    'system'
+    'SYSTEM',
+    'SYSTEM'
 );
 
 
@@ -241,7 +241,7 @@ CREATE TABLE public.products (
 CREATE TABLE public.bookmarks (
 	bookmark_id varchar(36) NOT NULL,
 	user_id varchar(36) NOT NULL,
-	product_id varchar(36) NOT NULL,
+	target_id varchar(36) NOT NULL,
 	create_datetime timestamptz DEFAULT now() NOT NULL,
 	creator_id varchar(36) NOT NULL,
 	creator_login_id varchar(60) NOT NULL,

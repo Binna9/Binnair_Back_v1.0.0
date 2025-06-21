@@ -101,7 +101,7 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
         if (user.getProvider() != null && user.getProviderId() != null) {
-            if (!Objects.equals(user.getProvider(), AuthProvider.GOOGLE)) {
+            if (Objects.equals(user.getProvider(), AuthProvider.GOOGLE)) {
                 throw new ImmutableFieldException("error.user.provider.immutable");
             }
         }

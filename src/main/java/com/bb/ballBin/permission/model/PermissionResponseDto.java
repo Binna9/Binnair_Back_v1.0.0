@@ -12,6 +12,8 @@ import lombok.Setter;
 @Builder
 public class PermissionResponseDto {
 
+    @Schema(description = "권한 ID")
+    private String permissionId;
     @Schema(description = "권한 명")
     private String permissionName;
     @Schema(description = "권한 설명")
