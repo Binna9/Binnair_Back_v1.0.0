@@ -77,15 +77,10 @@ public class UserService {
 
         List<File> files = fileRepository.findByTargetIdAndTargetType(userId, TargetType.USER);
 
-        if (files == null || files.isEmpty()) {
-            throw new NotFoundException("error.file.notfound");
-        }
+        String relativePath = null;
 
-        File fileEntity = files.get(0);
-        String relativePath = fileEntity.getFilePath();
-
-        if (relativePath == null || relativePath.isEmpty()) {
-            throw new NotFoundException("error.path.notfound");
+        if (files != null && !files.isEmpty()) {
+            relativePath = files.get(0).getFilePath();
         }
 
         return fileUtil.getImageResponse("user", relativePath);

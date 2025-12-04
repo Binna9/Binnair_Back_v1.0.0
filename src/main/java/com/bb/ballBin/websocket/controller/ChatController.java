@@ -21,7 +21,7 @@ public class ChatController {
 
     @GetMapping("")
     @PreAuthorize("hasAuthority('WEBSOCKET_READ')")
-    @Operation(summary = "채팅 50개 조회")
+    @Operation(summary = "실시간 채팅 조회")
     public ResponseEntity<List<ChatMessageResponseDto>> getChatHistory() {
         return chatService.getChatHistoryList();
     }

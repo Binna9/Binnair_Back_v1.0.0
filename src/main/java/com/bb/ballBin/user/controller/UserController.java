@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -34,6 +35,7 @@ public class UserController {
     }
 
     @GetMapping("")
+    @PreAuthorize("hasAuthority('USER_READ')")
     @Operation(summary = "사용자 전체 조회")
     public ResponseEntity<Page<UserResponseDto>> getAllUsers(
             @PageableDefault(page = 0, size = 9, sort = "createDatetime", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -41,6 +43,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
+    @PreAuthorize("hasAuthority('USER_READ')")
     @Operation(summary = "사용자 개별 조회")
     public ResponseEntity<UserResponseDto> userDetail(@PathVariable String userId) {
         return ResponseEntity.ok(userService.getUserById(userId));
@@ -53,6 +56,7 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
+    @PreAuthorize("hasAuthority('USER_UPDATE')")
     @Operation(summary = "사용자 수정")
     @MessageKey(value = "success.user.update")
     public ResponseEntity<Void> modifyUser(@PathVariable String userId, @RequestBody UserUpdateRequestDto userUpdateRequestDto) {
@@ -63,6 +67,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}")
+    @PreAuthorize("hasAuthority('USER_DELETE')")
     @Operation(summary = "사용자 삭제")
     @MessageKey(value = "success.user.delete")
     public ResponseEntity<Void> removeUser(@PathVariable String userId) {
@@ -98,6 +103,7 @@ public class UserController {
     }
 
     @PutMapping("/change-active")
+    @PreAuthorize("hasAuthority('USER_ACTIVE')")
     @Operation(summary = "사용자 활성화")
     @MessageKey(value = "success.user.active.change")
     public ResponseEntity<Void> changeActive(@RequestBody UserActiveRequestDto userActiveRequestDto) {

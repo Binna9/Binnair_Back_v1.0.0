@@ -27,6 +27,9 @@ public class FileUtil {
     @Value("${file.board.upload-dir}")
     private String boardUploadDir;
 
+    @Value("${file.default.upload-dir}")
+    private String DefaultUploadDir;
+
     /**
      * 저장된 파일의 전체 경로 가져오기
      *
@@ -163,11 +166,15 @@ public class FileUtil {
      */
     public ResponseEntity<Resource> getImageResponse(String type, String relativePath) {
 
-        if (relativePath == null) {
-            throw new NotFoundException("error.path.notfound");
+        File imageFile = null;
+
+        if (relativePath != null && !relativePath.isEmpty()) {
+            imageFile = getFilePath(type, relativePath);
         }
 
-        File imageFile = getFilePath(type, relativePath);
+        if (imageFile == null || !imageFile.exists()) {
+            imageFile = new File(DefaultUploadDir);
+        }
 
         if (!imageFile.exists()) {
             return ResponseEntity.notFound().build();
@@ -180,6 +187,7 @@ public class FileUtil {
                 .contentType(getMediaType(imageFile))
                 .body(resource);
     }
+
 
     /**
      * 파일 확장자를 기반으로 MIME 타입 반환(이미지 기준)
