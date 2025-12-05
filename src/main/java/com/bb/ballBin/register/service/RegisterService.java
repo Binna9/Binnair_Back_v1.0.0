@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,9 +48,10 @@ public class RegisterService {
         String userId = user.getUserId();
 
         UserRoleRequestDto userRoleRequestDto = new UserRoleRequestDto();
+        userRoleRequestDto.setUserId(user.getUserId());
         userRoleRequestDto.setRoleName("ROLE_USER");
 
-        userService.roleToUser(userId, userRoleRequestDto);
+        userService.roleToUser(Collections.singletonList(userRoleRequestDto));
 
         if (files != null && !files.isEmpty()) {
             fileService.uploadFiles(TargetType.USER, userId, files);
@@ -78,9 +80,10 @@ public class RegisterService {
         userRepository.save(user);
 
         UserRoleRequestDto userRoleRequestDto = new UserRoleRequestDto();
+        userRoleRequestDto.setUserId(user.getUserId());
         userRoleRequestDto.setRoleName("ROLE_USER");
 
-        userService.roleToUser(user.getUserId(), userRoleRequestDto);
+        userService.roleToUser(Collections.singletonList(userRoleRequestDto));
 
         return user;
     }

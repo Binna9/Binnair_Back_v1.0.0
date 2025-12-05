@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -75,8 +76,9 @@ public class RoleController {
 
     @GetMapping("/permission")
     @Operation(summary = "역할 권한 조회")
-    public ResponseEntity<Set<String>> getRolePermissions(@RequestParam("roleIds") Set<String> roleIds) {
+    public ResponseEntity<Set<String>> getRolePermissions(@RequestParam("roleId") String roleId) {
 
+        Set<String> roleIds = Set.of(roleId);
         Set<String> permissions = roleService.getPermissionsByRoles(roleIds);
 
         return ResponseEntity.ok(permissions);
@@ -85,7 +87,7 @@ public class RoleController {
     @PostMapping("/assign-permission")
     @Operation(summary = "역할 권한 부여")
     @MessageKey(value = "success.role.permission.assign")
-    public ResponseEntity<Void> assignPermissionToRole(@RequestBody RolePermissionRequestDto rolePermissionRequestDto) {
+    public ResponseEntity<Void> assignPermissionToRole(@RequestBody List<RolePermissionRequestDto> rolePermissionRequestDto) {
 
         roleService.permissionToRole(rolePermissionRequestDto);
 
@@ -95,7 +97,7 @@ public class RoleController {
     @DeleteMapping("/remove-permission")
     @Operation(summary = "역할 권한 삭제")
     @MessageKey(value = "success.role.permission.remove")
-    public ResponseEntity<Void> removePermissionToRole(@RequestBody RolePermissionRequestDto rolePermissionRequestDto) {
+    public ResponseEntity<Void> removePermissionToRole(@RequestBody List<RolePermissionRequestDto> rolePermissionRequestDto) {
 
         roleService.removeToRole(rolePermissionRequestDto);
 

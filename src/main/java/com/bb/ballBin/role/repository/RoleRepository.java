@@ -1,11 +1,12 @@
 package com.bb.ballBin.role.repository;
 
 import com.bb.ballBin.role.entity.Role;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -20,9 +21,23 @@ public interface RoleRepository extends JpaRepository<Role, String> {
 
     Optional<Role> findByRoleNameIgnoreCase(String roleName); // 대소문자 무시 (한글엔 영향 없음)
 
-    @Query("SELECT r FROM Role r WHERE r.roleName IN :roleNames")
-    Set<Role> findByRoleNameIn(@Param("roleNames") Collection<String> roleNames);
-
     @Query("SELECT r.roleId FROM Role r WHERE r.roleName IN :roleNames")
     Set<String> findRoleIdsByRoleNames(@Param("roleNames") Set<String> roleNames);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query(value = "INSERT INTO role_permissions (role_id , permission_id) VALUES (:roleId, :permissionId)",
+            nativeQuery = true)
+    void insertRolePermission(@Param("roleId") String roleId, @Param("permissionId") String permissionId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query(value = "DELETE FROM role_permissions WHERE role_id = :roleId AND permission_id = :permissionId",
+            nativeQuery = true)
+    void deleteRolePermission(@Param("roleId") String roleId, @Param("permissionId") String permissionId);
+
+    @Transactional
+    @Query(value = "SELECT COUNT(*) > 0 FROM role_permissions WHERE role_id = :roleId AND permission_id = :permissionId",
+            nativeQuery = true)
+    boolean existsRolePermission(@Param("roleId") String roleId, @Param("permissionId") String permissionId);
 }

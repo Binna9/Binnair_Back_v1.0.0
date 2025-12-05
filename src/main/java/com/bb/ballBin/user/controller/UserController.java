@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -125,9 +126,9 @@ public class UserController {
     @PostMapping("/assign-role")
     @Operation(summary = "사용자 역할 부여")
     @MessageKey(value = "success.user.role.assign")
-    public ResponseEntity<Void> assignRoleToUser(@CurrentUserId String userId, @RequestBody UserRoleRequestDto userRoleRequestDto) {
+    public ResponseEntity<Void> assignRoleToUser(@RequestBody List<UserRoleRequestDto> userRoleRequestDto) {
 
-        userService.roleToUser(userId, userRoleRequestDto);
+        userService.roleToUser(userRoleRequestDto);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -135,9 +136,9 @@ public class UserController {
     @DeleteMapping("/remove-role")
     @Operation(summary = "사용자 역할 제거")
     @MessageKey(value = "success.user.role.remove")
-    public ResponseEntity<Void> removeRoleFromUser(@CurrentUserId String userId, @RequestBody UserRoleRequestDto userRoleRequestDto) {
+    public ResponseEntity<Void> removeRoleFromUser(@RequestBody List<UserRoleRequestDto> userRoleRequestDto) {
 
-        userService.removeRoleFromUser(userId, userRoleRequestDto.getRoleName());
+        userService.removeRoleFromUser(userRoleRequestDto);
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }

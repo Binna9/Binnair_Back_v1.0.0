@@ -12,6 +12,8 @@ import lombok.Setter;
 @NoArgsConstructor
 public class UserRoleRequestDto {
 
+    @Schema(name = "사용자 ID")
+    private String userId;
     @Schema(name = "역할 명")
     private String roleName;
 }

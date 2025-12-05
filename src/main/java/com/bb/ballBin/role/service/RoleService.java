@@ -120,30 +120,38 @@ public class RoleService {
     /**
      * 역할 권한 부여
      */
-    public void permissionToRole(RolePermissionRequestDto rolePermissionRequestDto) {
+    public void permissionToRole(List<RolePermissionRequestDto> rolePermissionRequestDtoList) {
 
-        Role role = roleRepository.findByRoleId(rolePermissionRequestDto.getRoleId())
-                .orElseThrow(() -> new NotFoundException("error.role.notfound"));
+        for(RolePermissionRequestDto dto : rolePermissionRequestDtoList) {
 
-        Permission permission = permissionRepository.findByPermissionName(rolePermissionRequestDto.getPermissionName())
-                .orElseThrow(() -> new NotFoundException("error.permission.notfound"));
+            Role role = roleRepository.findByRoleId(dto.getRoleId())
+                    .orElseThrow(() -> new NotFoundException("error.role.notfound"));
 
-        role.getPermissions().add(permission);
-        roleRepository.save(role);
+            Permission permission = permissionRepository.findByPermissionName(dto.getPermissionName())
+                    .orElseThrow(() -> new NotFoundException("error.permission.notfound"));
+
+            boolean exists = roleRepository.existsRolePermission(role.getRoleId(), permission.getPermissionId());
+
+            if(!exists){
+                roleRepository.insertRolePermission(role.getRoleId(), permission.getPermissionId());
+            }
+        }
     }
 
     /**
      * 역할 권한 삭제
      */
-    public void removeToRole(RolePermissionRequestDto rolePermissionRequestDto) {
+    public void removeToRole(List<RolePermissionRequestDto> rolePermissionRequestDtoList) {
 
-        Role role = roleRepository.findByRoleId(rolePermissionRequestDto.getRoleId())
-                .orElseThrow(() -> new NotFoundException("error.role.notfound"));
+        for(RolePermissionRequestDto dto : rolePermissionRequestDtoList) {
 
-        Permission permission = permissionRepository.findByPermissionName(rolePermissionRequestDto.getPermissionName())
-                .orElseThrow(() -> new NotFoundException("error.permission.notfound"));
+            Role role = roleRepository.findByRoleId(dto.getRoleId())
+                    .orElseThrow(() -> new NotFoundException("error.role.notfound"));
 
-        role.getPermissions().remove(permission);
-        roleRepository.save(role);
+            Permission permission = permissionRepository.findByPermissionName(dto.getPermissionName())
+                    .orElseThrow(() -> new NotFoundException("error.permission.notfound"));
+
+            roleRepository.deleteRolePermission(role.getRoleId(), permission.getPermissionId());
+        }
     }
 }

@@ -183,32 +183,38 @@ public class UserService {
     /**
      * 사용자 역할 부여
      */
-    public void roleToUser(String userId, UserRoleRequestDto userRoleRequestDto) {
+    public void roleToUser(List<UserRoleRequestDto> userRoleRequestDtoList) {
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("error.user.notfound"));
+        for (UserRoleRequestDto dto : userRoleRequestDtoList) {
 
-        Hibernate.initialize(user.getRoles());
+            User user = userRepository.findByUserId(dto.getUserId())
+                    .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
-        Role role = roleRepository.findByRoleNameIgnoreCase(userRoleRequestDto.getRoleName())
-                .orElseThrow(() -> new NotFoundException("error.role.notfound"));
+            Role role = roleRepository.findByRoleNameIgnoreCase(dto.getRoleName())
+                    .orElseThrow(() -> new NotFoundException("error.role.notfound"));
 
-        user.getRoles().add(role);
-        userRepository.save(user);
+            boolean exists = userRepository.existsUserRole(user.getUserId(), role.getRoleId());
+
+            if (!exists) {
+                userRepository.insertUserRole(user.getUserId(), role.getRoleId());
+            }
+        }
     }
 
     /**
      * 사용자 역할 삭제
      */
-    public void removeRoleFromUser(String userId, String roleName) {
+    public void removeRoleFromUser(List<UserRoleRequestDto> userRoleRequestDtoList) {
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        for (UserRoleRequestDto dto : userRoleRequestDtoList) {
 
-        Role role = roleRepository.findByRoleNameIgnoreCase(roleName)
-                .orElseThrow(() -> new NotFoundException("Role not found"));
+            User user = userRepository.findByUserId(dto.getUserId())
+                    .orElseThrow(() -> new NotFoundException("error.user.notfound"));
 
-        user.getRoles().remove(role);
-        userRepository.save(user);
+            Role role = roleRepository.findByRoleNameIgnoreCase(dto.getRoleName())
+                    .orElseThrow(() -> new NotFoundException("error.role.notfound"));
+
+            userRepository.deleteUserRole(user.getUserId(), role.getRoleId());
+        }
     }
 }
