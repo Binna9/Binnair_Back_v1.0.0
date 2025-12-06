@@ -106,11 +106,6 @@ public class RoleService {
 
         List<Role> roles = roleRepository.findAllWithPermissionsByRoleIdIn(List.copyOf(roleIds));
 
-        for (Role r : roles) {
-            System.out.println("Role: " + r.getRoleName());
-            r.getPermissions().forEach(p -> System.out.println(" - Permission: " + p.getPermissionName()));
-        }
-
         return roles.stream()
                 .flatMap(role -> role.getPermissions().stream())
                 .map(Permission::getPermissionName)
