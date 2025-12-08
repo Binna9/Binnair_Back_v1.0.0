@@ -2,7 +2,7 @@
 ``` sql
 ## users
 
-CREATE TABLE public.users (
+CREATE TABLE web.users (
 	user_id varchar(36) NOT NULL,
 	user_name varchar(50) NOT NULL,
 	login_id varchar(60) NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE public.users (
 );
 
 --- 최초 system 계정 ---
-INSERT INTO public.users
+INSERT INTO web.users
 (
     user_id,
     user_name,
@@ -73,7 +73,7 @@ VALUES (
 
 ## boards
  
-CREATE TABLE public.boards (
+CREATE TABLE web.boards (
 	board_id varchar(36) NOT NULL,
 	board_type varchar(10) NOT NULL,
 	title varchar(255) NOT NULL,
@@ -94,15 +94,15 @@ CREATE TABLE public.boards (
 	CONSTRAINT boards_pkey PRIMARY KEY (board_id)
 );
 
--- public.boards foreign keys
+-- web.boards foreign keys
 
-ALTER TABLE public.boards ADD CONSTRAINT fk_board_creator FOREIGN KEY (creator_id) REFERENCES public.users(user_id);
-ALTER TABLE public.boards ADD CONSTRAINT fk_board_modifier FOREIGN KEY (modifier_id) REFERENCES public.users(user_id);
-ALTER TABLE public.boards ADD CONSTRAINT fk_board_writer FOREIGN KEY (writer_id) REFERENCES public.users(user_id);
+ALTER TABLE web.boards ADD CONSTRAINT fk_board_creator FOREIGN KEY (creator_id) REFERENCES web.users(user_id);
+ALTER TABLE web.boards ADD CONSTRAINT fk_board_modifier FOREIGN KEY (modifier_id) REFERENCES web.users(user_id);
+ALTER TABLE web.boards ADD CONSTRAINT fk_board_writer FOREIGN KEY (writer_id) REFERENCES web.users(user_id);
 
 ## comments
 
-CREATE TABLE public."comments" (
+CREATE TABLE web."comments" (
 	comment_id varchar(36) NOT NULL,
 	board_id varchar(36) NOT NULL,
 	parent_id varchar(36) NULL,
@@ -120,17 +120,17 @@ CREATE TABLE public."comments" (
 	CONSTRAINT comments_pkey PRIMARY KEY (comment_id)
 );
 
--- public."comments" foreign keys
+-- web."comments" foreign keys
 
-ALTER TABLE public."comments" ADD CONSTRAINT fk_comment_board FOREIGN KEY (board_id) REFERENCES public.boards(board_id) ON DELETE CASCADE;
-ALTER TABLE public."comments" ADD CONSTRAINT fk_comment_creator FOREIGN KEY (creator_id) REFERENCES public.users(user_id);
-ALTER TABLE public."comments" ADD CONSTRAINT fk_comment_modifier FOREIGN KEY (modifier_id) REFERENCES public.users(user_id);
-ALTER TABLE public."comments" ADD CONSTRAINT fk_comment_parent FOREIGN KEY (parent_id) REFERENCES public."comments"(comment_id) ON DELETE CASCADE;
-ALTER TABLE public."comments" ADD CONSTRAINT fk_comment_writer FOREIGN KEY (writer_id) REFERENCES public.users(user_id);
+ALTER TABLE web."comments" ADD CONSTRAINT fk_comment_board FOREIGN KEY (board_id) REFERENCES web.boards(board_id) ON DELETE CASCADE;
+ALTER TABLE web."comments" ADD CONSTRAINT fk_comment_creator FOREIGN KEY (creator_id) REFERENCES web.users(user_id);
+ALTER TABLE web."comments" ADD CONSTRAINT fk_comment_modifier FOREIGN KEY (modifier_id) REFERENCES web.users(user_id);
+ALTER TABLE web."comments" ADD CONSTRAINT fk_comment_parent FOREIGN KEY (parent_id) REFERENCES web."comments"(comment_id) ON DELETE CASCADE;
+ALTER TABLE web."comments" ADD CONSTRAINT fk_comment_writer FOREIGN KEY (writer_id) REFERENCES web.users(user_id);
 
 ## Addresses 
 
-CREATE TABLE public.addresses (
+CREATE TABLE web.addresses (
 	address_id varchar(36) NOT NULL,
 	user_id varchar(36) NOT NULL,
 	receiver varchar(50) NOT NULL,
@@ -149,13 +149,13 @@ CREATE TABLE public.addresses (
 	CONSTRAINT addresses_pkey PRIMARY KEY (address_id)
 );
 
--- public.addresses foreign keys
+-- web.addresses foreign keys
 
-ALTER TABLE public.addresses ADD CONSTRAINT fk_addresses_user FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+ALTER TABLE web.addresses ADD CONSTRAINT fk_addresses_user FOREIGN KEY (user_id) REFERENCES web.users(user_id) ON DELETE CASCADE;
 
 ## roles
 
-CREATE TABLE public.roles (
+CREATE TABLE web.roles (
 	role_id varchar(36) NOT NULL,
 	role_name varchar(50) NOT NULL,
 	role_description varchar(1000) NULL,
@@ -172,7 +172,7 @@ CREATE TABLE public.roles (
 
 ## permissions
 
-CREATE TABLE public.permissions (
+CREATE TABLE web.permissions (
 	permission_id varchar(36) NOT NULL,
 	permission_name varchar(50) NOT NULL,
 	permission_description varchar(1000) NULL,
@@ -189,33 +189,33 @@ CREATE TABLE public.permissions (
 
 ## user_roles
 
-CREATE TABLE public.user_roles (
+CREATE TABLE web.user_roles (
 	user_id varchar(36) NOT NULL,
 	role_id varchar(36) NOT NULL,
 	CONSTRAINT user_roles_pkey PRIMARY KEY (user_id, role_id)
 );
 
--- public.user_roles foreign keys
+-- web.user_roles foreign keys
 
-ALTER TABLE public.user_roles ADD CONSTRAINT user_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(role_id);
-ALTER TABLE public.user_roles ADD CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id);
+ALTER TABLE web.user_roles ADD CONSTRAINT user_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES web.roles(role_id);
+ALTER TABLE web.user_roles ADD CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES web.users(user_id);
 
 ## role_permissions
 
-CREATE TABLE public.role_permissions (
+CREATE TABLE web.role_permissions (
 	role_id varchar(36) NOT NULL,
 	permission_id varchar(36) NOT NULL,
 	CONSTRAINT role_permissions_pkey PRIMARY KEY (role_id, permission_id)
 );
 
--- public.role_permissions foreign keys
+-- web.role_permissions foreign keys
 
-ALTER TABLE public.role_permissions ADD CONSTRAINT role_permissions_permission_id_fkey FOREIGN KEY (permission_id) REFERENCES public.permissions(permission_id);
-ALTER TABLE public.role_permissions ADD CONSTRAINT role_permissions_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(role_id);
+ALTER TABLE web.role_permissions ADD CONSTRAINT role_permissions_permission_id_fkey FOREIGN KEY (permission_id) REFERENCES web.permissions(permission_id);
+ALTER TABLE web.role_permissions ADD CONSTRAINT role_permissions_role_id_fkey FOREIGN KEY (role_id) REFERENCES web.roles(role_id);
 
 ## products
 
-CREATE TABLE public.products (
+CREATE TABLE web.products (
 	product_id varchar(36) NOT NULL,
 	product_name varchar(255) NOT NULL,
 	product_description text NULL,
@@ -238,7 +238,7 @@ CREATE TABLE public.products (
 
 ## bookmarks
 
-CREATE TABLE public.bookmarks (
+CREATE TABLE web.bookmarks (
 	bookmark_id varchar(36) NOT NULL,
 	user_id varchar(36) NOT NULL,
 	target_id varchar(36) NOT NULL,
@@ -253,14 +253,13 @@ CREATE TABLE public.bookmarks (
 	CONSTRAINT bookmarks_pkey PRIMARY KEY (bookmark_id)
 );
 
--- public.bookmarks foreign keys
+-- web.bookmarks foreign keys
 
-ALTER TABLE public.bookmarks ADD CONSTRAINT fk_bookmark_product FOREIGN KEY (product_id) REFERENCES public.products(product_id) ON DELETE CASCADE;
-ALTER TABLE public.bookmarks ADD CONSTRAINT fk_bookmark_user FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+ALTER TABLE web.bookmarks ADD CONSTRAINT fk_bookmark_user FOREIGN KEY (user_id) REFERENCES web.users(user_id) ON DELETE CASCADE;
 
 ## carts
 
-CREATE TABLE public.carts (
+CREATE TABLE web.carts (
 	cart_id varchar(36) NOT NULL,
 	user_id varchar(36) NOT NULL,
 	product_id varchar(36) NOT NULL,
@@ -277,14 +276,14 @@ CREATE TABLE public.carts (
 	CONSTRAINT carts_quantity_check CHECK ((quantity > 0))
 );
 
--- public.carts foreign keys
+-- web.carts foreign keys
 
-ALTER TABLE public.carts ADD CONSTRAINT fk_cart_product FOREIGN KEY (product_id) REFERENCES public.products(product_id) ON DELETE CASCADE;
-ALTER TABLE public.carts ADD CONSTRAINT fk_cart_user FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+ALTER TABLE web.carts ADD CONSTRAINT fk_cart_product FOREIGN KEY (product_id) REFERENCES web.products(product_id) ON DELETE CASCADE;
+ALTER TABLE web.carts ADD CONSTRAINT fk_cart_user FOREIGN KEY (user_id) REFERENCES web.users(user_id) ON DELETE CASCADE;
 
 ## likes
    
-CREATE TABLE public.likes (
+CREATE TABLE web.likes (
 	like_id varchar(36) NOT NULL,
 	user_id varchar(36) NOT NULL,
 	board_id varchar(36) NOT NULL,
@@ -304,7 +303,7 @@ CREATE TABLE public.likes (
 
 ## files
 
-CREATE TABLE public.files (
+CREATE TABLE web.files (
 	file_id varchar(36) NOT NULL,
 	target_id varchar(36) NOT NULL,
 	target_type varchar(50) NOT NULL,
@@ -324,10 +323,10 @@ CREATE TABLE public.files (
 	CONSTRAINT files_pkey PRIMARY KEY (file_id)
 );
 
--- public.files foreign keys
+-- web.files foreign keys
 
-ALTER TABLE public.files ADD CONSTRAINT fk_creator FOREIGN KEY (creator_id) REFERENCES public.users(user_id);
-ALTER TABLE public.files ADD CONSTRAINT fk_modifier FOREIGN KEY (modifier_id) REFERENCES public.users(user_id);
+ALTER TABLE web.files ADD CONSTRAINT fk_creator FOREIGN KEY (creator_id) REFERENCES web.users(user_id);
+ALTER TABLE web.files ADD CONSTRAINT fk_modifier FOREIGN KEY (modifier_id) REFERENCES web.users(user_id);
 
 ## chats
 
