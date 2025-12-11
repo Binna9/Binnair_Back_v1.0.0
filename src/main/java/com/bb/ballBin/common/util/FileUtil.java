@@ -1,6 +1,5 @@
 package com.bb.ballBin.common.util;
 
-import com.bb.ballBin.common.exception.NotFoundException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;

@@ -25,7 +25,37 @@ CREATE TABLE web.users (
 	CONSTRAINT users_pkey PRIMARY KEY (user_id)
 );
 
---- 최초 system 계정 ---
+-- 로그인 ID는 중복 방지와 검색 성능을 위해 UNIQUE 인덱스 권장
+CREATE UNIQUE INDEX idx_users_login_id ON web.users(login_id);
+
+-- 활성화 상태 값 제한
+ALTER TABLE web.users ADD CONSTRAINT chk_users_is_active 
+CHECK (is_active IN ('Y', 'N', 'L'));
+
+-- 테이블 코멘트
+COMMENT ON TABLE web.users IS '시스템 사용자 정보 테이블';
+-- 컬럼 코멘트
+COMMENT ON COLUMN web.users.user_id IS '사용자 고유 식별자 (UUID)';
+COMMENT ON COLUMN web.users.user_name IS '사용자 실명';
+COMMENT ON COLUMN web.users.login_id IS '로그인 아이디';
+COMMENT ON COLUMN web.users.login_password IS '암호화된 로그인 비밀번호';
+COMMENT ON COLUMN web.users.provider_id IS 'OAuth 제공자에서의 사용자 ID (소셜 로그인 시 사용)';
+COMMENT ON COLUMN web.users.provider IS 'OAuth 제공자 (google, kakao, naver, facebook 등)';
+COMMENT ON COLUMN web.users.failed_login_attempts IS '연속 로그인 실패 횟수 (보안 정책에 따른 계정 잠금용)';
+COMMENT ON COLUMN web.users.email IS '사용자 이메일 주소';
+COMMENT ON COLUMN web.users.phone_number IS '사용자 전화번호';
+COMMENT ON COLUMN web.users.nick_name IS '사용자 닉네임';
+COMMENT ON COLUMN web.users.is_active IS '계정 활성화 상태: Y(활성), N(비활성), L(잠금) 등';
+COMMENT ON COLUMN web.users.create_datetime IS '계정 생성 일시';
+COMMENT ON COLUMN web.users.creator_id IS '생성자 사용자 ID';
+COMMENT ON COLUMN web.users.creator_login_id IS '생성자 로그인 ID';
+COMMENT ON COLUMN web.users.creator_name IS '생성자 이름';
+COMMENT ON COLUMN web.users.modify_datetime IS '최종 수정 일시';
+COMMENT ON COLUMN web.users.modifier_id IS '수정자 사용자 ID';
+COMMENT ON COLUMN web.users.modifier_login_id IS '수정자 로그인 ID';
+COMMENT ON COLUMN web.users.modifier_name IS '수정자 이름';
+
+--- 최초 user system 계정 ---
 INSERT INTO web.users
 (
     user_id,
@@ -69,7 +99,6 @@ VALUES (
     'SYSTEM',
     'SYSTEM'
 );
-
 
 ## boards
  

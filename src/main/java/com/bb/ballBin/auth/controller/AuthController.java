@@ -36,10 +36,12 @@ public class AuthController {
      */
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
-
         return authService.logout(request, response);
     }
 
+    /**
+     * Google OAuth 로그인
+     */
     @PostMapping("/google/login")
     public ResponseEntity<JwtResponse> googleLogin(@RequestBody Map<String, String> request) {
 
@@ -50,6 +52,9 @@ public class AuthController {
         return ResponseEntity.ok(new JwtResponse(accessToken));
     }
 
+    /**
+     * 토큰 리프래쉬
+     */
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
         return authService.refreshAccessToken(refreshToken);
