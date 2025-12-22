@@ -26,7 +26,7 @@ public class FileUtil {
     @Value("${file.board.upload-dir}")
     private String boardUploadDir;
 
-    @Value("${file.default.upload-dir}")
+    @Value("${file.default.upload}")
     private String DefaultUploadDir;
 
     /**
@@ -171,22 +171,22 @@ public class FileUtil {
             imageFile = getFilePath(type, relativePath);
         }
 
-        if (imageFile == null || !imageFile.exists()) {
-            imageFile = new File(DefaultUploadDir);
+        if (imageFile == null || !imageFile.exists() || imageFile.isDirectory()) {
+            imageFile = new File(DefaultUploadDir); // 반드시 파일 경로
         }
 
-        if (!imageFile.exists()) {
+        if (!imageFile.exists() || imageFile.isDirectory()) {
             return ResponseEntity.notFound().build();
         }
 
         Resource resource = new FileSystemResource(imageFile);
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + imageFile.getName() + "\"")
                 .contentType(getMediaType(imageFile))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + imageFile.getName() + "\"")
                 .body(resource);
     }
-
 
     /**
      * 파일 확장자를 기반으로 MIME 타입 반환(이미지 기준)

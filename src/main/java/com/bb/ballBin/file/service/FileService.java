@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -43,11 +42,6 @@ public class FileService {
             saveFileMetadata(targetType, targetId, savedPath, file);
 
         }
-    }
-
-    public void createFiles(TargetType targetType, List<MultipartFile> files){
-        List<File> savedFiles = new ArrayList<>();
-
     }
 
     /**
