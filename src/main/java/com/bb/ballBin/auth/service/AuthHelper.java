@@ -15,17 +15,12 @@ public class AuthHelper {
     private final UserRepository userRepository;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void increaseFailedAttempts(String loginId) {
-        try {
-            User user = userRepository.findByLoginId(loginId)
-                    .orElseThrow(() -> new NotFoundException("error.user.notfound"));
-
-            user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
-            userRepository.save(user);
-
-        } catch (Exception e) {
-            System.err.println("FAIL" + e.getMessage());
+    public int increaseFailedAttemptsAndGet(String loginId) {
+        Integer failed = userRepository.incrementFailedAttempts(loginId);
+        if (failed == null) {
+            throw new NotFoundException("error.user.notfound");
         }
+        return failed;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

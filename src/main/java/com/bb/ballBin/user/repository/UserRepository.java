@@ -25,6 +25,15 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     boolean existsByNickName(String nickName);
 
+    @Query(value = """
+        UPDATE web.users
+        SET failed_login_attempts = COALESCE(failed_login_attempts, 0) + 1,
+            modify_datetime = now()
+        WHERE login_id = :loginId
+        RETURNING failed_login_attempts
+        """, nativeQuery = true)
+    Integer incrementFailedAttempts(@Param("loginId") String loginId);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Transactional
     @Query(value = "INSERT INTO user_roles (user_id, role_id) VALUES (:userId, :roleId)",

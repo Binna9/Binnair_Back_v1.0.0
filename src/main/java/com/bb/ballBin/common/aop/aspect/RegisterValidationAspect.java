@@ -26,7 +26,6 @@ public class RegisterValidationAspect {
                 if (!dto.getLoginPassword().equals(dto.getConfirmPassword())) {
                     throw new InvalidPasswordException("error.password.mismatch");
                 }
-
                 // 비밀번호 형식
                 String password = dto.getLoginPassword();
 

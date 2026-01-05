@@ -3,7 +3,6 @@ package com.bb.ballBin.auth.service;
 import com.bb.ballBin.common.exception.InvalidPasswordException;
 import com.bb.ballBin.common.Service.MessageService;
 import com.bb.ballBin.common.exception.IsActiveAccountException;
-import com.bb.ballBin.security.jwt.BallBinUserDetails;
 import com.bb.ballBin.security.jwt.service.JwtBlacklistService;
 import com.bb.ballBin.security.jwt.service.RefreshTokenService;
 import com.bb.ballBin.security.jwt.util.JwtUtil;
@@ -18,6 +17,7 @@ import org.springframework.http.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -51,19 +50,19 @@ public class AuthService {
      */
     public ResponseEntity<?> login(String loginId, String loginPassword, HttpServletResponse response) {
 
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new UsernameNotFoundException("error.login.error.notfound"));
+
+        if (!user.isActive()) {
+            throw new IsActiveAccountException("error.login.assign");
+        }
+
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginId, loginPassword)
             );
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            BallBinUserDetails userDetails = (BallBinUserDetails) authentication.getPrincipal();
-
-            User user = userDetails.getUser();
-
-            if (!user.isActive()) {
-                throw new IsActiveAccountException("error.login.assign");
-            }
 
             String userId = user.getUserId();
             Set<String> roles = userService.getUserRoleNames(userId);
@@ -96,12 +95,9 @@ public class AuthService {
                     .body(Map.of("accessToken", accessToken));
 
         } catch (BadCredentialsException e) {
-            userRepository.findByLoginId(loginId).ifPresent(user -> {
-                authHelper.increaseFailedAttempts(loginId);
-                if (user.getFailedLoginAttempts() >= 5) {
-                    throw new InvalidPasswordException("error.security.login.lock"); // 🚨 5회 이상 틀리면 예외 발생
-                }
-            });
+            int failed = authHelper.increaseFailedAttemptsAndGet(loginId);
+            if (failed >= 5) throw new InvalidPasswordException("error.security.login.lock");
+
             throw new InvalidPasswordException("error.security.password");
         }
     }

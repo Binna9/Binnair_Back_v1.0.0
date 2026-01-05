@@ -7,5 +7,4 @@ import org.springframework.stereotype.Component;
 @Aspect
 @Component
 @RequiredArgsConstructor
-public class ChangePasswordValidationAspect {
-}
+public class ChangePasswordValidationAspect {}
