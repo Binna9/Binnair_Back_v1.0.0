@@ -17,8 +17,6 @@ import com.bb.ballBin.file.service.FileService;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,8 +28,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class BoardService {
-
-    private static final Logger logger = LoggerFactory.getLogger(BoardService.class);
 
     private final BoardMapper boardMapper;
     private final BoardRepository boardRepository;
@@ -99,8 +95,7 @@ public class BoardService {
             }
 
         } catch (Exception e) {
-            logger.error("오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("처리 중 오류 발생", e);
+            throw new RuntimeException("error.runtime", e);
         }
     }
 
@@ -118,8 +113,7 @@ public class BoardService {
             boardRepository.save(board);
 
         } catch (Exception e) {
-            logger.error("오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("처리 중 오류 발생", e);
+            throw new RuntimeException("error.runtime", e);
         }
     }
 
@@ -132,8 +126,7 @@ public class BoardService {
             boardRepository.deleteById(boardId);
             fileService.deleteFilesByTarget(TargetType.BOARD, boardId);
         } catch (Exception e) {
-            logger.error("삭제 중 오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("삭제 중 오류 발생", e);
+            throw new RuntimeException("error.runtime", e);
         }
     }
 

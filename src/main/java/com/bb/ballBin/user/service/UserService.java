@@ -17,7 +17,6 @@ import com.bb.ballBin.user.mapper.UserMapper;
 import com.bb.ballBin.user.model.*;
 import com.bb.ballBin.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.Hibernate;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;

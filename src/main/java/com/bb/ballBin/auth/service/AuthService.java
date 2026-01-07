@@ -19,11 +19,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.Map;
@@ -33,8 +31,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Transactional
 public class AuthService {
-
-    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
@@ -97,7 +93,6 @@ public class AuthService {
         } catch (BadCredentialsException e) {
             int failed = authHelper.increaseFailedAttemptsAndGet(loginId);
             if (failed >= 5) throw new InvalidPasswordException("error.security.login.lock");
-
             throw new InvalidPasswordException("error.security.password");
         }
     }
@@ -144,8 +139,7 @@ public class AuthService {
 
             return ResponseEntity.ok(messageService.getMessage("success.logout"));
         } catch (Exception e){
-            logger.error(e.getMessage());
-            throw new RuntimeException("ERROR",e);
+            throw new RuntimeException("error.runtime", e);
         }
     }
 
@@ -187,8 +181,7 @@ public class AuthService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("ERROR", "Refresh Token Expired"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("ERROR", "Invalid Refresh Token"));
+            throw new RuntimeException("error.runtime", e);
         }
     }
 }

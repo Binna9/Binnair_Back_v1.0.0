@@ -32,7 +32,7 @@ public class AuthHelper {
             user.setFailedLoginAttempts(0);
             userRepository.save(user);
         } catch (Exception e) {
-            System.err.println("FAIL" + e.getMessage());
+            throw new RuntimeException("error.runtime", e);
         }
     }
 }
