@@ -10,6 +10,9 @@ public interface FileRepository extends JpaRepository<File, String> {
 
     List<File> findByTargetIdAndTargetType(String targetId, TargetType targetType);
 
-    void deleteByTargetIdAndTargetType(String targetId, TargetType targetType);
+    List<File> findByTargetTypeAndTargetIdIn(TargetType targetType, List<String> targetIds);
 
+    boolean existsByTargetTypeAndTargetId(TargetType targetType, String targetId);
+
+    void deleteAllByIdInBatch(Iterable<String> ids);
 }

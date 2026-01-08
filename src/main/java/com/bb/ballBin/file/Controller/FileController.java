@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.core.io.Resource;
+
 
 import java.util.List;
 
@@ -19,9 +21,17 @@ public class FileController {
 
     private final FileService fileService;
 
-    @PostMapping("")
+    @GetMapping("/{fileId}")
+    @PreAuthorize("hasAuthority('FILE_DOWNLOAD')")
+    @Operation(summary = "파일 다운로드")
+    @MessageKey(value = "success.file.download")
+    public ResponseEntity<Resource> download(@PathVariable String fileId) {
+        return fileService.downloadFile(fileId);
+    }
+
+    @PostMapping("/upload")
     @PreAuthorize("hasAuthority('FILE_UPLOAD')")
-    @Operation(summary = "파일 업로드")
+    @Operation(summary = "파일 다중 업로드")
     @MessageKey(value = "success.file.upload")
     public ResponseEntity<Void> uploadFiles(
             @ModelAttribute FileRequestDto fileRequestDto,
@@ -32,13 +42,13 @@ public class FileController {
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{fileId}")
+    @PostMapping("/delete")
     @PreAuthorize("hasAuthority('FILE_DELETE')")
-    @Operation(summary = "파일 삭제")
-    @MessageKey(value = "success.file.delete")
-    public ResponseEntity<Void> removeFile(@PathVariable("fileId") String fileId) {
+    @Operation(summary = "파일 다중 삭제")
+    @MessageKey("success.file.delete")
+    public ResponseEntity<Void> removeFiles(@RequestBody List<String> fileIds) {
 
-        fileService.deleteFile(fileId);
+        fileService.deleteFiles(fileIds);
 
         return ResponseEntity.ok().build();
     }

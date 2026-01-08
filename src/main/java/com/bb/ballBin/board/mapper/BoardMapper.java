@@ -14,6 +14,7 @@ public interface BoardMapper {
 
     @Mapping(target = "writerId", source = "writer.userId")
     @Mapping(target = "comments", ignore = true)
+    @Mapping(target = "files", ignore = true)
     BoardResponseDto toDto(Board entity);
 
     void updateEntity(BoardRequestDto dto, @MappingTarget Board entity);

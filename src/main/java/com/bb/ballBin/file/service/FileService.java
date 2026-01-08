@@ -1,16 +1,27 @@
 package com.bb.ballBin.file.service;
 
+import com.bb.ballBin.common.exception.NotFoundException;
 import com.bb.ballBin.common.util.FileUtil;
 import com.bb.ballBin.file.entity.File;
 import com.bb.ballBin.file.entity.TargetType;
 import com.bb.ballBin.file.entity.FileType;
 import com.bb.ballBin.file.repository.FileRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriUtils;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.FileSystemResource;
 
+
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,9 +40,46 @@ public class FileService {
     }
 
     /**
+     * FIle DownLoad
+     */
+    @Transactional(readOnly = true)
+    public ResponseEntity<Resource> downloadFile(String fileId) {
+
+        File file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new NotFoundException("error.file.notfound"));
+
+        // filePath는 "targetId/uuid.ext" (relative)
+        java.io.File diskFile = fileUtil.getFilePath(file.getTargetType().name().toLowerCase(), file.getFilePath());
+
+        if (!diskFile.exists() || diskFile.isDirectory()) {
+            throw new NotFoundException("error.file.notfound");
+        }
+
+        Resource resource = new FileSystemResource(diskFile);
+
+        // MIME 타입: 기본은 octet-stream, 가능하면 더 정확히
+        MediaType mediaType = fileUtil.getMediaType(diskFile); // 아래 FileUtil 패치 참고
+
+        // 원본 파일명은 헤더 인코딩 처리 필요 (한글)
+        String encoded = UriUtils.encode(file.getOriginalFileName(), StandardCharsets.UTF_8);
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename*=UTF-8''" + encoded)
+                .contentLength(diskFile.length())
+                .body(resource);
+    }
+
+
+    /**
      * 파일 업로드
      */
     public void uploadFiles(TargetType targetType, String targetId, List<MultipartFile> files) {
+
+        if (files == null || files.isEmpty()) {
+            throw new IllegalArgumentException("error.file.notfound");
+        }
 
         if (targetType == TargetType.USER) {
             deleteFilesByTarget(targetType, targetId);
@@ -40,14 +88,13 @@ public class FileService {
         for (MultipartFile file : files) {
             String savedPath = fileUtil.saveFile(targetType.name().toLowerCase(), targetId, file);
             saveFileMetadata(targetType, targetId, savedPath, file);
-
         }
     }
 
     /**
      * 파일 메타데이터 저장
      */
-    private File saveFileMetadata(TargetType targetType, String targetId, String filePath, MultipartFile file) {
+    private void saveFileMetadata(TargetType targetType, String targetId, String filePath, MultipartFile file) {
 
         File fileEntity = File.builder()
                 .targetId(targetId)
@@ -55,39 +102,83 @@ public class FileService {
                 .filePath(filePath)
                 .fileSize(file.getSize())
                 .fileExtension(getFileExtension(file.getOriginalFilename()))
-                .fileType(FileType.fromMimeType(file.getContentType()))
+                .fileType(FileType.fromMimeType( file.getContentType() == null ? "" : file.getContentType()))
                 .originalFileName(file.getOriginalFilename())
                 .build();
 
-        return fileRepository.save(fileEntity);
+        fileRepository.save(fileEntity);
     }
 
     /**
      * 특정 TargetType + TargetId에 해당하는 모든 파일 삭제
      */
+    @Transactional
     public void deleteFilesByTarget(TargetType targetType, String targetId) {
 
         List<File> files = getFilesByTarget(targetType, targetId);
+        if (files.isEmpty()) return;
 
-        for (File file : files) {
-            boolean isDeleted = fileUtil.deleteFile(targetType.name().toLowerCase(), file.getFilePath());
-            if (isDeleted) {
-                fileRepository.delete(file);
+        for (File f : files) {
+            boolean deleted = fileUtil.deleteFile(
+                    targetType.name().toLowerCase(),
+                    f.getFilePath()
+            );
+            if (!deleted) {
+                throw new RuntimeException("파일 삭제 실패: " + f.getFilePath());
             }
         }
 
-        fileUtil.deleteDirectory(targetType.name().toLowerCase(), targetId);
+        List<String> ids = files.stream().map(File::getFileId).toList();
+        fileRepository.deleteAllByIdInBatch(ids);
+
+        if (!fileRepository.existsByTargetTypeAndTargetId(targetType, targetId)) {
+            boolean dirDeleted = fileUtil.deleteDirectory(targetType.name().toLowerCase(), targetId);
+            if (!dirDeleted) {
+                throw new RuntimeException("디렉토리 삭제 실패: " + targetId);
+            }
+        }
     }
 
-    /**
-     * 파일 단일 삭제
-     */
-    public void deleteFile(String fileId){
-        try {
-            fileRepository.deleteById(fileId);
-        } catch (Exception e) {
-            throw new RuntimeException("삭제 중 오류 발생", e);
+    @Transactional
+    public void deleteFiles(List<String> fileIds) {
+        if (fileIds == null || fileIds.isEmpty()) return;
+
+        List<String> uniqIds = fileIds.stream().distinct().toList();
+
+        List<File> files = fileRepository.findAllById(uniqIds);
+
+        if (files.size() != uniqIds.size()) {
+            throw new NotFoundException("error.file.notfound");
         }
+
+        Map<TargetKey, List<File>> byTarget = files.stream()
+                .collect(Collectors.groupingBy(f -> new TargetKey(f.getTargetType(), f.getTargetId())));
+
+        for (File f : files) {
+            boolean deleted = fileUtil.deleteFile(
+                    f.getTargetType().name().toLowerCase(),
+                    f.getFilePath()
+            );
+            if (!deleted) {
+                throw new RuntimeException("파일 삭제 실패: " + f.getFilePath());
+            }
+        }
+
+        fileRepository.deleteAllByIdInBatch(uniqIds);
+
+        for (TargetKey key : byTarget.keySet()) {
+            boolean exists = fileRepository.existsByTargetTypeAndTargetId(key.targetType(), key.targetId());
+            if (!exists) {
+                boolean dirDeleted = fileUtil.deleteDirectory(key.typeString(), key.targetId());
+                if (!dirDeleted) {
+                    throw new RuntimeException("디렉 삭제 실패: " + key.targetId());
+                }
+            }
+        }
+    }
+
+    private record TargetKey(TargetType targetType, String targetId) {
+        String typeString() { return targetType.name().toLowerCase(); }
     }
 
     /**

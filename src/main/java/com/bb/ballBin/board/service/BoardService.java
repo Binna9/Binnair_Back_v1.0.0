@@ -13,6 +13,7 @@ import com.bb.ballBin.common.exception.NotFoundException;
 import com.bb.ballBin.common.util.SecurityUtil;
 import com.bb.ballBin.file.entity.File;
 import com.bb.ballBin.file.entity.TargetType;
+import com.bb.ballBin.file.repository.FileRepository;
 import com.bb.ballBin.file.service.FileService;
 import com.bb.ballBin.user.entity.User;
 import com.bb.ballBin.user.repository.UserRepository;
@@ -24,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,14 +36,32 @@ public class BoardService {
     private final BoardRepository boardRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
+    private final FileRepository fileRepository;
     private final FileService fileService;
 
     /**
      * 게시글 목록 조회
      */
+    @Transactional(readOnly = true)
     public Page<BoardResponseDto> allBoards(BoardType boardType, Pageable pageable) {
-        return boardRepository.findByBoardType(boardType, pageable)
-                .map(boardMapper::toDto);
+
+        Page<Board> page = boardRepository.findByBoardType(boardType, pageable);
+
+        List<String> boardIds = page.getContent().stream()
+                .map(Board::getBoardId)
+                .toList();
+
+        List<com.bb.ballBin.file.entity.File> files =
+                fileRepository.findByTargetTypeAndTargetIdIn(TargetType.BOARD, boardIds);
+
+        Map<String, List<File>> filesByBoardId =
+                files.stream().collect(Collectors.groupingBy(com.bb.ballBin.file.entity.File::getTargetId));
+
+        return page.map(b -> {
+            BoardResponseDto dto = boardMapper.toDto(b);
+            dto.setFiles(filesByBoardId.getOrDefault(b.getBoardId(), List.of()));
+            return dto;
+        });
     }
 
     /**
