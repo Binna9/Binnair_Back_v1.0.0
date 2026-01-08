@@ -45,6 +45,14 @@ public class BoardController {
         return ResponseEntity.ok(boardService.boardById(boardId));
     }
 
+    @GetMapping("/comments/{boardId}")
+    @PreAuthorize("hasAuthority('BOARD_READ')")
+    @Operation(summary = "게시글 별 댓글 수")
+    public ResponseEntity<Integer> getBoardByCommentCount(@PathVariable("boardId") String boardId) {
+        int count = boardService.getCommentCountByBoardId(boardId);
+        return ResponseEntity.ok(count);
+    }
+
     @PostMapping("")
     @PreAuthorize("hasAuthority('BOARD_CREATE')")
     @MessageKey(value = "success.board.create")

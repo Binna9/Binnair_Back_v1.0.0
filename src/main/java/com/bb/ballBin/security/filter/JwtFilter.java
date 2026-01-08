@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.Authentication;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
@@ -86,7 +88,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
             SecurityContextHolder.getContext().setAuthentication(authToken);
         } else {
-            System.out.println("❌ [JwtFilter] userId를 찾을 수 없음");
+            log.info("❌ [JwtFilter] userId를 찾을 수 없음");
         }
 
         filterChain.doFilter(req, res);

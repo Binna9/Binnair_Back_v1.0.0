@@ -1,6 +1,6 @@
 package com.bb.ballBin.user.service;
 
-import com.bb.ballBin.common.annotation.CheckUserRegisterValid;
+import com.bb.ballBin.common.annotation.CheckUserChangePasswordValid;
 import com.bb.ballBin.common.exception.ImmutableFieldException;
 import com.bb.ballBin.common.exception.InvalidPasswordException;
 import com.bb.ballBin.common.exception.NotFoundException;
@@ -138,15 +138,11 @@ public class UserService {
     /**
      * 사용자 비밀번호 변경
      */
-    @CheckUserRegisterValid
+    @CheckUserChangePasswordValid
     public void changePassword(String userId, UserPasswordChangeRequestDto passwordChangeDto) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("error.user.notfound"));
-
-        if (!passwordChangeDto.getNewPassword().equals(passwordChangeDto.getConfirmPassword())) {
-            throw new InvalidPasswordException("error.password.mismatch");
-        }
 
         String bcryptHashedPassword = passwordEncoder.encode(passwordChangeDto.getNewPassword());
 

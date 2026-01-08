@@ -8,5 +8,8 @@ import java.util.List;
 
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, String> {
+
     List<Comment> findByBoard_BoardIdAndParentIsNull(String boardId);
+
+    int countByBoard_BoardIdAndParentIsNull(String boardId);
 }

@@ -66,6 +66,14 @@ public class BoardService {
         return responseDto;
     }
 
+    @Transactional(readOnly = true)
+    public int getCommentCountByBoardId(String boardId) {
+
+        boardRepository.findById(boardId).orElseThrow(() -> new NotFoundException("error.board.notfound"));
+
+        return commentRepository.countByBoard_BoardIdAndParentIsNull(boardId);
+    }
+
     /**
      * 게시글 생성
      */
