@@ -6,9 +6,8 @@ import com.bb.ballBin.permission.mapper.PermissionMapper;
 import com.bb.ballBin.permission.model.PermissionRequestDto;
 import com.bb.ballBin.permission.model.PermissionResponseDto;
 import com.bb.ballBin.permission.repository.PermissionRepository;
+import com.bb.ballBin.role.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,10 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class PermissionService {
 
-    private static final Logger logger = LoggerFactory.getLogger(PermissionService.class);
-
     private final PermissionMapper permissionMapper;
     private final PermissionRepository permissionRepository;
+    private final RoleRepository roleRepository;
 
     /**
      * 권한 전체 조회
@@ -53,7 +51,6 @@ public class PermissionService {
             permissionRepository.save(permission);
 
         } catch (Exception e) {
-            logger.error("오류 발생: {}", e.getMessage(), e);
             throw new RuntimeException("처리 중 오류 발생", e);
         }
     }
@@ -70,7 +67,6 @@ public class PermissionService {
             permissionRepository.save(permission);
 
         } catch (Exception e) {
-            logger.error("오류 발생: {}", e.getMessage(), e);
             throw new RuntimeException("처리 중 오류 발생", e);
         }
     }
@@ -78,12 +74,13 @@ public class PermissionService {
     /**
      * 권한 삭제
      */
+    @Transactional
     public void deletePermission(String permissionId) {
-        try {
-            permissionRepository.deleteById(permissionId);
-        } catch (Exception e) {
-            logger.error("삭제 중 오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("삭제 중 오류 발생", e);
-        }
+
+        permissionRepository.findById(permissionId)
+                .orElseThrow(() -> new NotFoundException("error.permission.notfound"));
+
+        roleRepository.deleteRolePermissionsByPermissionId(permissionId);
+        permissionRepository.deleteById(permissionId);
     }
 }

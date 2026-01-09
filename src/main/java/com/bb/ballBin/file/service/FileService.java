@@ -43,7 +43,7 @@ public class FileService {
      * FIle DownLoad
      */
     @Transactional(readOnly = true)
-    public ResponseEntity<Resource> downloadFile(String fileId) {
+    public ResponseEntity<Resource> downloadFiles(String fileId) {
 
         File file = fileRepository.findById(fileId)
                 .orElseThrow(() -> new NotFoundException("error.file.notfound"));
@@ -57,10 +57,8 @@ public class FileService {
 
         Resource resource = new FileSystemResource(diskFile);
 
-        // MIME 타입: 기본은 octet-stream, 가능하면 더 정확히
-        MediaType mediaType = fileUtil.getMediaType(diskFile); // 아래 FileUtil 패치 참고
+        MediaType mediaType = fileUtil.getMediaType(diskFile);
 
-        // 원본 파일명은 헤더 인코딩 처리 필요 (한글)
         String encoded = UriUtils.encode(file.getOriginalFileName(), StandardCharsets.UTF_8);
 
         return ResponseEntity.ok()

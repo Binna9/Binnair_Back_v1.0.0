@@ -87,7 +87,6 @@ public class FileUtil {
 
     /**
      * 저장된 파일의 전체 경로 가져오기
-     *
      * @param type         타입
      * @param relativePath 저장된 파일의 상대 경로
      * @return 파일 객체
