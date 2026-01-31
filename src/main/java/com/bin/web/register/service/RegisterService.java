@@ -1,0 +1,90 @@
+package com.bin.web.register.service;
+
+import com.bin.web.common.annotation.CheckUserRegisterValid;
+import com.bin.web.file.entity.TargetType;
+import com.bin.web.file.service.FileService;
+import com.bin.web.security.jwt.model.OAuthUserDto;
+import com.bin.web.user.entity.AuthProvider;
+import com.bin.web.user.entity.User;
+import com.bin.web.register.model.RegisterRequestDto;
+import com.bin.web.user.mapper.UserMapper;
+import com.bin.web.user.model.UserRoleRequestDto;
+import com.bin.web.user.repository.UserRepository;
+import com.bin.web.user.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class RegisterService {
+
+    private final UserService userService;
+    private final FileService fileService;
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
+
+    @Transactional
+    @CheckUserRegisterValid
+    public void registerAccount(RegisterRequestDto registerRequestDto, List<MultipartFile> files) {
+
+        String encodedPassword = bCryptPasswordEncoder.encode(registerRequestDto.getLoginPassword());
+        registerRequestDto.setLoginPassword(encodedPassword);
+
+        User user = userMapper.toEntity(registerRequestDto);
+        user.setProvider(AuthProvider.LOCAL);
+        user.setProviderId(registerRequestDto.getLoginId());
+        user.setActive(false);
+
+        userRepository.save(user);
+
+        String userId = user.getUserId();
+
+        UserRoleRequestDto userRoleRequestDto = new UserRoleRequestDto();
+        userRoleRequestDto.setUserId(user.getUserId());
+        userRoleRequestDto.setRoleName("ROLE_USER");
+
+        userService.roleToUser(Collections.singletonList(userRoleRequestDto));
+
+        if (files != null && !files.isEmpty()) {
+            fileService.uploadFiles(TargetType.USER, userId, files);
+        }
+    }
+
+    /**
+     * ✅ OAuth2 신규 사용자 회원가입 처리
+     */
+    @Transactional
+    public User registerOAuthUser(OAuthUserDto userDto) {
+
+        String loginId = userDto.getEmail();
+        String dummyPassword = bCryptPasswordEncoder.encode(UUID.randomUUID().toString());
+
+        User user = User.builder()
+                .loginId(loginId)
+                .loginPassword(dummyPassword)
+                .provider(AuthProvider.GOOGLE)
+                .providerId(userDto.getProviderId())
+                .userName(userDto.getUserName())
+                .email(userDto.getEmail())
+                .isActive(true) // OAuth 사용자는 기본적으로 활성 상태
+                .build();
+
+        userRepository.save(user);
+
+        UserRoleRequestDto userRoleRequestDto = new UserRoleRequestDto();
+        userRoleRequestDto.setUserId(user.getUserId());
+        userRoleRequestDto.setRoleName("ROLE_USER");
+
+        userService.roleToUser(Collections.singletonList(userRoleRequestDto));
+
+        return user;
+    }
+}
