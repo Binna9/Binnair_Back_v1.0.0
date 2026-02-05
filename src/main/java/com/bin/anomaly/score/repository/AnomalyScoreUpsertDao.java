@@ -1,6 +1,6 @@
 package com.bin.anomaly.score.repository;
 
-import com.bin.anomaly.score.AnomalyScoreProperties;
+import com.bin.anomaly.score.config.AnomalyScoreProperties;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;

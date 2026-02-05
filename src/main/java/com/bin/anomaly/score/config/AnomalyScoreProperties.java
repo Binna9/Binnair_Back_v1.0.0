@@ -1,4 +1,4 @@
-package com.bin.anomaly.score;
+package com.bin.anomaly.score.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

@@ -1,6 +1,6 @@
 package com.bin.anomaly.score.repository;
 
-import com.bin.anomaly.score.AnomalyScoreProperties;
+import com.bin.anomaly.score.config.AnomalyScoreProperties;
 import com.bin.anomaly.score.model.CandleRow;
 import com.bin.anomaly.score.model.VenueInstrument;
 import jakarta.persistence.EntityManager;

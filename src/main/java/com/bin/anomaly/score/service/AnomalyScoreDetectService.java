@@ -1,6 +1,6 @@
 package com.bin.anomaly.score.service;
 
-import com.bin.anomaly.score.AnomalyScoreProperties;
+import com.bin.anomaly.score.config.AnomalyScoreProperties;
 import com.bin.anomaly.score.model.CandleRow;
 import com.bin.anomaly.score.model.VenueInstrument;
 import com.bin.anomaly.score.repository.AnomalyScoreUpsertDao;
@@ -37,12 +37,14 @@ public class AnomalyScoreDetectService {
      */
     @Transactional
     public AnomalyScoreDetectResult detectAllActive() {
+
         List<VenueInstrument> assets = coreMarketDataDao.listActiveVenueInstruments();
 
         int success = 0;
         int skipped = 0;
         int failed = 0;
         int partial = 0;
+
         List<AnomalyScoreDetectResult.PerAsset> details = new ArrayList<>(Math.min(assets.size(), 500));
 
         for (VenueInstrument a : assets) {
@@ -186,7 +188,6 @@ public class AnomalyScoreDetectService {
                         outputCount++;
                     }
                 }
-
                 // baseline 업데이트(현재값을 window에 반영)
                 retStats.add(ts, ret);
                 volStats.add(ts, logVol);
