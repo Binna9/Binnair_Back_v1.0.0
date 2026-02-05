@@ -6,6 +6,7 @@ import com.bin.anomaly.score.model.VenueInstrument;
 import com.bin.anomaly.score.repository.AnomalyScoreUpsertDao;
 import com.bin.anomaly.score.repository.CoreMarketDataDao;
 import com.bin.anomaly.score.repository.PipelineRunDao;
+import com.bin.anomaly.score.model.AnomalyScoreDetectResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,6 +79,7 @@ public class AnomalyScoreDetectService {
     }
 
     private DetectOutcome detectOne(long venueId, long instrumentId) {
+
         OffsetDateTime lastScoreTs = coreMarketDataDao.findLastScoreTs(venueId, instrumentId);
         OffsetDateTime maxCandleTs = coreMarketDataDao.findMaxFinalCandleTs(venueId, instrumentId);
 

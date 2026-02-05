@@ -19,15 +19,20 @@ final class RollingWindowStats {
     private double sumsq = 0.0;
 
     RollingWindowStats(Duration window) {
+
         if (window == null || window.isZero() || window.isNegative()) {
             throw new IllegalArgumentException("window must be positive");
         }
+
         this.window = window;
     }
 
     void evictOlderThan(OffsetDateTime nowTs) {
+
         if (nowTs == null) return;
+
         OffsetDateTime cutoff = nowTs.minus(window);
+
         while (!samples.isEmpty() && samples.peekFirst().ts().isBefore(cutoff)) {
             Sample s = samples.removeFirst();
             sum -= s.value();
@@ -36,7 +41,9 @@ final class RollingWindowStats {
     }
 
     void add(OffsetDateTime ts, Double value) {
+
         if (ts == null || value == null) return;
+
         double v = value;
         samples.addLast(new Sample(ts, v));
         sum += v;
@@ -52,17 +59,25 @@ final class RollingWindowStats {
     }
 
     double mean() {
+
         int n = samples.size();
+
         if (n == 0) return 0.0;
+
         return sum / n;
     }
 
     double std() {
+
         int n = samples.size();
+
         if (n < 2) return 0.0;
+
         double mean = sum / n;
         double var = (sumsq / n) - (mean * mean);
+
         if (var < 0.0) var = 0.0;
+
         return Math.sqrt(var);
     }
 }

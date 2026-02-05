@@ -1,4 +1,4 @@
-package com.bin.anomaly.score.service;
+package com.bin.anomaly.score.model;
 
 import java.util.List;
 

@@ -10,15 +10,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 /**
  * core.* (candles/venue_symbols/venues/anomaly_scores) 조회 전용 DAO.
- * - JPA Entity가 없는 테이블(candles 등)도 다루기 위해 native query + 수동 매핑을 사용.
- * - 운영 안정성을 위해 "입력 범위" 필터를 SQL에 고정한다.
  */
 @Repository
 @RequiredArgsConstructor
@@ -56,16 +56,16 @@ public class CoreMarketDataDao {
         String sql = """
                 SELECT MAX(s.ts)
                 FROM core.anomaly_scores s
-                WHERE s.venue_id = :venueId
-                  AND s.instrument_id = :instrumentId
-                  AND s.timeframe = :timeframe
-                  AND s.score_version = :scoreVersion
+                WHERE s.venue_id = ?1
+                   AND s.instrument_id = ?2
+                   AND s.timeframe = ?3
+                   AND s.score_version = ?4
                 """;
         Object value = em.createNativeQuery(sql)
-                .setParameter("venueId", venueId)
-                .setParameter("instrumentId", instrumentId)
-                .setParameter("timeframe", props.getTimeframe())
-                .setParameter("scoreVersion", props.getScoreVersion())
+                .setParameter(1, venueId)
+                .setParameter(2, instrumentId)
+                .setParameter(3, props.getTimeframe())
+                .setParameter(4, props.getScoreVersion())
                 .getSingleResult();
         return toOffsetDateTime(value);
     }
@@ -81,12 +81,15 @@ public class CoreMarketDataDao {
                   AND c.is_final = true
                   AND c.ts <= (now() - (:lagSeconds || ' seconds')::interval)
                 """;
-        Object value = em.createNativeQuery(sql)
-                .setParameter("venueId", venueId)
-                .setParameter("instrumentId", instrumentId)
-                .setParameter("timeframe", props.getTimeframe())
-                .setParameter("lagSeconds", props.getFinalCandleSafetyLag().getSeconds())
-                .getSingleResult();
+        Query q = em.createNativeQuery(sql);
+
+        q.setParameter("venueId", venueId);
+        q.setParameter("instrumentId", instrumentId);
+        q.setParameter("timeframe", props.getTimeframe());
+        q.setParameter("lagSeconds", props.getFinalCandleSafetyLag().getSeconds());
+
+        Object value = q.getSingleResult();
+
         return toOffsetDateTime(value);
     }
 
@@ -146,7 +149,13 @@ public class CoreMarketDataDao {
 
         if (value instanceof OffsetDateTime odt) return odt;
 
-        if (value instanceof Timestamp ts) return ts.toInstant().atOffset(java.time.ZoneOffset.UTC);
+        if (value instanceof Instant instant) {
+            return instant.atOffset(ZoneOffset.UTC);
+        }
+
+        if (value instanceof Timestamp ts) {
+            return ts.toInstant().atOffset(ZoneOffset.UTC);
+        }
 
         throw new IllegalArgumentException("Unsupported timestamp type: " + value.getClass());
     }

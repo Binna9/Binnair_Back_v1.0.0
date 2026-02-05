@@ -1,6 +1,6 @@
 package com.bin.anomaly.score.controller;
 
-import com.bin.anomaly.score.service.AnomalyScoreDetectResult;
+import com.bin.anomaly.score.model.AnomalyScoreDetectResult;
 import com.bin.anomaly.score.service.AnomalyScoreDetectService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;

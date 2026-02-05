@@ -24,10 +24,10 @@ public class PipelineRunDao {
      * (종료 시점에 update로 최종 status/count/extra를 채운다.)
      */
     public UUID createDetectRun(long venueId,
-                               long instrumentId,
-                               OffsetDateTime startTs,
-                               OffsetDateTime endTs,
-                               String extraJson) {
+                                long instrumentId,
+                                OffsetDateTime startTs,
+                                OffsetDateTime endTs,
+                                String extraJson) {
 
         String sql = """
                 INSERT INTO core.pipeline_runs (
@@ -75,25 +75,25 @@ public class PipelineRunDao {
         String sql = """
                 UPDATE core.pipeline_runs
                 SET
-                  status = CAST(:status AS core.pipeline_status),
-                  input_count = :inputCount,
-                  output_count = :outputCount,
-                  start_ts = :startTs,
-                  end_ts = :endTs,
-                  error_message = :errorMessage,
-                  extra = CAST(:extraJson AS jsonb)
-                WHERE run_id = :runId
+                  status = CAST(?1 AS core.pipeline_status),
+                  input_count = ?2,
+                  output_count = ?3,
+                  start_ts = ?4,
+                  end_ts = ?5,
+                  error_message = ?6,
+                  extra = CAST(?7 AS jsonb)
+                WHERE run_id = ?8
                 """;
 
         em.createNativeQuery(sql)
-                .setParameter("runId", runId)
-                .setParameter("status", status)
-                .setParameter("inputCount", inputCount)
-                .setParameter("outputCount", outputCount)
-                .setParameter("startTs", startTs == null ? null : Timestamp.from(startTs.toInstant()))
-                .setParameter("endTs", endTs == null ? null : Timestamp.from(endTs.toInstant()))
-                .setParameter("errorMessage", errorMessage)
-                .setParameter("extraJson", extraJson == null ? "{}" : extraJson)
+                .setParameter(1, status)
+                .setParameter(2, inputCount)
+                .setParameter(3, outputCount)
+                .setParameter(4, startTs == null ? null : Timestamp.from(startTs.toInstant()))
+                .setParameter(5, endTs == null ? null : Timestamp.from(endTs.toInstant()))
+                .setParameter(6, errorMessage)
+                .setParameter(7, extraJson == null ? "{}" : extraJson)
+                .setParameter(8, runId)
                 .executeUpdate();
     }
 }
