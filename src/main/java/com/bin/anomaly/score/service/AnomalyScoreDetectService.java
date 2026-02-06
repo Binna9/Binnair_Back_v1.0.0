@@ -67,6 +67,7 @@ public class AnomalyScoreDetectService {
     }
 
     private static final class DetectOutcome {
+
         private final String status;
         private final int inputCount;
         private final int outputCount;
