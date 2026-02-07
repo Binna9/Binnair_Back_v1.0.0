@@ -1,6 +1,5 @@
 package com.bin.anomaly.score.repository;
 
-import com.bin.anomaly.score.config.AnomalyScoreProperties;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -17,15 +16,40 @@ public class AnomalyScoreUpsertDao {
 
     @PersistenceContext
     private final EntityManager em;
-    private final AnomalyScoreProperties props;
 
     /**
-     * DDL의 UNIQUE(venue_id,instrument_id,timeframe,ts,score_version) 기반 멱등 저장.
+     * DDL의 UNIQUE(venue_id,instrument_id,timeframe,ts,score_version,window_days) 기반 멱등 저장.
+     * 
+     * 중요: window_days도 점수 정의의 일부이므로 UNIQUE 키에 포함되어야 함.
+     * DDL 변경 필요:
+     *   ALTER TABLE core.anomaly_scores 
+     *   DROP CONSTRAINT IF EXISTS anomaly_scores_venue_id_instrument_id_timeframe_ts_score_version_key;
+     *   ALTER TABLE core.anomaly_scores 
+     *   ADD CONSTRAINT anomaly_scores_unique 
+     *   UNIQUE (venue_id, instrument_id, timeframe, ts, score_version, window_days);
+     * 
+     * zRet, zVol, zRng는 null일 수 있음 (계산 불가인 경우).
+     * score는 항상 non-null (null z-score가 있어도 maxAbs로 계산됨).
+     * 
+     * @param venueId 거래소 ID
+     * @param instrumentId 종목 ID
+     * @param timeframe 캔들 주기 (예: "5m", "1h")
+     * @param ts 점수 기준 시각
+     * @param scoreVersion 점수 버전 (예: "z_v1")
+     * @param windowDays baseline window 일수
+     * @param zRet 수익률 z-score
+     * @param zVol 거래량 z-score
+     * @param zRng 변동폭 z-score
+     * @param score 종합 이상 점수
+     * @param detectRunId 파이프라인 run ID (ingest_run_id 컬럼에 저장)
      */
     @Transactional
     public void upsert(long venueId,
                        long instrumentId,
+                       String timeframe,
                        OffsetDateTime ts,
+                       String scoreVersion,
+                       int windowDays,
                        Double zRet,
                        Double zVol,
                        Double zRng,
@@ -45,9 +69,8 @@ public class AnomalyScoreUpsertDao {
                   :zRet, :zVol, :zRng, :score,
                   :runId
                 )
-                ON CONFLICT (venue_id, instrument_id, timeframe, ts, score_version)
+                ON CONFLICT (venue_id, instrument_id, timeframe, ts, score_version, window_days)
                 DO UPDATE SET
-                  window_days = EXCLUDED.window_days,
                   z_ret = EXCLUDED.z_ret,
                   z_vol = EXCLUDED.z_vol,
                   z_rng = EXCLUDED.z_rng,
@@ -58,10 +81,10 @@ public class AnomalyScoreUpsertDao {
         em.createNativeQuery(sql)
                 .setParameter("venueId", venueId)
                 .setParameter("instrumentId", instrumentId)
-                .setParameter("timeframe", props.getTimeframe())
+                .setParameter("timeframe", timeframe)
                 .setParameter("ts", Timestamp.from(ts.toInstant()))
-                .setParameter("scoreVersion", props.getScoreVersion())
-                .setParameter("windowDays", props.getWindowDays())
+                .setParameter("scoreVersion", scoreVersion)
+                .setParameter("windowDays", windowDays)
                 .setParameter("zRet", zRet)
                 .setParameter("zVol", zVol)
                 .setParameter("zRng", zRng)

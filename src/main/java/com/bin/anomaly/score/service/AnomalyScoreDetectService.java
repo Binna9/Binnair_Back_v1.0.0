@@ -28,11 +28,13 @@ public class AnomalyScoreDetectService {
 
     /**
      * Detect 잡(배치) 실행.
-     * - 입력 범위 고정: (is_active + timeframe=5m + is_final + safety_lag)
-     * - 증분 기준점 고정: last_score_ts
+     * - 입력 범위 고정: (is_active + timeframe + is_final + safety_lag)
+     * - 증분 기준점: (venue_id, instrument_id, timeframe, score_version, window_days) 조합의 마지막 ts
+     *   중요: window_days 도 점수 정의의 일부 이므로 증분 기준에 포함됨
+     *   window_days 가 다르면 완전히 다른 baseline 으로 계산된 점수 이므로 별도로 관리
      * - baseline 포함 로딩/신규만 저장
-     * - warm-up: baseline 7일 미만은 스킵
-     * - 멱등 저장: ON CONFLICT upsert
+     * - warm-up: baseline warmupMinDays 미만은 스킵
+     * - 멱등 저장: ON CONFLICT upsert (UNIQUE: venue_id, instrument_id, timeframe, ts, score_version)
      * - pipeline_runs 기록
      */
     @Transactional
@@ -81,10 +83,24 @@ public class AnomalyScoreDetectService {
         }
     }
 
+    /**
+     * 단일 자산(venue_id, instrument_id)에 대한 이상 점수 계산
+     * 증분 기준:
+     * - 현재 설정값(timeframe, score_version, window_days) 조합의 마지막 점수 시각을 조회
+     * - window_days 도 점수 정의의 일부 이므로, window_days 가 다르면 별도의 증분 기준을 가짐
+     * - 예: window_days=90으로 계산된 데이터 가 있어도, window_days=30으로 변경 시 처음 부터 계산
+     */
     private DetectOutcome detectOne(long venueId, long instrumentId) {
 
-        OffsetDateTime lastScoreTs = coreMarketDataDao.findLastScoreTs(venueId, instrumentId);
-        OffsetDateTime maxCandleTs = coreMarketDataDao.findMaxFinalCandleTs(venueId, instrumentId);
+        // 현재 설정값(timeframe, score_version, window_days) 조합의 마지막 점수 시각
+        OffsetDateTime lastScoreTs = coreMarketDataDao.findLastScoreTs(
+                venueId, instrumentId, 
+                props.getTimeframe(), props.getScoreVersion(), props.getWindowDays()
+        );
+        OffsetDateTime maxCandleTs = coreMarketDataDao.findMaxFinalCandleTs(
+                venueId, instrumentId, 
+                props.getTimeframe(), props.getFinalCandleSafetyLag()
+        );
 
         if (maxCandleTs == null) {
             UUID runId = pipelineRunDao.createDetectRun(
@@ -104,12 +120,26 @@ public class AnomalyScoreDetectService {
             return new DetectOutcome("skipped", 0, 0, "up_to_date");
         }
 
-        // 초기(점수 0건)면: last_score_ts = NULL로 보고 warm-up 정책 적용
-        OffsetDateTime initialWriteThreshold = (lastScoreTs == null)
-                ? maxCandleTs.minusDays(props.getWindowDays())
-                : null;
-
-        OffsetDateTime writeStart = (lastScoreTs == null) ? initialWriteThreshold : lastScoreTs;
+        OffsetDateTime initialWriteThreshold = null;
+        OffsetDateTime writeStart;
+        
+        if (lastScoreTs == null) {
+            // 초기 실행: 저장 시작을 warmupMinDays만큼 늦춰서 warmup 확보
+            // writeStart = max - windowDays + warmupMinDays
+            initialWriteThreshold = maxCandleTs
+                    .minusDays(props.getWindowDays())
+                    .plusDays(props.getWarmupMinDays());
+            writeStart = initialWriteThreshold;
+        } else {
+            if (props.getBackfillBars() > 0) {
+                writeStart = lastScoreTs.minus(
+                    props.getBarDuration().multipliedBy(props.getBackfillBars())
+                );
+            } else {
+                writeStart = lastScoreTs;
+            }
+        }
+        
         OffsetDateTime readFrom = writeStart
                 .minusDays(props.getWindowDays())
                 .minus(props.getBarDuration()); // ret 계산용 직전 1봉
@@ -129,7 +159,11 @@ public class AnomalyScoreDetectService {
         String errorMessage = null;
 
         try {
-            List<CandleRow> candles = coreMarketDataDao.loadFinalCandles(venueId, instrumentId, readFrom, maxCandleTs);
+            List<CandleRow> candles = coreMarketDataDao.loadFinalCandles(
+                    venueId, instrumentId, 
+                    props.getTimeframe(), 
+                    readFrom, maxCandleTs
+            );
             inputCount = candles.size();
 
             if (candles.size() < 2) {
@@ -152,8 +186,20 @@ public class AnomalyScoreDetectService {
                 OffsetDateTime ts = c.ts();
 
                 // 증분 "저장 대상" 정의
-                boolean isNewerThanLastScore = (lastScoreTs == null) ? true : ts.isAfter(lastScoreTs);
-                boolean isAfterInitialThreshold = (initialWriteThreshold == null) ? true : ts.isAfter(initialWriteThreshold);
+                boolean isNewerThanLastScore;
+                if (lastScoreTs == null) {
+                    isNewerThanLastScore = true;
+                } else if (props.getBackfillBars() > 0) {
+                    OffsetDateTime backfillStart = lastScoreTs.minus(
+                        props.getBarDuration().multipliedBy(props.getBackfillBars())
+                    );
+                    isNewerThanLastScore = !ts.isBefore(backfillStart);
+                } else {
+                    isNewerThanLastScore = ts.isAfter(lastScoreTs);
+                }
+                
+                // 초기 실행 시 저장 시작 시점 체크 (warmup 확보를 위해 늦춘 시점)
+                boolean isAfterInitialThreshold = (initialWriteThreshold == null) ? true : !ts.isBefore(initialWriteThreshold);
                 boolean isWriteTarget = isNewerThanLastScore && isAfterInitialThreshold;
 
                 if (isWriteTarget) newCandleCount++;
@@ -181,7 +227,9 @@ public class AnomalyScoreDetectService {
                         skippedByWarmup++;
                     } else {
                         anomalyScoreUpsertDao.upsert(
-                                venueId, instrumentId, ts,
+                                venueId, instrumentId,
+                                props.getTimeframe(), ts,
+                                props.getScoreVersion(), props.getWindowDays(),
                                 zRet, zVol, zRng,
                                 score,
                                 runId
@@ -227,27 +275,60 @@ public class AnomalyScoreDetectService {
         return m;
     }
 
+    /**
+     * warmup 조건 체크: 시간 기반 + 표본 수 기반 모두 만족해야 함.
+     * 시간 기반: earliest 부터 nowTs까지 warmupMinDays 이상
+     * 표본 수 기반: warmupMinBars가 설정 되어 있으면 stats.count() >= warmupMinBars
+     */
     private boolean hasWarmup(RollingWindowStats stats, OffsetDateTime nowTs) {
         OffsetDateTime earliest = stats.earliestTs();
         if (earliest == null) return false;
+        
+        // 시간 기반 체크
         long days = Duration.between(earliest, nowTs).toDays();
-        return days >= props.getWarmupMinDays();
+        if (days < props.getWarmupMinDays()) return false;
+        
+        // 표본 수 기반 체크 (설정되어 있는 경우)
+        if (props.getWarmupMinBars() != null) {
+            if (stats.count() < props.getWarmupMinBars()) return false;
+        }
+        
+        return true;
     }
 
+    /**
+     * z-score 계산.
+     * value 가 null 이면 null 을 반환 (0.0이 아님).
+     */
     private Double zscore(RollingWindowStats stats, Double value) {
-        if (value == null) return 0.0;
-        if (stats.count() < 2) return 0.0;
+        if (value == null) return null;  // 0.0 대신 null 반환
+        if (stats.count() < 2) return null;  // 표본 수 부족도 null
         double std = stats.std();
-        if (std < props.getStdEps()) return 0.0;
+        if (std < props.getStdEps()) return null;  // std가 너무 작으면 null
         double mean = stats.mean();
         return (value - mean) / std;
     }
 
+    /**
+     * null 을 제외한 z-score 들의 절댓값 중 최대값 반환.
+     * null 은 "계산 불가"를 의미 하므로 score 계산 에서 제외됨.
+     * 모든 값이 null 이면 0.0 반환.
+     */
     private static double maxAbs(Double a, Double b, Double c) {
-        double x = a == null ? 0.0 : Math.abs(a);
-        double y = b == null ? 0.0 : Math.abs(b);
-        double z = c == null ? 0.0 : Math.abs(c);
-        return Math.max(x, Math.max(y, z));
+        double max = 0.0;
+        if (a != null) {
+            double absA = Math.abs(a);
+            if (absA > max) max = absA;
+        }
+        if (b != null) {
+            double absB = Math.abs(b);
+            if (absB > max) max = absB;
+        }
+        if (c != null) {
+            double absC = Math.abs(c);
+            if (absC > max) max = absC;
+        }
+        return max;
     }
 
     private static Double calcLogReturn(Double prevClose, double close) {

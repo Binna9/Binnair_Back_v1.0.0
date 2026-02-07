@@ -13,6 +13,7 @@ src/main/resources/constants.properties
 src/main/resources/schedule.properties
 
 ### STS ###
+.ds_store
 .apt_generated
 .classpath
 .factorypath

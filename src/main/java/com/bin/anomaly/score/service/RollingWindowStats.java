@@ -1,19 +1,26 @@
 package com.bin.anomaly.score.service;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
 /**
  * 고정 기간(time-based) sliding window에 대한 sum/sumsq 기반 평균/표준편차 계산기.
- * - 제거(evict)가 가능해야 하므로, 온라인 Welford 대신 sum/sumsq를 사용한다.
- * - 수치 오차로 분산이 음수가 될 수 있어 clamp 처리한다.
+ * 성능 최적화: OffsetDateTime 객체 대신 long epochMillis를 사용하여 GC 부담 감소.
+ * 자산 수가 많을 때(수십~수백 개) 메모리 효율적.
  */
 final class RollingWindowStats {
 
-    private record Sample(OffsetDateTime ts, double value) {}
-    private final Duration window;
+    /**
+     * 샘플 데이터.
+     * ts는 epochMillis (UTC 기준)로 저장하여 메모리 효율성 향상.
+     */
+    private record Sample(long tsEpochMillis, double value) {}
+    
+    private final long windowMillis;
     private final Deque<Sample> samples = new ArrayDeque<>();
     private double sum = 0.0;
     private double sumsq = 0.0;
@@ -24,28 +31,41 @@ final class RollingWindowStats {
             throw new IllegalArgumentException("window must be positive");
         }
 
-        this.window = window;
+        this.windowMillis = window.toMillis();
     }
 
+    /**
+     * nowTs 이전 window 기간 밖의 샘플 제거.
+     * 
+     * @param nowTs 현재 시각 (OffsetDateTime)
+     */
     void evictOlderThan(OffsetDateTime nowTs) {
 
         if (nowTs == null) return;
 
-        OffsetDateTime cutoff = nowTs.minus(window);
+        long nowMillis = nowTs.toInstant().toEpochMilli();
+        long cutoffMillis = nowMillis - windowMillis;
 
-        while (!samples.isEmpty() && samples.peekFirst().ts().isBefore(cutoff)) {
+        while (!samples.isEmpty() && samples.peekFirst().tsEpochMillis() < cutoffMillis) {
             Sample s = samples.removeFirst();
             sum -= s.value();
             sumsq -= s.value() * s.value();
         }
     }
 
+    /**
+     * 샘플 추가.
+     * 
+     * @param ts 시각 (OffsetDateTime)
+     * @param value 값
+     */
     void add(OffsetDateTime ts, Double value) {
 
         if (ts == null || value == null) return;
 
+        long tsMillis = ts.toInstant().toEpochMilli();
         double v = value;
-        samples.addLast(new Sample(ts, v));
+        samples.addLast(new Sample(tsMillis, v));
         sum += v;
         sumsq += v * v;
     }
@@ -54,8 +74,15 @@ final class RollingWindowStats {
         return samples.size();
     }
 
+    /**
+     * 가장 오래된 샘플의 시각 반환.
+     * 
+     * @return 가장 오래된 시각 (없으면 null)
+     */
     OffsetDateTime earliestTs() {
-        return samples.isEmpty() ? null : samples.peekFirst().ts();
+        if (samples.isEmpty()) return null;
+        long earliestMillis = samples.peekFirst().tsEpochMillis();
+        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(earliestMillis), ZoneOffset.UTC);
     }
 
     double mean() {
@@ -74,7 +101,8 @@ final class RollingWindowStats {
         if (n < 2) return 0.0;
 
         double mean = sum / n;
-        double var = (sumsq / n) - (mean * mean);
+
+        double var = (sumsq - n * mean * mean) / (n - 1);
 
         if (var < 0.0) var = 0.0;
 
