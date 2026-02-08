@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -127,8 +128,12 @@ public class AnomalyScoreFinalService {
             }
         }
 
+        OffsetDateTime responseTs = targetTs
+                .atZoneSameInstant(ZoneId.of("Asia/Seoul"))
+                .toOffsetDateTime();
+
         return new AnomalyScoreFinalResponse(
-                targetTs,
+                responseTs,
                 evalMode,
                 finalScore,
                 finalLevel,

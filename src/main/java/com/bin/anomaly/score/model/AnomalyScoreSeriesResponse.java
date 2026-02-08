@@ -2,6 +2,7 @@ package com.bin.anomaly.score.model;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 단일 자산(venueId/instrumentId)의 캔들(OHLCV) + 이상점수(score/z_*) 시계열 응답.
@@ -20,7 +21,7 @@ public record AnomalyScoreSeriesResponse(
             String venueSymbol,
             String timeframe,
             String scoreVersion,
-            Integer windowDays,
+            List<Integer> windowDays,
             OffsetDateTime from,
             OffsetDateTime to,
             OffsetDateTime serverTime,
@@ -29,9 +30,9 @@ public record AnomalyScoreSeriesResponse(
 
     public record Summary(
             OffsetDateTime latestTs,
-            Double latestScore,
-            Double maxScore,
-            OffsetDateTime maxScoreTs
+            Map<String, Double> latestScores,
+            Map<String, Double> maxScores,
+            Map<String, OffsetDateTime> maxScoreTs
     ) {}
 
     public record Point(
@@ -41,11 +42,15 @@ public record AnomalyScoreSeriesResponse(
             double l,
             double c,
             double v,
-            Double score,
-            Double zRet,
-            Double zVol,
-            Double zRng,
-            String driver
+            Map<String, Double> scores,
+            Map<String, String> drivers,
+            Map<String, Z> z
+    ) {}
+
+    public record Z(
+            Double ret,
+            Double vol,
+            Double rng
     ) {}
 }
 

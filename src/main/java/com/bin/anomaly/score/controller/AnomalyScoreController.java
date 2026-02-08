@@ -29,15 +29,14 @@ public class AnomalyScoreController {
      * `from`, `to`는 ISO-8601 날짜 시간 문자열 로 전달 해야 합니다. ex) `2026-02-06T00:00:00Z`, `2026-02-06T00:00:00+09:00`
      */
     @GetMapping("/{venueId}/{instrumentId}/series")
-    @Operation(summary = "단일 자산 캔들(OHLCV) + anomaly score 시계열 조회")
+    @Operation(summary = "단일 자산 캔들(OHLCV) + anomaly score 시계열 조회 (windowDays=30/60/90 동시)")
     public ResponseEntity<AnomalyScoreSeriesResponse> series(
             @PathVariable long venueId,
             @PathVariable long instrumentId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
             @RequestParam(required = false) String timeframe,
-            @RequestParam(required = false) String scoreVersion,
-            @RequestParam(required = false) Integer windowDays
+            @RequestParam(required = false) String scoreVersion
     ) {
         return ResponseEntity.ok(
                 anomalyScoreSeriesService.getSeries(
@@ -46,27 +45,15 @@ public class AnomalyScoreController {
                         from,
                         to,
                         timeframe,
-                        scoreVersion,
-                        windowDays
+                        scoreVersion
                 )
         );
     }
 
     /**
-     * 특정 venue/instrument 에 대한 이상 점수 적재 실행 API
-     */
-    @PostMapping("/detect")
-    @Operation(summary = "특정 venue/instrument 에 대한 Anomaly score detect 실행")
-    public ResponseEntity<AnomalyScoreDetectResult> detectOne(
-            @RequestBody AnomalyScoreDetectRequest request
-    ) {
-        return ResponseEntity.ok(anomalyScoreDetectService.detectAllActive(request));
-    }
-
-    /**
      * 최종 평가 API
      * windowDays 30, 60, 90에 대한 데이터를 종합하여 최종 평가 수행
-     * 
+     *
      * @param venueId 거래소 ID
      * @param instrumentId 종목 ID
      * @param timeframe 캔들 주기 (기본: 5m)
@@ -95,6 +82,17 @@ public class AnomalyScoreController {
                         ts
                 )
         );
+    }
+
+    /**
+     * 특정 venue/instrument 에 대한 이상 점수 적재 실행 API
+     */
+    @PostMapping("/detect")
+    @Operation(summary = "특정 venue/instrument 에 대한 Anomaly score detect 실행")
+    public ResponseEntity<AnomalyScoreDetectResult> detectOne(
+            @RequestBody AnomalyScoreDetectRequest request
+    ) {
+        return ResponseEntity.ok(anomalyScoreDetectService.detectAllActive(request));
     }
 }
 
