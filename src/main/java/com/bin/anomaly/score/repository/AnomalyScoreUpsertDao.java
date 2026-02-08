@@ -18,19 +18,6 @@ public class AnomalyScoreUpsertDao {
     private final EntityManager em;
 
     /**
-     * DDL의 UNIQUE(venue_id,instrument_id,timeframe,ts,score_version,window_days) 기반 멱등 저장.
-     * 
-     * 중요: window_days도 점수 정의의 일부이므로 UNIQUE 키에 포함되어야 함.
-     * DDL 변경 필요:
-     *   ALTER TABLE core.anomaly_scores 
-     *   DROP CONSTRAINT IF EXISTS anomaly_scores_venue_id_instrument_id_timeframe_ts_score_version_key;
-     *   ALTER TABLE core.anomaly_scores 
-     *   ADD CONSTRAINT anomaly_scores_unique 
-     *   UNIQUE (venue_id, instrument_id, timeframe, ts, score_version, window_days);
-     * 
-     * zRet, zVol, zRng는 null일 수 있음 (계산 불가인 경우).
-     * score는 항상 non-null (null z-score가 있어도 maxAbs로 계산됨).
-     * 
      * @param venueId 거래소 ID
      * @param instrumentId 종목 ID
      * @param timeframe 캔들 주기 (예: "5m", "1h")
@@ -41,7 +28,7 @@ public class AnomalyScoreUpsertDao {
      * @param zVol 거래량 z-score
      * @param zRng 변동폭 z-score
      * @param score 종합 이상 점수
-     * @param detectRunId 파이프라인 run ID (ingest_run_id 컬럼에 저장)
+     * @param detectRunId pipeline run ID (ingest_run_id 컬럼에 저장)
      */
     @Transactional
     public void upsert(long venueId,

@@ -32,8 +32,6 @@ CREATE TABLE IF NOT EXISTS core.anomaly_scores (
                                             -- NOTE: 실제로는 detect_run_id가 의미상 더 맞을 수 있음
     create_datetime TIMESTAMPTZ NOT NULL DEFAULT now(), -- 레코드 생성 시각(UTC)
     UNIQUE (venue_id, instrument_id, timeframe, ts, score_version, window_days) -- 멱등 저장 키
-    -- 중요: window_days도 점수 정의의 일부이므로 UNIQUE 키에 포함됨
-    -- window_days가 다르면 완전히 다른 baseline으로 계산된 점수이므로 별도로 관리되어야 함
 );
 
 COMMENT ON TABLE core.anomaly_scores IS
@@ -69,6 +67,9 @@ CREATE INDEX IF NOT EXISTS idx_anomaly_scores_lookup
 ON core.anomaly_scores (venue_id, instrument_id, timeframe, ts DESC, score_version);
 COMMENT ON INDEX core.idx_anomaly_scores_lookup IS
 '자산(venue/instrument/timeframe)별 최근 점수 조회(ts DESC) 및 score_version 필터 최적화 인덱스.';
+CREATE INDEX IF NOT EXISTS idx_anomaly_scores_final
+ON core.anomaly_scores (venue_id, instrument_id, timeframe, score_version, window_days, ts DESC);
+
 
 ```
 

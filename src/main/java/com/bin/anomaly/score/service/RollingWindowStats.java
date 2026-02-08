@@ -16,7 +16,7 @@ final class RollingWindowStats {
 
     /**
      * 샘플 데이터.
-     * ts는 epochMillis (UTC 기준)로 저장하여 메모리 효율성 향상.
+     * ts는 epochMillis (UTC 기준)로 저장 하여 메모리 효율성 향상.
      */
     private record Sample(long tsEpochMillis, double value) {}
     

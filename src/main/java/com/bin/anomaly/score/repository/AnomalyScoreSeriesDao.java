@@ -78,6 +78,7 @@ public class AnomalyScoreSeriesDao {
             long instrumentId,
             String timeframe,
             String scoreVersion,
+            int windowDays,
             OffsetDateTime fromInclusive,
             OffsetDateTime toInclusive
     ) {
@@ -106,6 +107,7 @@ public class AnomalyScoreSeriesDao {
                  AND s.timeframe = c.timeframe
                  AND s.ts = c.ts
                  AND s.score_version = :scoreVersion
+                 AND s.window_days = :windowDays
                 WHERE c.venue_id = :venueId
                   AND c.instrument_id = :instrumentId
                   AND c.timeframe = :timeframe
@@ -123,6 +125,7 @@ public class AnomalyScoreSeriesDao {
                 .setParameter("instrumentId", instrumentId)
                 .setParameter("timeframe", Objects.requireNonNull(timeframe))
                 .setParameter("scoreVersion", Objects.requireNonNull(scoreVersion))
+                .setParameter("windowDays", windowDays)
                 .setParameter("lagSeconds", props.getFinalCandleSafetyLag().getSeconds())
                 .setParameter("fromTs", Timestamp.from(Objects.requireNonNull(fromInclusive).toInstant()))
                 .setParameter("toTs", Timestamp.from(Objects.requireNonNull(toInclusive).toInstant()));
@@ -138,13 +141,13 @@ public class AnomalyScoreSeriesDao {
             double low = ((Number) r[3]).doubleValue();
             double close = ((Number) r[4]).doubleValue();
             double volume = ((Number) r[5]).doubleValue();
-            Integer windowDays = (r[6] == null) ? null : ((Number) r[6]).intValue();
+            Integer rowWindowDays = (r[6] == null) ? null : ((Number) r[6]).intValue();
             Double zRet = (r[7] == null) ? null : ((Number) r[7]).doubleValue();
             Double zVol = (r[8] == null) ? null : ((Number) r[8]).doubleValue();
             Double zRng = (r[9] == null) ? null : ((Number) r[9]).doubleValue();
             Double score = (r[10] == null) ? null : ((Number) r[10]).doubleValue();
 
-            result.add(new SeriesRow(ts, open, high, low, close, volume, windowDays, zRet, zVol, zRng, score));
+            result.add(new SeriesRow(ts, open, high, low, close, volume, rowWindowDays, zRet, zVol, zRng, score));
         }
         return result;
     }

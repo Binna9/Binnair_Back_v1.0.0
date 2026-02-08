@@ -25,7 +25,8 @@ public class AnomalyScoreSeriesService {
             OffsetDateTime fromInclusive,
             OffsetDateTime toInclusive,
             String timeframe,
-            String scoreVersion
+            String scoreVersion,
+            Integer windowDays
     ) {
         if (fromInclusive == null || toInclusive == null) {
             throw new IllegalArgumentException("error.anomaly.series.invalid_range");
@@ -36,6 +37,7 @@ public class AnomalyScoreSeriesService {
 
         String tf = (timeframe == null || timeframe.isBlank()) ? props.getTimeframe() : timeframe;
         String sv = (scoreVersion == null || scoreVersion.isBlank()) ? props.getScoreVersion() : scoreVersion;
+        int wd = (windowDays == null || windowDays <= 0) ? props.getWindowDays() : windowDays;
 
         AnomalyScoreSeriesDao.SeriesMeta meta;
         try {
@@ -49,6 +51,7 @@ public class AnomalyScoreSeriesService {
                 instrumentId,
                 tf,
                 sv,
+                wd,
                 fromInclusive,
                 toInclusive
         );
@@ -61,7 +64,7 @@ public class AnomalyScoreSeriesService {
         OffsetDateTime latestTs = null;
         Double latestScore = null;
 
-        Integer windowDays = null;
+        Integer detectedWindowDays = null;
 
         for (AnomalyScoreSeriesDao.SeriesRow r : rows) {
             String driver = driverOf(r.zRet(), r.zVol(), r.zRng());
@@ -79,8 +82,8 @@ public class AnomalyScoreSeriesService {
                     driver
             ));
 
-            if (windowDays == null && r.windowDays() != null) {
-                windowDays = r.windowDays();
+            if (detectedWindowDays == null && r.windowDays() != null) {
+                detectedWindowDays = r.windowDays();
             }
 
             latestTs = r.ts();
@@ -94,9 +97,7 @@ public class AnomalyScoreSeriesService {
             }
         }
 
-        if (windowDays == null) {
-            windowDays = props.getWindowDays();
-        }
+        Integer finalWindowDays = detectedWindowDays != null ? detectedWindowDays : wd;
 
         AnomalyScoreSeriesResponse.Meta responseMeta = new AnomalyScoreSeriesResponse.Meta(
                 venueId,
@@ -106,7 +107,7 @@ public class AnomalyScoreSeriesService {
                 meta.venueSymbol(),
                 tf,
                 sv,
-                windowDays,
+                finalWindowDays,
                 fromInclusive,
                 toInclusive,
                 OffsetDateTime.now(ZoneOffset.UTC),

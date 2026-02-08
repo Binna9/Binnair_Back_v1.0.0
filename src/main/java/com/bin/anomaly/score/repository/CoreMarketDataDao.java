@@ -179,6 +179,153 @@ public class CoreMarketDataDao {
         return result;
     }
 
+    /**
+     * 최신 공통 ts 조회 (30, 60, 90일 window 모두 존재하는 ts)
+     * 
+     * @param venueId 거래소 ID
+     * @param instrumentId 종목 ID
+     * @param timeframe 캔들 주기 (예: "5m", "1h")
+     * @param scoreVersion 점수 버전 (예: "z_v1")
+     * @return 최신 공통 ts (없으면 null)
+     */
+    public OffsetDateTime findLatestCommonTs(long venueId, long instrumentId, String timeframe, String scoreVersion) {
+        String sql = """
+                SELECT ts
+                FROM core.anomaly_scores
+                WHERE venue_id = :venueId
+                  AND instrument_id = :instrumentId
+                  AND timeframe = :timeframe
+                  AND score_version = :scoreVersion
+                  AND window_days IN (30, 60, 90)
+                GROUP BY ts
+                HAVING count(*) = 3
+                ORDER BY ts DESC
+                LIMIT 1
+                """;
+        
+        Query q = em.createNativeQuery(sql)
+                .setParameter("venueId", venueId)
+                .setParameter("instrumentId", instrumentId)
+                .setParameter("timeframe", timeframe)
+                .setParameter("scoreVersion", scoreVersion);
+        
+        @SuppressWarnings("unchecked")
+        List<Object> results = q.getResultList();
+        
+        if (results.isEmpty()) {
+            return null;
+        }
+        
+        return toOffsetDateTime(results.get(0));
+    }
+
+    /**
+     * 범위 내 공통 ts 목록 조회 (30, 60, 90일 window 모두 존재하는 ts들)
+     * 
+     * @param venueId 거래소 ID
+     * @param instrumentId 종목 ID
+     * @param timeframe 캔들 주기 (예: "5m", "1h")
+     * @param scoreVersion 점수 버전 (예: "z_v1")
+     * @param fromInclusive 시작 시각 (포함)
+     * @param toInclusive 종료 시각 (포함)
+     * @return 공통 ts 목록 (ts DESC 정렬)
+     */
+    public List<OffsetDateTime> findCommonTsInRange(long venueId, long instrumentId, String timeframe, 
+                                                     String scoreVersion, OffsetDateTime fromInclusive, 
+                                                     OffsetDateTime toInclusive) {
+        String sql = """
+                SELECT ts
+                FROM core.anomaly_scores
+                WHERE venue_id = :venueId
+                  AND instrument_id = :instrumentId
+                  AND timeframe = :timeframe
+                  AND score_version = :scoreVersion
+                  AND ts >= :fromTs
+                  AND ts <= :toTs
+                  AND window_days IN (30, 60, 90)
+                GROUP BY ts
+                HAVING count(*) = 3
+                ORDER BY ts DESC
+                """;
+        
+        Query q = em.createNativeQuery(sql)
+                .setParameter("venueId", venueId)
+                .setParameter("instrumentId", instrumentId)
+                .setParameter("timeframe", timeframe)
+                .setParameter("scoreVersion", scoreVersion)
+                .setParameter("fromTs", Timestamp.from(fromInclusive.toInstant()))
+                .setParameter("toTs", Timestamp.from(toInclusive.toInstant()));
+        
+        @SuppressWarnings("unchecked")
+        List<Object> results = q.getResultList();
+        
+        List<OffsetDateTime> result = new ArrayList<>(results.size());
+        for (Object r : results) {
+            result.add(toOffsetDateTime(r));
+        }
+        return result;
+    }
+
+    /**
+     * 특정 ts의 3개 window 로우 조회 (30, 60, 90일)
+     * 
+     * @param venueId 거래소 ID
+     * @param instrumentId 종목 ID
+     * @param timeframe 캔들 주기 (예: "5m", "1h")
+     * @param scoreVersion 점수 버전 (예: "z_v1")
+     * @param ts 시각
+     * @return window별 점수 정보 리스트
+     */
+    public List<WindowScoreRow> loadWindowScores(long venueId, long instrumentId, String timeframe, 
+                                                  String scoreVersion, OffsetDateTime ts) {
+        String sql = """
+                SELECT
+                  window_days, ts, score, z_ret, z_vol, z_rng
+                FROM core.anomaly_scores
+                WHERE venue_id = :venueId
+                  AND instrument_id = :instrumentId
+                  AND timeframe = :timeframe
+                  AND score_version = :scoreVersion
+                  AND ts = :ts
+                  AND window_days IN (30, 60, 90)
+                ORDER BY window_days
+                """;
+        
+        Query q = em.createNativeQuery(sql)
+                .setParameter("venueId", venueId)
+                .setParameter("instrumentId", instrumentId)
+                .setParameter("timeframe", timeframe)
+                .setParameter("scoreVersion", scoreVersion)
+                .setParameter("ts", Timestamp.from(ts.toInstant()));
+        
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = q.getResultList();
+        
+        List<WindowScoreRow> result = new ArrayList<>(rows.size());
+        for (Object[] r : rows) {
+            int windowDays = ((Number) r[0]).intValue();
+            OffsetDateTime rowTs = toOffsetDateTime(r[1]);
+            Double score = r[2] != null ? ((Number) r[2]).doubleValue() : null;
+            Double zRet = r[3] != null ? ((Number) r[3]).doubleValue() : null;
+            Double zVol = r[4] != null ? ((Number) r[4]).doubleValue() : null;
+            Double zRng = r[5] != null ? ((Number) r[5]).doubleValue() : null;
+            result.add(new WindowScoreRow(windowDays, rowTs, score, zRet, zVol, zRng));
+        }
+        return result;
+    }
+
+    /**
+     * Window별 점수 로우
+     */
+    public record WindowScoreRow(
+            int windowDays,
+            OffsetDateTime ts,
+            Double score,
+            Double zRet,
+            Double zVol,
+            Double zRng
+    ) {}
+
     private static OffsetDateTime toOffsetDateTime(Object value) {
 
         if (value == null) return null;

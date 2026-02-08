@@ -1,6 +1,7 @@
 package com.bin.anomaly.score.service;
 
 import com.bin.anomaly.score.config.AnomalyScoreProperties;
+import com.bin.anomaly.score.model.AnomalyScoreDetectRequest;
 import com.bin.anomaly.score.model.CandleRow;
 import com.bin.anomaly.score.model.VenueInstrument;
 import com.bin.anomaly.score.repository.AnomalyScoreUpsertDao;
@@ -27,19 +28,10 @@ public class AnomalyScoreDetectService {
     private final AnomalyScoreProperties props;
 
     /**
-     * Detect 잡(배치) 실행.
-     * - 입력 범위 고정: (is_active + timeframe + is_final + safety_lag)
-     * - 증분 기준점: (venue_id, instrument_id, timeframe, score_version, window_days) 조합의 마지막 ts
-     *   중요: window_days 도 점수 정의의 일부 이므로 증분 기준에 포함됨
-     *   window_days 가 다르면 완전히 다른 baseline 으로 계산된 점수 이므로 별도로 관리
-     * - baseline 포함 로딩/신규만 저장
-     * - warm-up: baseline warmupMinDays 미만은 스킵
-     * - 멱등 저장: ON CONFLICT upsert (UNIQUE: venue_id, instrument_id, timeframe, ts, score_version)
-     * - pipeline_runs 기록
+     * Detect 잡(배치) 실행 - 모든 active venue/instrument 에 대해 Properties 기본값 으로 실행 (Scheduler용).
      */
     @Transactional
     public AnomalyScoreDetectResult detectAllActive() {
-
         List<VenueInstrument> assets = coreMarketDataDao.listActiveVenueInstruments();
 
         int success = 0;
@@ -50,7 +42,7 @@ public class AnomalyScoreDetectService {
         List<AnomalyScoreDetectResult.PerAsset> details = new ArrayList<>(Math.min(assets.size(), 500));
 
         for (VenueInstrument a : assets) {
-            DetectOutcome o = detectOne(a.venueId(), a.instrumentId());
+            DetectOutcome o = detectOneInternal(a.venueId(), a.instrumentId(), null);
             switch (o.status) {
                 case "success" -> success++;
                 case "skipped" -> skipped++;
@@ -66,6 +58,42 @@ public class AnomalyScoreDetectService {
         }
 
         return new AnomalyScoreDetectResult(assets.size(), success, skipped, failed, partial, details);
+    }
+
+    /**
+     * Detect 잡(배치) 실행 (RequestBody로 venue/instrument 및 설정값 전달).
+     */
+    @Transactional
+    public AnomalyScoreDetectResult detectAllActive(AnomalyScoreDetectRequest request) {
+        if (request == null || request.getVenueId() == null || request.getInstrumentId() == null) {
+            throw new IllegalArgumentException("venueId and instrumentId are required");
+        }
+
+        long venueId = request.getVenueId();
+        long instrumentId = request.getInstrumentId();
+
+        DetectOutcome outcome = detectOneInternal(venueId, instrumentId, request);
+        
+        int success = 0;
+        int skipped = 0;
+        int failed = 0;
+        int partial = 0;
+
+        switch (outcome.status) {
+            case "success" -> success = 1;
+            case "skipped" -> skipped = 1;
+            case "failed" -> failed = 1;
+            case "partial" -> partial = 1;
+            default -> failed = 1;
+        }
+
+        List<AnomalyScoreDetectResult.PerAsset> details = List.of(
+                new AnomalyScoreDetectResult.PerAsset(
+                        venueId, instrumentId, outcome.status, outcome.inputCount, outcome.outputCount, outcome.message
+                )
+        );
+
+        return new AnomalyScoreDetectResult(1, success, skipped, failed, partial, details);
     }
 
     private static final class DetectOutcome {
@@ -84,22 +112,37 @@ public class AnomalyScoreDetectService {
     }
 
     /**
-     * 단일 자산(venue_id, instrument_id)에 대한 이상 점수 계산
+     * 단일 자산(venue_id, instrument_id)에 대한 이상 점수 계산 (설정값 파라미터화)
      * 증분 기준:
      * - 현재 설정값(timeframe, score_version, window_days) 조합의 마지막 점수 시각을 조회
      * - window_days 도 점수 정의의 일부 이므로, window_days 가 다르면 별도의 증분 기준을 가짐
      * - 예: window_days=90으로 계산된 데이터 가 있어도, window_days=30으로 변경 시 처음 부터 계산
      */
-    private DetectOutcome detectOne(long venueId, long instrumentId) {
+    private DetectOutcome detectOneInternal(long venueId, long instrumentId, AnomalyScoreDetectRequest request) {
+
+        String timeframe = (request != null && request.getTimeframe() != null && !request.getTimeframe().isBlank())
+                ? request.getTimeframe() : props.getTimeframe();
+        String scoreVersion = (request != null && request.getScoreVersion() != null && !request.getScoreVersion().isBlank())
+                ? request.getScoreVersion() : props.getScoreVersion();
+        int windowDays = (request != null && request.getWindowDays() != null && request.getWindowDays() > 0)
+                ? request.getWindowDays() : props.getWindowDays();
+        
+        int warmupMinDays = props.getWarmupMinDays();
+        Integer warmupMinBars = props.getWarmupMinBars();
+        int backfillBars = props.getBackfillBars();
+        Duration finalCandleSafetyLag = props.getFinalCandleSafetyLag();
+        double stdEps = props.getStdEps();
+        
+        Duration barDuration = parseTimeframeToDuration(timeframe);
 
         // 현재 설정값(timeframe, score_version, window_days) 조합의 마지막 점수 시각
         OffsetDateTime lastScoreTs = coreMarketDataDao.findLastScoreTs(
                 venueId, instrumentId, 
-                props.getTimeframe(), props.getScoreVersion(), props.getWindowDays()
+                timeframe, scoreVersion, windowDays
         );
         OffsetDateTime maxCandleTs = coreMarketDataDao.findMaxFinalCandleTs(
                 venueId, instrumentId, 
-                props.getTimeframe(), props.getFinalCandleSafetyLag()
+                timeframe, finalCandleSafetyLag
         );
 
         if (maxCandleTs == null) {
@@ -127,13 +170,13 @@ public class AnomalyScoreDetectService {
             // 초기 실행: 저장 시작을 warmupMinDays만큼 늦춰서 warmup 확보
             // writeStart = max - windowDays + warmupMinDays
             initialWriteThreshold = maxCandleTs
-                    .minusDays(props.getWindowDays())
-                    .plusDays(props.getWarmupMinDays());
+                    .minusDays(windowDays)
+                    .plusDays(warmupMinDays);
             writeStart = initialWriteThreshold;
         } else {
-            if (props.getBackfillBars() > 0) {
+            if (backfillBars > 0) {
                 writeStart = lastScoreTs.minus(
-                    props.getBarDuration().multipliedBy(props.getBackfillBars())
+                    barDuration.multipliedBy(backfillBars)
                 );
             } else {
                 writeStart = lastScoreTs;
@@ -141,15 +184,15 @@ public class AnomalyScoreDetectService {
         }
         
         OffsetDateTime readFrom = writeStart
-                .minusDays(props.getWindowDays())
-                .minus(props.getBarDuration()); // ret 계산용 직전 1봉
+                .minusDays(windowDays)
+                .minus(barDuration); // ret 계산용 직전 1봉
 
         UUID runId = pipelineRunDao.createDetectRun(
                 venueId,
                 instrumentId,
                 writeStart,
                 maxCandleTs,
-                "{\"score_version\":\"" + props.getScoreVersion() + "\",\"window_days\":" + props.getWindowDays() + "}"
+                "{\"score_version\":\"" + scoreVersion + "\",\"window_days\":" + windowDays + "}"
         );
 
         int inputCount = 0;
@@ -161,7 +204,7 @@ public class AnomalyScoreDetectService {
         try {
             List<CandleRow> candles = coreMarketDataDao.loadFinalCandles(
                     venueId, instrumentId, 
-                    props.getTimeframe(), 
+                    timeframe, 
                     readFrom, maxCandleTs
             );
             inputCount = candles.size();
@@ -172,9 +215,9 @@ public class AnomalyScoreDetectService {
                 return new DetectOutcome(finalStatus, inputCount, 0, "insufficient_candles");
             }
 
-            RollingWindowStats retStats = new RollingWindowStats(Duration.ofDays(props.getWindowDays()));
-            RollingWindowStats volStats = new RollingWindowStats(Duration.ofDays(props.getWindowDays()));
-            RollingWindowStats rngStats = new RollingWindowStats(Duration.ofDays(props.getWindowDays()));
+            RollingWindowStats retStats = new RollingWindowStats(Duration.ofDays(windowDays));
+            RollingWindowStats volStats = new RollingWindowStats(Duration.ofDays(windowDays));
+            RollingWindowStats rngStats = new RollingWindowStats(Duration.ofDays(windowDays));
 
             int newCandleCount = 0;
             int skippedByWarmup = 0;
@@ -189,9 +232,9 @@ public class AnomalyScoreDetectService {
                 boolean isNewerThanLastScore;
                 if (lastScoreTs == null) {
                     isNewerThanLastScore = true;
-                } else if (props.getBackfillBars() > 0) {
+                } else if (backfillBars > 0) {
                     OffsetDateTime backfillStart = lastScoreTs.minus(
-                        props.getBarDuration().multipliedBy(props.getBackfillBars())
+                        barDuration.multipliedBy(backfillBars)
                     );
                     isNewerThanLastScore = !ts.isBefore(backfillStart);
                 } else {
@@ -215,11 +258,13 @@ public class AnomalyScoreDetectService {
                 Double rng = calcRange(c.high(), c.low(), c.close());
 
                 // z-score는 baseline(이전값들)로 계산 => "현재값"은 아래에서 add
-                boolean warmupOk = hasWarmup(retStats, ts) && hasWarmup(volStats, ts) && hasWarmup(rngStats, ts);
+                boolean warmupOk = hasWarmup(retStats, ts, warmupMinDays, warmupMinBars) 
+                        && hasWarmup(volStats, ts, warmupMinDays, warmupMinBars) 
+                        && hasWarmup(rngStats, ts, warmupMinDays, warmupMinBars);
 
-                Double zRet = zscore(retStats, ret);
-                Double zVol = zscore(volStats, logVol);
-                Double zRng = zscore(rngStats, rng);
+                Double zRet = zscore(retStats, ret, stdEps);
+                Double zVol = zscore(volStats, logVol, stdEps);
+                Double zRng = zscore(rngStats, rng, stdEps);
                 double score = maxAbs(zRet, zVol, zRng);
 
                 if (isWriteTarget) {
@@ -228,8 +273,8 @@ public class AnomalyScoreDetectService {
                     } else {
                         anomalyScoreUpsertDao.upsert(
                                 venueId, instrumentId,
-                                props.getTimeframe(), ts,
-                                props.getScoreVersion(), props.getWindowDays(),
+                                timeframe, ts,
+                                scoreVersion, windowDays,
                                 zRet, zVol, zRng,
                                 score,
                                 runId
@@ -280,17 +325,17 @@ public class AnomalyScoreDetectService {
      * 시간 기반: earliest 부터 nowTs까지 warmupMinDays 이상
      * 표본 수 기반: warmupMinBars가 설정 되어 있으면 stats.count() >= warmupMinBars
      */
-    private boolean hasWarmup(RollingWindowStats stats, OffsetDateTime nowTs) {
+    private boolean hasWarmup(RollingWindowStats stats, OffsetDateTime nowTs, int warmupMinDays, Integer warmupMinBars) {
         OffsetDateTime earliest = stats.earliestTs();
         if (earliest == null) return false;
         
         // 시간 기반 체크
         long days = Duration.between(earliest, nowTs).toDays();
-        if (days < props.getWarmupMinDays()) return false;
+        if (days < warmupMinDays) return false;
         
         // 표본 수 기반 체크 (설정되어 있는 경우)
-        if (props.getWarmupMinBars() != null) {
-            if (stats.count() < props.getWarmupMinBars()) return false;
+        if (warmupMinBars != null) {
+            if (stats.count() < warmupMinBars) return false;
         }
         
         return true;
@@ -300,13 +345,58 @@ public class AnomalyScoreDetectService {
      * z-score 계산.
      * value 가 null 이면 null 을 반환 (0.0이 아님).
      */
-    private Double zscore(RollingWindowStats stats, Double value) {
+    private Double zscore(RollingWindowStats stats, Double value, double stdEps) {
         if (value == null) return null;  // 0.0 대신 null 반환
         if (stats.count() < 2) return null;  // 표본 수 부족도 null
         double std = stats.std();
-        if (std < props.getStdEps()) return null;  // std가 너무 작으면 null
+        if (std < stdEps) return null;  // std가 너무 작으면 null
         double mean = stats.mean();
         return (value - mean) / std;
+    }
+
+    /**
+     * timeframe 문자열을 Duration으로 파싱
+     * 예: "5m" -> Duration.ofMinutes(5), "1h" -> Duration.ofHours(1), "1d" -> Duration.ofDays(1)
+     */
+    private Duration parseTimeframeToDuration(String timeframe) {
+        if (timeframe == null || timeframe.isBlank()) {
+            return props.getBarDuration(); // 기본값 사용
+        }
+        
+        timeframe = timeframe.trim().toLowerCase();
+        
+        if (timeframe.endsWith("m")) {
+            try {
+                int minutes = Integer.parseInt(timeframe.substring(0, timeframe.length() - 1));
+                return Duration.ofMinutes(minutes);
+            } catch (NumberFormatException e) {
+                return props.getBarDuration();
+            }
+        } else if (timeframe.endsWith("h")) {
+            try {
+                int hours = Integer.parseInt(timeframe.substring(0, timeframe.length() - 1));
+                return Duration.ofHours(hours);
+            } catch (NumberFormatException e) {
+                return props.getBarDuration();
+            }
+        } else if (timeframe.endsWith("d")) {
+            try {
+                int days = Integer.parseInt(timeframe.substring(0, timeframe.length() - 1));
+                return Duration.ofDays(days);
+            } catch (NumberFormatException e) {
+                return props.getBarDuration();
+            }
+        } else if (timeframe.endsWith("s")) {
+            try {
+                int seconds = Integer.parseInt(timeframe.substring(0, timeframe.length() - 1));
+                return Duration.ofSeconds(seconds);
+            } catch (NumberFormatException e) {
+                return props.getBarDuration();
+            }
+        }
+        
+        // 파싱 실패 시 기본값 사용
+        return props.getBarDuration();
     }
 
     /**

@@ -19,10 +19,6 @@ public class PipelineRunDao {
 
     private final AnomalyScoreProperties props;
 
-    /**
-     * Detect run을 "먼저" 생성해서 run_id로 anomaly_scores.ingest_run_id에 연결한다.
-     * (종료 시점에 update로 최종 status/count/extra를 채운다.)
-     */
     public UUID createDetectRun(long venueId,
                                 long instrumentId,
                                 OffsetDateTime startTs,
