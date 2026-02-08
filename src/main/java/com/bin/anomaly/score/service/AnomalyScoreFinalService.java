@@ -71,7 +71,6 @@ public class AnomalyScoreFinalService {
             );
         }
 
-        // window별 값 매핑
         Map<Integer, CoreMarketDataDao.WindowScoreRow> windowMap = new HashMap<>();
         for (CoreMarketDataDao.WindowScoreRow row : rows) {
             windowMap.put(row.windowDays(), row);
@@ -85,25 +84,27 @@ public class AnomalyScoreFinalService {
         Double finalScore;
         String basis;
 
-        if ("max".equals(evalMode)) {
-            // OR 모드: max(s30, s60, s90)
-            finalScore = maxNonNull(s30, s60, s90);
-            basis = "MAX_30_60_90";
-        } else {
-            // AND 모드 (consensus): max(min(s30, s60), min(s60, s90))
-            Double c1 = minNonNull(s30, s60);  // 단기+중기 합의 강도
-            Double c2 = minNonNull(s60, s90);  // 중기+장기 합의 강도
-            finalScore = maxNonNull(c1, c2);
-            
-            if (c1 != null && c2 != null) {
-                basis = (c1 >= c2) ? "CONSENSUS_30_60" : "CONSENSUS_60_90";
-            } else if (c1 != null) {
-                basis = "CONSENSUS_30_60";
-            } else if (c2 != null) {
-                basis = "CONSENSUS_60_90";
-            } else {
-                basis = "INSUFFICIENT_DATA";
+        switch (evalMode) {
+            case "max" -> {
+                finalScore = maxNonNull(s30, s60, s90);
+                basis = "MAX_30_60_90";
             }
+            case "consensus" -> {
+                Double c1 = minNonNull(s30, s60);
+                Double c2 = minNonNull(s60, s90);
+                finalScore = maxNonNull(c1, c2);
+
+                if (c1 != null && c2 != null) {
+                    basis = (c1 >= c2) ? "CONSENSUS_30_60" : "CONSENSUS_60_90";
+                } else if (c1 != null) {
+                    basis = "CONSENSUS_30_60";
+                } else if (c2 != null) {
+                    basis = "CONSENSUS_60_90";
+                } else {
+                    basis = "INSUFFICIENT_DATA";
+                }
+            }
+            default -> throw new IllegalStateException("Unreachable: " + evalMode);
         }
 
         // finalLevel 계산
@@ -168,7 +169,7 @@ public class AnomalyScoreFinalService {
     }
 
     /**
-     * Driver 계산 (z_ret, z_vol, z_rng 중 절댓값이 가장 큰 것)
+     * Driver 계산 (z_ret, z_vol, z_rng 중 절댓값 이 가장 큰 것)
      */
     private String calculateDriver(Double zRet, Double zVol, Double zRng) {
         double maxAbs = 0.0;
@@ -206,12 +207,14 @@ public class AnomalyScoreFinalService {
         if (finalScore == null) {
             return "NORMAL";
         }
-
         if (finalScore >= SEVERE_THRESHOLD) {
+            // SEVERE   : 구조적/비정상 상태 가능성 높음
             return "SEVERE";
         } else if (finalScore >= ANOMALY_THRESHOLD) {
+            // ANOMALY  : 통계적 이상 확정
             return "ANOMALY";
         } else if (finalScore >= WATCH_THRESHOLD) {
+            // WATCH    : 이상 징후 관찰 필요
             return "WATCH";
         } else {
             return "NORMAL";
