@@ -9,7 +9,6 @@ build/
 src/main/resources/application-dev.properties
 src/main/resources/application-prod.properties
 src/main/resources/logback-spring.xml
-src/main/resources/constants.properties
 src/main/resources/schedule.properties
 
 ### STS ###
