@@ -15,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -42,7 +44,13 @@ public class AnomalyScoreDetectService {
         List<AnomalyScoreDetectResult.PerAsset> details = new ArrayList<>(Math.min(assets.size(), 500));
 
         for (VenueInstrument a : assets) {
-            DetectOutcome o = detectOneInternal(a.venueId(), a.instrumentId(), null);
+            DetectOutcome o = detectOneInternal(
+                    a.venueId(),
+                    a.instrumentId(),
+                    props.getTimeframe(),
+                    props.getScoreVersion(),
+                    props.getWindowDays()
+            );
             switch (o.status) {
                 case "success" -> success++;
                 case "skipped" -> skipped++;
@@ -65,35 +73,53 @@ public class AnomalyScoreDetectService {
      */
     @Transactional
     public AnomalyScoreDetectResult detectAllActive(AnomalyScoreDetectRequest request) {
-        if (request == null || request.getVenueId() == null || request.getInstrumentId() == null) {
-            throw new IllegalArgumentException("venueId and instrumentId are required");
-        }
+        EffectiveDetectRequest eff = EffectiveDetectRequest.from(request, props);
 
-        long venueId = request.getVenueId();
-        long instrumentId = request.getInstrumentId();
+        List<VenueInstrument> assets = resolveAssets(eff);
+        List<String> timeframes = eff.timeframes;
+        List<Integer> windowDaysList = eff.windowDaysList;
+        String scoreVersion = eff.scoreVersion;
 
-        DetectOutcome outcome = detectOneInternal(venueId, instrumentId, request);
-        
+        long taskCountLong = (long) assets.size() * (long) timeframes.size() * (long) windowDaysList.size();
+        int taskCount = (taskCountLong > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) taskCountLong;
+
         int success = 0;
         int skipped = 0;
         int failed = 0;
         int partial = 0;
 
-        switch (outcome.status) {
-            case "success" -> success = 1;
-            case "skipped" -> skipped = 1;
-            case "failed" -> failed = 1;
-            case "partial" -> partial = 1;
-            default -> failed = 1;
+        List<AnomalyScoreDetectResult.PerAsset> details = new ArrayList<>(Math.min(taskCount, 500));
+
+        for (VenueInstrument a : assets) {
+            for (String timeframe : timeframes) {
+                for (int windowDays : windowDaysList) {
+                    DetectOutcome o = detectOneInternal(
+                            a.venueId(),
+                            a.instrumentId(),
+                            timeframe,
+                            scoreVersion,
+                            windowDays
+                    );
+
+                    switch (o.status) {
+                        case "success" -> success++;
+                        case "skipped" -> skipped++;
+                        case "failed" -> failed++;
+                        case "partial" -> partial++;
+                        default -> failed++;
+                    }
+
+                    if (details.size() < 500) {
+                        String msg = "timeframe=" + timeframe + ", windowDays=" + windowDays + ", message=" + o.message;
+                        details.add(new AnomalyScoreDetectResult.PerAsset(
+                                a.venueId(), a.instrumentId(), o.status, o.inputCount, o.outputCount, msg
+                        ));
+                    }
+                }
+            }
         }
 
-        List<AnomalyScoreDetectResult.PerAsset> details = List.of(
-                new AnomalyScoreDetectResult.PerAsset(
-                        venueId, instrumentId, outcome.status, outcome.inputCount, outcome.outputCount, outcome.message
-                )
-        );
-
-        return new AnomalyScoreDetectResult(1, success, skipped, failed, partial, details);
+        return new AnomalyScoreDetectResult(taskCount, success, skipped, failed, partial, details);
     }
 
     private static final class DetectOutcome {
@@ -118,14 +144,16 @@ public class AnomalyScoreDetectService {
      * - window_days 도 점수 정의의 일부 이므로, window_days 가 다르면 별도의 증분 기준을 가짐
      * - 예: window_days=90으로 계산된 데이터 가 있어도, window_days=30으로 변경 시 처음 부터 계산
      */
-    private DetectOutcome detectOneInternal(long venueId, long instrumentId, AnomalyScoreDetectRequest request) {
-
-        String timeframe = (request != null && request.getTimeframe() != null && !request.getTimeframe().isBlank())
-                ? request.getTimeframe() : props.getTimeframe();
-        String scoreVersion = (request != null && request.getScoreVersion() != null && !request.getScoreVersion().isBlank())
-                ? request.getScoreVersion() : props.getScoreVersion();
-        int windowDays = (request != null && request.getWindowDays() != null && request.getWindowDays() > 0)
-                ? request.getWindowDays() : props.getWindowDays();
+    private DetectOutcome detectOneInternal(
+            long venueId,
+            long instrumentId,
+            String timeframe,
+            String scoreVersion,
+            int windowDays
+    ) {
+        if (timeframe == null || timeframe.isBlank()) timeframe = props.getTimeframe();
+        if (scoreVersion == null || scoreVersion.isBlank()) scoreVersion = props.getScoreVersion();
+        if (windowDays <= 0) windowDays = props.getWindowDays();
         
         int warmupMinDays = props.getWarmupMinDays();
         Integer warmupMinBars = props.getWarmupMinBars();
@@ -318,6 +346,172 @@ public class AnomalyScoreDetectService {
         // 너무 긴 메시지는 pipeline_runs.error_message 저장/로깅에 부담 -> 상한
         if (m.length() > 1000) return m.substring(0, 1000);
         return m;
+    }
+
+    /**
+     * 요청(RequestBody)을 "단일(legacy) / 배치(list)" 둘 다 수용하기 위해,
+     * 내부에서 사용할 유효 값으로 정규화합니다.
+     */
+    private static final class EffectiveDetectRequest {
+
+        private final boolean batchMode;
+        private final Long legacyVenueId;
+        private final Long legacyInstrumentId;
+        private final List<Long> venueIds;
+        private final List<Long> instrumentIds;
+        private final List<String> timeframes;
+        private final String scoreVersion;
+        private final List<Integer> windowDaysList;
+
+        private EffectiveDetectRequest(
+                boolean batchMode,
+                Long legacyVenueId,
+                Long legacyInstrumentId,
+                List<Long> venueIds,
+                List<Long> instrumentIds,
+                List<String> timeframes,
+                String scoreVersion,
+                List<Integer> windowDaysList
+        ) {
+            this.batchMode = batchMode;
+            this.legacyVenueId = legacyVenueId;
+            this.legacyInstrumentId = legacyInstrumentId;
+            this.venueIds = venueIds;
+            this.instrumentIds = instrumentIds;
+            this.timeframes = timeframes;
+            this.scoreVersion = scoreVersion;
+            this.windowDaysList = windowDaysList;
+        }
+
+        private static EffectiveDetectRequest from(AnomalyScoreDetectRequest request, AnomalyScoreProperties props) {
+            if (request == null) {
+                return new EffectiveDetectRequest(
+                        true,
+                        null,
+                        null,
+                        List.of(),
+                        List.of(),
+                        List.of(props.getTimeframe()),
+                        props.getScoreVersion(),
+                        List.of(30, 60, 90)
+                );
+            }
+
+            boolean hasAnyList =
+                    hasAny(request.getVenueIds())
+                            || hasAny(request.getInstrumentIds())
+                            || hasAny(request.getTimeframes())
+                            || hasAny(request.getWindowDaysList());
+
+            boolean legacySingle = !hasAnyList
+                    && request.getVenueId() != null
+                    && request.getInstrumentId() != null;
+
+            boolean batchMode = !legacySingle;
+
+            List<Long> venueIds = firstNonEmptyLongs(request.getVenueIds(),
+                    (request.getVenueId() != null) ? List.of(request.getVenueId()) : List.of());
+            List<Long> instrumentIds = firstNonEmptyLongs(request.getInstrumentIds(),
+                    (request.getInstrumentId() != null) ? List.of(request.getInstrumentId()) : List.of());
+
+            List<String> timeframes = firstNonEmptyStrings(request.getTimeframes(),
+                    (request.getTimeframe() != null && !request.getTimeframe().isBlank())
+                            ? List.of(request.getTimeframe())
+                            : List.of(props.getTimeframe()));
+
+            String scoreVersion = (request.getScoreVersion() != null && !request.getScoreVersion().isBlank())
+                    ? request.getScoreVersion()
+                    : props.getScoreVersion();
+
+            List<Integer> windowDaysList;
+            if (hasAny(request.getWindowDaysList())) {
+                windowDaysList = normalizePositiveInts(request.getWindowDaysList());
+            } else if (request.getWindowDays() != null && request.getWindowDays() > 0) {
+                windowDaysList = List.of(request.getWindowDays());
+            } else if (batchMode) {
+                windowDaysList = List.of(30, 60, 90);
+            } else {
+                windowDaysList = List.of(props.getWindowDays());
+            }
+
+            return new EffectiveDetectRequest(
+                    batchMode,
+                    request.getVenueId(),
+                    request.getInstrumentId(),
+                    venueIds,
+                    instrumentIds,
+                    timeframes,
+                    scoreVersion,
+                    windowDaysList
+            );
+        }
+
+        private static boolean hasAny(List<?> xs) {
+            return xs != null && !xs.isEmpty();
+        }
+
+        private static List<Long> firstNonEmptyLongs(List<Long> primary, List<Long> fallback) {
+            if (primary != null && !primary.isEmpty()) return primary;
+            return fallback;
+        }
+
+        private static List<String> firstNonEmptyStrings(List<String> primary, List<String> fallback) {
+            if (primary != null && !primary.isEmpty()) {
+                List<String> normalized = new ArrayList<>(primary.size());
+                for (String s : primary) {
+                    if (s == null) continue;
+                    String t = s.trim();
+                    if (!t.isEmpty()) normalized.add(t);
+                }
+                if (!normalized.isEmpty()) return normalized;
+            }
+            return fallback;
+        }
+
+        private static List<Integer> normalizePositiveInts(List<Integer> xs) {
+            if (xs == null || xs.isEmpty()) return List.of();
+            Set<Integer> set = new LinkedHashSet<>();
+            for (Integer x : xs) {
+                if (x == null) continue;
+                if (x > 0) set.add(x);
+            }
+            return set.isEmpty() ? List.of() : List.copyOf(set);
+        }
+    }
+
+    private List<VenueInstrument> resolveAssets(EffectiveDetectRequest eff) {
+        // legacy 단일 요청: 지정된 (venueId, instrumentId) 한 건만 처리
+        if (!eff.batchMode && eff.legacyVenueId != null && eff.legacyInstrumentId != null) {
+            return List.of(new VenueInstrument(eff.legacyVenueId, eff.legacyInstrumentId));
+        }
+
+        // 배치 요청: 기본은 active 전체, 필요하면 venue/instrument 필터 적용
+        List<VenueInstrument> assets = coreMarketDataDao.listActiveVenueInstruments();
+
+        Set<Long> venueFilter = toFilterSet(eff.venueIds);
+        Set<Long> instrumentFilter = toFilterSet(eff.instrumentIds);
+
+        if (venueFilter.isEmpty() && instrumentFilter.isEmpty()) {
+            return assets;
+        }
+
+        List<VenueInstrument> filtered = new ArrayList<>(assets.size());
+        for (VenueInstrument a : assets) {
+            boolean ok = true;
+            if (!venueFilter.isEmpty() && !venueFilter.contains(a.venueId())) ok = false;
+            if (!instrumentFilter.isEmpty() && !instrumentFilter.contains(a.instrumentId())) ok = false;
+            if (ok) filtered.add(a);
+        }
+        return filtered;
+    }
+
+    private static Set<Long> toFilterSet(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return Set.of();
+        Set<Long> set = new LinkedHashSet<>();
+        for (Long id : ids) {
+            if (id != null) set.add(id);
+        }
+        return set.isEmpty() ? Set.of() : Set.copyOf(set);
     }
 
     /**

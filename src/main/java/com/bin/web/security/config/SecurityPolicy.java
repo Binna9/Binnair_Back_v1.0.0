@@ -38,6 +38,8 @@ public class SecurityPolicy {
                 "/comments/**",
                 "/likes/**",
                 "/files/**",
+                "/chats/**",
+                "/anomaly/**",
                 "/chats/**"
         );
     }

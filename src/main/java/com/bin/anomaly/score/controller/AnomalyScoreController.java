@@ -4,8 +4,10 @@ import com.bin.anomaly.score.model.AnomalyScoreDetectRequest;
 import com.bin.anomaly.score.model.AnomalyScoreDetectResult;
 import com.bin.anomaly.score.model.AnomalyScoreFinalResponse;
 import com.bin.anomaly.score.model.AnomalyScoreSeriesResponse;
+import com.bin.anomaly.score.model.AnomalyScoreTopResponse;
 import com.bin.anomaly.score.service.AnomalyScoreDetectService;
 import com.bin.anomaly.score.service.AnomalyScoreFinalService;
+import com.bin.anomaly.score.service.AnomalyScoreScannerService;
 import com.bin.anomaly.score.service.AnomalyScoreSeriesService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class AnomalyScoreController {
     private final AnomalyScoreDetectService anomalyScoreDetectService;
     private final AnomalyScoreSeriesService anomalyScoreSeriesService;
     private final AnomalyScoreFinalService anomalyScoreFinalService;
+    private final AnomalyScoreScannerService anomalyScoreScannerService;
 
     /**
      * 차트용 시계열 조회 API
@@ -51,9 +54,74 @@ public class AnomalyScoreController {
     }
 
     /**
+     * "지금 가장 이상한 종목 Top N" 스캐너 API.
+     * - 각 (venue,instrument)별 최신 공통 ts(30/60/90 모두 존재) 기준으로 finalScore(mode) 계산 후 정렬
+     * - Δ(delta)는 "n봉 전 공통 ts"의 finalScore 대비 변화량 (finalScore_now - finalScore_prev)
+     */
+    @GetMapping("/top")
+    @Operation(summary = "지금 가장 이상한 종목 Top N 조회 (프리미엄 스캐너/알림용)")
+    public ResponseEntity<AnomalyScoreTopResponse> top(
+            @RequestParam(required = false) String timeframe,
+            @RequestParam(required = false, defaultValue = "consensus") String mode,
+            @RequestParam(required = false, defaultValue = "20") Integer limit,
+            @RequestParam(required = false, defaultValue = "12") Integer deltaBars
+    ) {
+        return ResponseEntity.ok(
+                anomalyScoreScannerService.top(timeframe, mode, limit, deltaBars)
+        );
+    }
+
+    @GetMapping("/top/vol")
+    @Operation(summary = "거래량 이상 Top N (z_vol 기반 정렬)")
+    public ResponseEntity<AnomalyScoreTopResponse> topVol(
+            @RequestParam(required = false) String timeframe,
+            @RequestParam(required = false, defaultValue = "consensus") String mode,
+            @RequestParam(required = false, defaultValue = "20") Integer limit,
+            @RequestParam(required = false, defaultValue = "12") Integer deltaBars,
+            @RequestParam(required = false) String minLevel,
+            @RequestParam(required = false) String driver,
+            @RequestParam(required = false) Double minDeltaAbs
+    ) {
+        return ResponseEntity.ok(
+                anomalyScoreScannerService.topVol(timeframe, mode, limit, deltaBars, minLevel, driver, minDeltaAbs)
+        );
+    }
+
+    @GetMapping("/top/rng")
+    @Operation(summary = "변동폭 이상 Top N (z_rng 기반 정렬)")
+    public ResponseEntity<AnomalyScoreTopResponse> topRng(
+            @RequestParam(required = false) String timeframe,
+            @RequestParam(required = false, defaultValue = "consensus") String mode,
+            @RequestParam(required = false, defaultValue = "20") Integer limit,
+            @RequestParam(required = false, defaultValue = "12") Integer deltaBars,
+            @RequestParam(required = false) String minLevel,
+            @RequestParam(required = false) String driver,
+            @RequestParam(required = false) Double minDeltaAbs
+    ) {
+        return ResponseEntity.ok(
+                anomalyScoreScannerService.topRng(timeframe, mode, limit, deltaBars, minLevel, driver, minDeltaAbs)
+        );
+    }
+
+    @GetMapping("/top/ret")
+    @Operation(summary = "급등/급락 Top N (|z_ret| 기반 정렬 + direction)")
+    public ResponseEntity<AnomalyScoreTopResponse> topRet(
+            @RequestParam(required = false) String timeframe,
+            @RequestParam(required = false, defaultValue = "consensus") String mode,
+            @RequestParam(required = false, defaultValue = "20") Integer limit,
+            @RequestParam(required = false, defaultValue = "12") Integer deltaBars,
+            @RequestParam(required = false) String minLevel,
+            @RequestParam(required = false) String driver,
+            @RequestParam(required = false) Double minDeltaAbs
+    ) {
+        return ResponseEntity.ok(
+                anomalyScoreScannerService.topRet(timeframe, mode, limit, deltaBars, minLevel, driver, minDeltaAbs)
+        );
+    }
+
+    /**
      * 최종 평가 API
      * windowDays 30, 60, 90에 대한 데이터를 종합하여 최종 평가 수행
-     *
      * @param venueId 거래소 ID
      * @param instrumentId 종목 ID
      * @param timeframe 캔들 주기 (기본: 5m)
@@ -85,12 +153,15 @@ public class AnomalyScoreController {
     }
 
     /**
-     * 특정 venue/instrument 에 대한 이상 점수 적재 실행 API
+     * 이상 점수 적재 실행 API (단일/배치).
+     * - RequestBody 없으면: 전체 active venue/instrument 대상으로 배치 실행 (windowDays=30/60/90 기본)
+     * - RequestBody 있으면: venueIds/instrumentIds/timeframes/windowDaysList(리스트)로 필터/설정하여 배치 실행
+     * - 기존 단일 요청 바디(venueId/instrumentId/timeframe/windowDays)도 호환 지원
      */
     @PostMapping("/detect")
-    @Operation(summary = "특정 venue/instrument 에 대한 Anomaly score detect 실행")
-    public ResponseEntity<AnomalyScoreDetectResult> detectOne(
-            @RequestBody AnomalyScoreDetectRequest request
+    @Operation(summary = "Anomaly score detect 실행 (단일/배치, body 없으면 전체 배치)")
+    public ResponseEntity<AnomalyScoreDetectResult> detect(
+            @RequestBody(required = false) AnomalyScoreDetectRequest request
     ) {
         return ResponseEntity.ok(anomalyScoreDetectService.detectAllActive(request));
     }
