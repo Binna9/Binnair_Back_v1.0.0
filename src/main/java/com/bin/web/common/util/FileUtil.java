@@ -17,6 +17,8 @@ import java.util.UUID;
 @Component
 public class FileUtil {
 
+    private static final long MAX_FILE_SIZE = 10L * 1024 * 1024;
+
     @Value("${file.user.upload-dir}")
     private String userUploadDir;
 
@@ -46,6 +48,11 @@ public class FileUtil {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("error.file.notfound");
         }
+
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("error.file.size.exceeded");
+        }
+
         try {
             String baseDir;
             if ("user".equals(type)) {

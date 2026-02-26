@@ -385,10 +385,13 @@ public class AnomalyScoreScannerDao {
     }
 
     private static OffsetDateTime toOffsetDateTime(Object value) {
+
         if (value == null) return null;
+
         if (value instanceof OffsetDateTime odt) return odt;
         if (value instanceof Instant instant) return instant.atOffset(ZoneOffset.UTC);
         if (value instanceof Timestamp ts) return ts.toInstant().atOffset(ZoneOffset.UTC);
+
         throw new IllegalArgumentException("Unsupported timestamp type: " + value.getClass());
     }
 }
