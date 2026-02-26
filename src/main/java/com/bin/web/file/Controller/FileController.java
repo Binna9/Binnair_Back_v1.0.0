@@ -23,7 +23,6 @@ public class FileController {
     @GetMapping("/{fileId}")
     @PreAuthorize("hasAuthority('FILE_DOWNLOAD')")
     @Operation(summary = "파일 다운로드")
-    @MessageKey(value = "success.file.download")
     public ResponseEntity<Resource> download(@PathVariable String fileId) {
         return fileService.downloadFiles(fileId);
     }
