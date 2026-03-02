@@ -17,7 +17,8 @@ public class SecurityPolicy {
                 "/swagger-ui/**",
                 "/api-docs/**",
                 "/v3/api-docs/**",
-                "/websocket"
+                "/websocket",
+                "/anomaly/**"
         );
     }
 
@@ -39,7 +40,6 @@ public class SecurityPolicy {
                 "/likes/**",
                 "/files/**",
                 "/chats/**",
-                "/anomaly/**",
                 "/chats/**"
         );
     }
