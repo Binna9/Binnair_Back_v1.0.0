@@ -7,7 +7,6 @@ build/
 
 ## Properties
 src/main/resources/application-dev.properties
-src/main/resources/application-prod.properties
 src/main/resources/logback-spring.xml
 src/main/resources/schedule.properties
 
