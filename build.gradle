@@ -74,7 +74,7 @@ dependencies {
 }
 
 tasks.named("bootJar") {
-    archiveFileName = "binnair-web.jar"
+    archiveFileName = "app.jar"
 }
 
 tasks.withType(JavaCompile).configureEach {
