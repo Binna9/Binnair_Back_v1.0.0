@@ -103,7 +103,7 @@ public class CoreMarketDataDao {
                   AND c.instrument_id = :instrumentId
                   AND c.timeframe = :timeframe
                   AND c.is_final = true
-                  AND c.ts <= (now() - (:lagSeconds || ' seconds')::interval)
+                  AND c.ts <= ((clock_timestamp() AT TIME ZONE 'Asia/Seoul') - (:lagSeconds || ' seconds')::interval) AT TIME ZONE 'Asia/Seoul'
                 """;
         Query q = em.createNativeQuery(sql);
 
