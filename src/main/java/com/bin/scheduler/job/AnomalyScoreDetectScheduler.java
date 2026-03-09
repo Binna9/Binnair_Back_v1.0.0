@@ -20,7 +20,7 @@ public class AnomalyScoreDetectScheduler {
 
     @Scheduled(cron = "${anomaly.score.detect.schedule.cron:0 */5 * * * *}")
     public void run() {
-        anomalyScoreDetectService.detectAllActive();
+        anomalyScoreDetectService.detectAllActive(null);
         log.info("[scheduler] AnomalyScoreDetectScheduler bean created");
     }
 }
