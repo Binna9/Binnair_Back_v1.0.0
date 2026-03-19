@@ -1,6 +1,7 @@
 package com.bin.scheduler.job;
 
 import com.bin.anomaly.score.service.AnomalyScoreDetectService;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -21,6 +22,10 @@ public class AnomalyScoreDetectScheduler {
     @Scheduled(cron = "${anomaly.score.detect.schedule.cron:0 */5 * * * *}")
     public void run() {
         anomalyScoreDetectService.detectAllActive(null);
+    }
+
+    @PostConstruct
+    public void init() {
         log.info("[scheduler] AnomalyScoreDetectScheduler bean created");
     }
 }
