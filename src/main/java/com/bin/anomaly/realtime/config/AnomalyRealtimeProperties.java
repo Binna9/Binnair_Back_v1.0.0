@@ -76,9 +76,10 @@ public class AnomalyRealtimeProperties {
     private Duration snapshotTtl = Duration.ofSeconds(10);
 
     /**
-     * Top 스냅샷에 미리 계산해 둘 최대 limit.
+     * Top 스냅샷(AGG/VOL/RNG/RET)에 Redis로 올릴 개수.
+     * FE 종합이상 카드는 Top5 기준. /series·/final과 무관.
      */
-    private int topSnapshotLimit = 200;
+    private int topSnapshotLimit = 5;
 
     /**
      * Top delta 계산용 봉 수.

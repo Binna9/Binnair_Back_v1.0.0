@@ -56,7 +56,7 @@ public class AnomalyScoreController {
     public ResponseEntity<AnomalyScoreTopResponse> top(
             @RequestParam(required = false) String timeframe,
             @RequestParam(required = false, defaultValue = "consensus") String mode,
-            @RequestParam(required = false, defaultValue = "20") Integer limit,
+            @RequestParam(required = false, defaultValue = "5") Integer limit,
             @RequestParam(required = false, defaultValue = "12") Integer deltaBars
     ) {
         return ResponseEntity.ok(
@@ -69,7 +69,7 @@ public class AnomalyScoreController {
     public ResponseEntity<AnomalyScoreTopResponse> topVol(
             @RequestParam(required = false) String timeframe,
             @RequestParam(required = false, defaultValue = "consensus") String mode,
-            @RequestParam(required = false, defaultValue = "20") Integer limit,
+            @RequestParam(required = false, defaultValue = "5") Integer limit,
             @RequestParam(required = false, defaultValue = "12") Integer deltaBars,
             @RequestParam(required = false) String minLevel,
             @RequestParam(required = false) String driver,
@@ -85,7 +85,7 @@ public class AnomalyScoreController {
     public ResponseEntity<AnomalyScoreTopResponse> topRng(
             @RequestParam(required = false) String timeframe,
             @RequestParam(required = false, defaultValue = "consensus") String mode,
-            @RequestParam(required = false, defaultValue = "20") Integer limit,
+            @RequestParam(required = false, defaultValue = "5") Integer limit,
             @RequestParam(required = false, defaultValue = "12") Integer deltaBars,
             @RequestParam(required = false) String minLevel,
             @RequestParam(required = false) String driver,
@@ -101,7 +101,7 @@ public class AnomalyScoreController {
     public ResponseEntity<AnomalyScoreTopResponse> topRet(
             @RequestParam(required = false) String timeframe,
             @RequestParam(required = false, defaultValue = "consensus") String mode,
-            @RequestParam(required = false, defaultValue = "20") Integer limit,
+            @RequestParam(required = false, defaultValue = "5") Integer limit,
             @RequestParam(required = false, defaultValue = "12") Integer deltaBars,
             @RequestParam(required = false) String minLevel,
             @RequestParam(required = false) String driver,

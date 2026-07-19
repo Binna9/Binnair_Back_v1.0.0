@@ -1,5 +1,6 @@
 package com.bin.anomaly.score.service;
 
+import com.bin.anomaly.realtime.config.AnomalyRealtimeProperties;
 import com.bin.anomaly.realtime.redis.AnomalyRedisSnapshotStore;
 import com.bin.anomaly.score.config.AnomalyScoreProperties;
 import com.bin.anomaly.score.model.AnomalyScoreTopResponse;
@@ -17,6 +18,7 @@ public class AnomalyScoreScannerService {
 
     private final AnomalyRedisSnapshotStore snapshotStore;
     private final AnomalyScoreProperties props;
+    private final AnomalyRealtimeProperties realtimeProps;
 
     public AnomalyScoreTopResponse top(
             String timeframe,
@@ -81,9 +83,11 @@ public class AnomalyScoreScannerService {
         String m = (mode == null || mode.isBlank()) ? "consensus" : mode.trim().toLowerCase(Locale.ROOT);
         String t = (tab == null || tab.isBlank()) ? "AGG" : tab.trim().toUpperCase(Locale.ROOT);
 
-        int limRaw = (limit == null) ? 20 : limit;
+        int maxLim = Math.max(1, realtimeProps.getTopSnapshotLimit());
+        int limRaw = (limit == null) ? maxLim : limit;
         int dbRaw = (deltaBars == null) ? 12 : deltaBars;
-        final int lim = limRaw <= 0 ? 20 : Math.min(limRaw, 200);
+        // Writer 스냅샷 크기(top-snapshot-limit)를 상한으로 — 그 이상은 Redis에 없음
+        final int lim = limRaw <= 0 ? maxLim : Math.min(limRaw, maxLim);
         final int db = dbRaw < 1 ? 1 : Math.min(dbRaw, 5000);
 
         Integer minSeverity = parseMinSeverity(minLevel);
