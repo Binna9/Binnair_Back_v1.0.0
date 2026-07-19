@@ -44,7 +44,12 @@ public record AnomalyScoreSeriesResponse(
             double v,
             Map<String, Double> scores,
             Map<String, String> drivers,
-            Map<String, Z> z
+            Map<String, Z> z,
+            /**
+             * true: Writer 주기 tip 샘플(미확정). false/null: 확정봉.
+             * FE optional — 없으면 확정봉으로 취급해도 됨.
+             */
+            Boolean isTip
     ) {}
 
     public record Z(

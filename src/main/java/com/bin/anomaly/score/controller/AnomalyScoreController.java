@@ -1,34 +1,32 @@
 package com.bin.anomaly.score.controller;
 
-import com.bin.anomaly.score.model.AnomalyScoreDetectRequest;
-import com.bin.anomaly.score.model.AnomalyScoreDetectResult;
 import com.bin.anomaly.score.model.AnomalyScoreFinalResponse;
 import com.bin.anomaly.score.model.AnomalyScoreSeriesResponse;
 import com.bin.anomaly.score.model.AnomalyScoreTopResponse;
-import com.bin.anomaly.score.service.AnomalyScoreDetectService;
 import com.bin.anomaly.score.service.AnomalyScoreFinalService;
 import com.bin.anomaly.score.service.AnomalyScoreScannerService;
 import com.bin.anomaly.score.service.AnomalyScoreSeriesService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/anomaly/scores")
 public class AnomalyScoreController {
 
-    private final AnomalyScoreDetectService anomalyScoreDetectService;
     private final AnomalyScoreSeriesService anomalyScoreSeriesService;
     private final AnomalyScoreFinalService anomalyScoreFinalService;
     private final AnomalyScoreScannerService anomalyScoreScannerService;
 
     /**
-     * 차트용 시계열 조회 API
+     * 차트용 시계열 조회 API (Redis 스냅샷).
      * `from`, `to`는 ISO-8601 날짜 시간 문자열 로 전달 해야 합니다. ex) `2026-02-06T00:00:00Z`, `2026-02-06T00:00:00+09:00`
      */
     @GetMapping("/{venueId}/{instrumentId}/series")
@@ -53,11 +51,6 @@ public class AnomalyScoreController {
         );
     }
 
-    /**
-     * "지금 가장 이상한 종목 Top N" 스캐너 API.
-     * - 각 (venue,instrument)별 최신 공통 ts(30/60/90 모두 존재) 기준으로 finalScore(mode) 계산 후 정렬
-     * - Δ(delta)는 "n봉 전 공통 ts"의 finalScore 대비 변화량 (finalScore_now - finalScore_prev)
-     */
     @GetMapping("/top")
     @Operation(summary = "지금 가장 이상한 종목 Top N 조회 (프리미엄 스캐너/알림용)")
     public ResponseEntity<AnomalyScoreTopResponse> top(
@@ -119,17 +112,6 @@ public class AnomalyScoreController {
         );
     }
 
-    /**
-     * 최종 평가 API
-     * windowDays 30, 60, 90에 대한 데이터를 종합하여 최종 평가 수행
-     * @param venueId 거래소 ID
-     * @param instrumentId 종목 ID
-     * @param timeframe 캔들 주기 (기본: 5m)
-     * @param scoreVersion 점수 버전 (기본: z_v1)
-     * @param mode 평가 모드 (max=OR, consensus=AND, 기본: consensus)
-     * @param ts 시각 (optional, 없으면 최신 공통 ts 사용)
-     * @return 최종 평가 결과
-     */
     @GetMapping("/{venueId}/{instrumentId}/final")
     @Operation(summary = "최종 평가 API - windowDays 30, 60, 90 종합 평가")
     public ResponseEntity<AnomalyScoreFinalResponse> finalEvaluation(
@@ -153,17 +135,13 @@ public class AnomalyScoreController {
     }
 
     /**
-     * 이상 점수 적재 실행 API (단일/배치).
-     * - RequestBody 없으면: 전체 active venue/instrument 대상으로 배치 실행 (windowDays=30/60/90 기본)
-     * - RequestBody 있으면: venueIds/instrumentIds/timeframes/windowDaysList(리스트)로 필터/설정하여 배치 실행
-     * - 기존 단일 요청 바디(venueId/instrumentId/timeframe/windowDays)도 호환 지원
+     * @deprecated 실시간 Writer로 대체됨. 호출 시 410 Gone.
      */
+    @Deprecated
     @PostMapping("/detect")
-    @Operation(summary = "Anomaly score detect 실행 (단일/배치, body 없으면 전체 배치)")
-    public ResponseEntity<AnomalyScoreDetectResult> detect(
-            @RequestBody(required = false) AnomalyScoreDetectRequest request
-    ) {
-        return ResponseEntity.ok(anomalyScoreDetectService.detectAllActive(request));
+    @Operation(summary = "[제거됨] Anomaly score detect — 실시간 Writer 사용")
+    public ResponseEntity<Map<String, String>> detectGone() {
+        return ResponseEntity.status(HttpStatus.GONE)
+                .body(Map.of("message", "error.anomaly.detect.gone"));
     }
 }
-

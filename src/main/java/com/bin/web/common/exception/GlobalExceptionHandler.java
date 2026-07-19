@@ -111,6 +111,14 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(ex.getStatus(), messageSource.getMessage(ex.getMessageKey(), null, LocaleContextHolder.getLocale())));
     }
 
+    // ✅ 503 Service Unavailable - anomaly realtime 워밍업/스냅샷 미준비
+    @ExceptionHandler(AnomalyNotReadyException.class)
+    public ResponseEntity<ErrorResponse> handleAnomalyNotReadyException(AnomalyNotReadyException ex) {
+        logger.warn(ex.getMessage());
+        return ResponseEntity.status(ex.getStatus())
+                .body(ErrorResponse.of(ex.getStatus(), messageSource.getMessage(ex.getMessageKey(), null, LocaleContextHolder.getLocale())));
+    }
+
     // ✅ 413 Payload Too Large - 파일 크기 초과
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ErrorResponse> handleFileSizeException(MaxUploadSizeExceededException ex) {
