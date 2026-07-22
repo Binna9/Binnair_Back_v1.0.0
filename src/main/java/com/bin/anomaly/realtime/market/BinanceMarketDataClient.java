@@ -28,10 +28,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 /**
- * Binance spot klines REST + combined stream WS.
+ * Binance spot klines REST + combined stream WS (자동 재연결).
  */
 @Slf4j
 @Component
@@ -45,8 +49,20 @@ public class BinanceMarketDataClient implements MarketDataClient {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
+    private final ScheduledExecutorService reconnectExec = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "binance-ws-reconnect");
+        t.setDaemon(true);
+        return t;
+    });
+
     private volatile WebSocketClient wsClient;
     private final Map<String, SymbolBinding> streamToBinding = new ConcurrentHashMap<>();
+    private final AtomicBoolean intentionalClose = new AtomicBoolean(false);
+    private final AtomicBoolean reconnectScheduled = new AtomicBoolean(false);
+
+    private volatile List<SymbolBinding> subscribedBindings = List.of();
+    private volatile String subscribedTimeframe;
+    private volatile BiConsumer<SymbolBinding, MarketCandle> subscribedCallback;
 
     @Override
     public boolean supports(String venueCode) {
@@ -99,18 +115,30 @@ public class BinanceMarketDataClient implements MarketDataClient {
 
     @Override
     public MarketCandle fetchLatest(SymbolBinding binding, String timeframe) {
+        List<MarketCandle> recent = fetchRecent(binding, timeframe, 1);
+        return recent.isEmpty() ? null : recent.get(0);
+    }
+
+    @Override
+    public List<MarketCandle> fetchRecent(SymbolBinding binding, String timeframe, int limit) {
+        int lim = Math.max(1, Math.min(limit, 1000));
         String symbol = toBinanceSymbol(binding.venueSymbol());
         String interval = toBinanceInterval(timeframe);
         String url = props.getBinanceRestBaseUrl()
                 + "/api/v3/klines?symbol=" + urlEncode(symbol)
                 + "&interval=" + urlEncode(interval)
-                + "&limit=1";
+                + "&limit=" + lim;
         JsonNode arr = getJson(url);
         if (arr == null || !arr.isArray() || arr.isEmpty()) {
-            return null;
+            return List.of();
         }
-        // REST kline의 마지막 봉은 진행 중일 수 있음 → isFinal=false로 tip 처리
-        return parseKlineArray(arr.get(0), false);
+        long nowMs = Instant.now().toEpochMilli();
+        List<MarketCandle> out = new ArrayList<>(arr.size());
+        for (JsonNode row : arr) {
+            MarketCandle c = parseKlineArray(row, nowMs);
+            if (c != null) out.add(c);
+        }
+        return out;
     }
 
     @Override
@@ -119,8 +147,21 @@ public class BinanceMarketDataClient implements MarketDataClient {
             String timeframe,
             BiConsumer<SymbolBinding, MarketCandle> onCandle
     ) {
-        unsubscribeAll();
-        if (bindings == null || bindings.isEmpty()) {
+        intentionalClose.set(true);
+        closeWsQuietly();
+        intentionalClose.set(false);
+
+        subscribedBindings = bindings == null ? List.of() : List.copyOf(bindings);
+        subscribedTimeframe = timeframe;
+        subscribedCallback = onCandle;
+        connectWs();
+    }
+
+    private void connectWs() {
+        List<SymbolBinding> bindings = subscribedBindings;
+        String timeframe = subscribedTimeframe;
+        BiConsumer<SymbolBinding, MarketCandle> onCandle = subscribedCallback;
+        if (bindings == null || bindings.isEmpty() || onCandle == null) {
             return;
         }
 
@@ -138,18 +179,17 @@ public class BinanceMarketDataClient implements MarketDataClient {
             return;
         }
 
-        // Binance combined stream: 한 URL에 여러 스트림. 너무 길면 청크.
         int chunkSize = 50;
-        // 단순화: 첫 청크만 연결 (maxAssets로 제한 권장). 필요 시 다중 연결 확장.
         List<String> first = streams.size() > chunkSize ? streams.subList(0, chunkSize) : streams;
         String joined = String.join("/", first);
         String wsUrl = props.getBinanceWsBaseUrl() + "?streams=" + joined;
 
         try {
             URI uri = URI.create(wsUrl);
-            wsClient = new WebSocketClient(uri) {
+            WebSocketClient client = new WebSocketClient(uri) {
                 @Override
                 public void onOpen(ServerHandshake handshake) {
+                    reconnectScheduled.set(false);
                     log.info("[binance-ws] connected streams={}", first.size());
                 }
 
@@ -176,23 +216,49 @@ public class BinanceMarketDataClient implements MarketDataClient {
 
                 @Override
                 public void onClose(int code, String reason, boolean remote) {
-                    log.warn("[binance-ws] closed code={} reason={}", code, reason);
+                    log.warn("[binance-ws] closed code={} reason={} remote={}", code, reason, remote);
+                    scheduleReconnect();
                 }
 
                 @Override
                 public void onError(Exception ex) {
-                    log.error("[binance-ws] error", ex);
+                    log.error("[binance-ws] error: {}", ex.getMessage());
                 }
             };
-            wsClient.connect();
+            wsClient = client;
+            client.connect();
         } catch (Exception e) {
             log.error("[binance-ws] connect failed: {}", e.getMessage());
+            scheduleReconnect();
         }
+    }
+
+    private void scheduleReconnect() {
+        if (intentionalClose.get()) return;
+        if (subscribedCallback == null || subscribedBindings.isEmpty()) return;
+        if (!reconnectScheduled.compareAndSet(false, true)) return;
+        reconnectExec.schedule(() -> {
+            reconnectScheduled.set(false);
+            if (intentionalClose.get()) return;
+            log.info("[binance-ws] reconnecting...");
+            closeWsQuietly();
+            connectWs();
+        }, 3, TimeUnit.SECONDS);
     }
 
     @Override
     @PreDestroy
     public void unsubscribeAll() {
+        intentionalClose.set(true);
+        closeWsQuietly();
+        streamToBinding.clear();
+        subscribedBindings = List.of();
+        subscribedCallback = null;
+        subscribedTimeframe = null;
+        reconnectExec.shutdownNow();
+    }
+
+    private void closeWsQuietly() {
         WebSocketClient client = wsClient;
         wsClient = null;
         if (client != null) {
@@ -201,7 +267,6 @@ public class BinanceMarketDataClient implements MarketDataClient {
             } catch (Exception ignored) {
             }
         }
-        streamToBinding.clear();
     }
 
     private JsonNode getJson(String url) {
@@ -222,7 +287,15 @@ public class BinanceMarketDataClient implements MarketDataClient {
         }
     }
 
+    /** 워밍업용: 전부 확정으로 취급. */
     private MarketCandle parseKlineArray(JsonNode row, boolean forceFinal) {
+        return parseKlineArray(row, forceFinal ? Long.MAX_VALUE : Instant.now().toEpochMilli());
+    }
+
+    /**
+     * closeTime &lt; nowMs 이면 확정봉, 아니면 tip.
+     */
+    private MarketCandle parseKlineArray(JsonNode row, long nowMs) {
         if (row == null || !row.isArray() || row.size() < 6) return null;
         long openTime = row.get(0).asLong();
         double open = row.get(1).asDouble();
@@ -230,10 +303,19 @@ public class BinanceMarketDataClient implements MarketDataClient {
         double low = row.get(3).asDouble();
         double close = row.get(4).asDouble();
         double volume = row.get(5).asDouble();
+        boolean isFinal;
+        if (nowMs == Long.MAX_VALUE) {
+            isFinal = true;
+        } else if (row.size() > 6) {
+            long closeTime = row.get(6).asLong();
+            isFinal = closeTime < nowMs;
+        } else {
+            isFinal = false;
+        }
         return new MarketCandle(
                 OffsetDateTime.ofInstant(Instant.ofEpochMilli(openTime), ZoneOffset.UTC),
                 open, high, low, close, volume,
-                forceFinal
+                isFinal
         );
     }
 

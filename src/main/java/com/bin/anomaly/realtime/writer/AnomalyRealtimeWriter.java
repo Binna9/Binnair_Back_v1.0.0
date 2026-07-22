@@ -155,6 +155,7 @@ public class AnomalyRealtimeWriter {
 
     /**
      * 1초(설정)마다 Redis 스냅샷 갱신.
+     * WS와 별개로 REST로 tip/확정봉을 보정한다 (WS 끊김·고착 대비).
      */
     @Scheduled(fixedDelayString = "${anomaly.realtime.interval-ms:1000}")
     public void publishLoop() {
@@ -169,18 +170,14 @@ public class AnomalyRealtimeWriter {
         }
 
         String timeframe = scoreProps.getTimeframe();
+        Duration barDuration = AnomalyScoreMath.parseTimeframeToDuration(timeframe, scoreProps.getBarDuration());
         try {
-            if (!realtimeProps.isUseWebSocket()) {
-                for (AssetRealtimeEngine engine : engines.values()) {
-                    try {
-                        MarketCandle latest = marketDataClientRouter.fetchLatest(engine.binding(), timeframe);
-                        if (latest != null) {
-                            engine.onCandle(latest);
-                        }
-                    } catch (Exception e) {
-                        log.debug("[anomaly-writer] latest poll failed {}: {}",
-                                engine.binding().venueSymbol(), e.getMessage());
-                    }
+            for (AssetRealtimeEngine engine : engines.values()) {
+                try {
+                    reconcileFromRest(engine, timeframe, barDuration);
+                } catch (Exception e) {
+                    log.debug("[anomaly-writer] rest reconcile failed {}: {}",
+                            engine.binding().venueSymbol(), e.getMessage());
                 }
             }
 
@@ -195,6 +192,46 @@ public class AnomalyRealtimeWriter {
             snapshotStore.markWarmingUp(false);
         } catch (Exception e) {
             log.warn("[anomaly-writer] publish loop error: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * REST로 확정봉 gap-fill + tip OHLC 갱신.
+     * WS가 죽어도 tip 점수/종가가 고정되지 않고, 확정봉도 따라잡는다.
+     */
+    private void reconcileFromRest(AssetRealtimeEngine engine, String timeframe, Duration barDuration) {
+        SymbolBinding binding = engine.binding();
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime lastFinal = engine.lastFinalBarTs();
+
+        boolean gap = lastFinal == null
+                || lastFinal.plus(barDuration).plusSeconds(15).isBefore(now);
+        if (gap) {
+            OffsetDateTime from = lastFinal != null
+                    ? lastFinal.plusSeconds(1)
+                    : now.minus(barDuration.multipliedBy(100));
+            // 너무 긴 gap은 최근 2일만 (기동 직후 폭주 방지)
+            OffsetDateTime minFrom = now.minusDays(2);
+            if (from.isBefore(minFrom)) {
+                from = minFrom;
+            }
+            List<MarketCandle> hist = marketDataClientRouter.fetchHistory(binding, timeframe, from, now);
+            for (MarketCandle c : hist) {
+                if (c == null) continue;
+                boolean closed = !c.ts().plus(barDuration).isAfter(now);
+                if (closed) {
+                    engine.onCandle(new MarketCandle(
+                            c.ts(), c.open(), c.high(), c.low(), c.close(), c.volume(), true
+                    ));
+                }
+            }
+        }
+
+        // 최근 봉으로 tip(+방금 마감분) 보정
+        List<MarketCandle> recent = marketDataClientRouter.fetchRecent(binding, timeframe, 3);
+        for (MarketCandle c : recent) {
+            if (c == null) continue;
+            engine.onCandle(c);
         }
     }
 

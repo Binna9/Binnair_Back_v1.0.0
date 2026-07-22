@@ -35,6 +35,10 @@ public class MarketDataClientRouter {
         return requireClient(binding.venueCode()).fetchLatest(binding, timeframe);
     }
 
+    public List<MarketCandle> fetchRecent(SymbolBinding binding, String timeframe, int limit) {
+        return requireClient(binding.venueCode()).fetchRecent(binding, timeframe, limit);
+    }
+
     public void subscribeKlines(
             List<SymbolBinding> bindings,
             String timeframe,

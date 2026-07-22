@@ -28,9 +28,17 @@ public interface MarketDataClient {
     );
 
     /**
-     * 최신 봉(진행 중 포함) 1개.
+     * 최신 봉(진행 중 포함) 1개. 미확정이면 isFinal=false.
      */
     MarketCandle fetchLatest(SymbolBinding binding, String timeframe);
+
+    /**
+     * 최근 N개 봉. 이미 마감된 봉은 isFinal=true, 진행 중 tip은 false.
+     */
+    default List<MarketCandle> fetchRecent(SymbolBinding binding, String timeframe, int limit) {
+        MarketCandle latest = fetchLatest(binding, timeframe);
+        return latest == null ? List.of() : List.of(latest);
+    }
 
     /**
      * kline 스트림 구독. 콜백: (binding, candle).

@@ -49,6 +49,8 @@ public class AssetRealtimeEngine {
     private final Deque<MetricSample> metricHistory = new ArrayDeque<>();
 
     private Double prevClose;
+    /** 마지막 확정봉 openTime (UTC). REST gap-fill / 중복 commit 방지. */
+    private OffsetDateTime lastFinalBarTs;
     private MarketCandle tipCandle;
     /** tip 임시 점수 (윈도우 commit 없음). tipCandle이 있을 때만 non-null. */
     private ScoreBundle tipSnapshot;
@@ -91,6 +93,10 @@ public class AssetRealtimeEngine {
         return ready;
     }
 
+    public synchronized OffsetDateTime lastFinalBarTs() {
+        return lastFinalBarTs;
+    }
+
     public void warmup(List<MarketCandle> candles) {
         for (MarketCandle c : candles) {
             if (c == null) continue;
@@ -109,7 +115,7 @@ public class AssetRealtimeEngine {
             tipCandle = candle;
             tipSnapshot = scoreAgainstBaseline(candle, false);
         }
-        ready = hasAnyScoredPoint();
+        ready = hasAnyScoredPoint() || tipSnapshot != null;
     }
 
     /**
@@ -200,8 +206,14 @@ public class AssetRealtimeEngine {
     }
 
     private void applyFinalBar(MarketCandle c) {
+        OffsetDateTime ts = c.ts();
+        if (lastFinalBarTs != null && !ts.isAfter(lastFinalBarTs)) {
+            return;
+        }
+
         ScoreBundle scored = scoreAgainstBaseline(c, true);
         prevClose = c.close();
+        lastFinalBarTs = ts;
 
         if (scored.scores().values().stream().allMatch(v -> v == null)) {
             return;
