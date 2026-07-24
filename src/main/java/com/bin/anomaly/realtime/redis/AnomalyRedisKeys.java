@@ -12,6 +12,11 @@ public final class AnomalyRedisKeys {
         return "anomaly:series:" + venueId + ":" + instrumentId + ":" + timeframe;
     }
 
+    /** tip 궤적 전용 (빠른 갱신). API에서 series와 merge. */
+    public static String seriesTip(long venueId, long instrumentId, String timeframe) {
+        return "anomaly:series-tip:" + venueId + ":" + instrumentId + ":" + timeframe;
+    }
+
     public static String finals(long venueId, long instrumentId, String timeframe, String mode) {
         return "anomaly:final:" + venueId + ":" + instrumentId + ":" + timeframe + ":" + mode;
     }

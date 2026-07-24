@@ -14,85 +14,61 @@ import java.util.List;
 @ConfigurationProperties(prefix = "anomaly.realtime")
 public class AnomalyRealtimeProperties {
 
-    /**
-     * Writer 활성화 여부. false면 Redis 스냅샷을 갱신하지 않음.
-     */
+    /** Writer 활성화 여부. false면 Redis 스냅샷을 갱신하지 않음. */
     private boolean enabled = true;
 
-    /**
-     * tip/top/final Redis 갱신 주기.
-     */
-    private Duration interval = Duration.ofSeconds(1);
+    /** tip/top/final Redis 갱신 주기 (Duration, 참고용). */
+    private Duration interval = Duration.ofSeconds(2);
+
+    /** tip/final/top @Scheduled fixedDelay(ms). */
+    private long intervalMs = 2000;
+
+    /** 확정봉 series Redis 갱신 주기(ms). tip보다 길게. */
+    private long seriesPublishIntervalMs = 15000;
 
     /**
-     * @Scheduled fixedDelay용 ms. interval과 맞출 것.
+     * REST tip/확정 보정 주기(ms). WS 사용 중이면 이 주기로만 fetchRecent.
+     * 확정봉 gap이 있으면 즉시 gap-fill.
      */
-    private long intervalMs = 1000;
+    private long restReconcileIntervalMs = 10000;
 
-    /**
-     * 지원 venue_code (소문자). 기본 binance만.
-     */
+    /** 지원 venue_code (소문자). */
     private List<String> venueCodes = new ArrayList<>(List.of("binance"));
 
-    /**
-     * Binance REST base URL.
-     */
     private String binanceRestBaseUrl = "https://api.binance.com";
 
-    /**
-     * Binance combined stream WS URL (query 없이 host path까지).
-     */
     private String binanceWsBaseUrl = "wss://stream.binance.com:9443/stream";
 
-    /**
-     * true면 WS 구독, false면 REST로 latest kline만 폴링.
-     */
+    /** true면 WS 구독 + REST 스로틀 보정, false면 REST만. */
     private boolean useWebSocket = true;
 
-    /**
-     * 워밍업/보관할 series 일수 (차트용 Redis 적재 길이).
-     */
-    private int seriesRetentionDays = 30;
+    /** 확정봉 series Redis 보관 일수. */
+    private int seriesRetentionDays = 7;
 
-    /**
-     * tip 샘플(미확정 궤적) 보관 기간. Writer interval마다 1포인트 append.
-     * 예: 1h + interval 1s ≈ 3600점, 2s ≈ 1800점.
-     */
-    private Duration tipRetention = Duration.ofHours(1);
+    /** tip 샘플 보관. 예: 30m + interval 2s ≈ 900점. */
+    private Duration tipRetention = Duration.ofMinutes(30);
 
-    /**
-     * 롤링 baseline 확보용 히스토리 일수 (REST 워밍업).
-     */
+    /** 롤링 baseline 워밍업 히스토리 일수. */
     private int warmupHistoryDays = 90;
 
-    /**
-     * 처리 자산 자산 수 (0이면 제한 없음).
-     */
+    /** 처리 최대 자산 수 (0이면 제한 없음). */
     private int maxAssets = 0;
 
     /**
-     * Redis 스냅샷 TTL.
+     * Redis 스냅샷 TTL. seriesPublishIntervalMs보다 길어야 확정 series 키가 안 끊김.
      */
-    private Duration snapshotTtl = Duration.ofSeconds(10);
+    private Duration snapshotTtl = Duration.ofSeconds(60);
 
-    /**
-     * Top 스냅샷(AGG/VOL/RNG/RET)에 Redis로 올릴 개수.
-     * FE 종합이상 카드는 Top5 기준. /series·/final과 무관.
-     */
+    /** Top 스냅샷 개수. */
     private int topSnapshotLimit = 5;
 
-    /**
-     * Top delta 계산용 봉 수.
-     */
+    /** Top delta 계산용 봉 수. */
     private int deltaBars = 12;
 
-    /**
-     * Writer 분산락 키 (멀티 인스턴스 시 단일 Writer).
-     */
+    /** publish할 final/top mode. 기본 consensus만. */
+    private List<String> scoreModes = new ArrayList<>(List.of("consensus"));
+
     private String writerLockKey = "anomaly:meta:writerLock";
 
-    /**
-     * Writer 락 TTL.
-     */
     private Duration writerLockTtl = Duration.ofSeconds(5);
 }

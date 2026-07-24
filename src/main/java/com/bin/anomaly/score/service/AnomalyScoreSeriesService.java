@@ -8,6 +8,7 @@ import com.bin.web.common.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -46,22 +47,30 @@ public class AnomalyScoreSeriesService {
         String tf = (timeframe == null || timeframe.isBlank()) ? props.getTimeframe() : timeframe;
         String sv = (scoreVersion == null || scoreVersion.isBlank()) ? props.getScoreVersion() : scoreVersion;
 
-        AnomalyScoreSeriesResponse cached = snapshotStore.getSeries(venueId, instrumentId, tf)
-                .orElseThrow(() -> new NotFoundException("error.anomaly.series.notfound"));
+        AnomalyScoreSeriesResponse confirmed = snapshotStore.getSeries(venueId, instrumentId, tf)
+                .orElse(null);
+        AnomalyScoreSeriesResponse tips = snapshotStore.getSeriesTip(venueId, instrumentId, tf)
+                .orElse(null);
 
-        List<AnomalyScoreSeriesResponse.Point> filtered = new ArrayList<>();
+        if (confirmed == null && tips == null) {
+            throw new NotFoundException("error.anomaly.series.notfound");
+        }
+
+        List<AnomalyScoreSeriesResponse.Point> confirmedPts = filterRange(
+                confirmed != null ? confirmed.points() : List.of(), fromInclusive, toInclusive);
+        List<AnomalyScoreSeriesResponse.Point> tipPts = filterRange(
+                tips != null ? tips.points() : List.of(), fromInclusive, toInclusive);
+
+        // 하위호환: 예전 full series(확정+tip)만 있을 때 tip 키 없음
+        List<AnomalyScoreSeriesResponse.Point> points = mergeByTs(confirmedPts, tipPts);
+
         OffsetDateTime latestTs = null;
         Map<String, Double> latestScores = new LinkedHashMap<>();
         Map<String, Double> maxScores = new LinkedHashMap<>();
         Map<String, OffsetDateTime> maxScoreTs = new LinkedHashMap<>();
         initWindowMaps(latestScores, maxScores, maxScoreTs);
 
-        for (AnomalyScoreSeriesResponse.Point p : cached.points()) {
-            OffsetDateTime tsUtc = p.ts().atZoneSameInstant(ZoneOffset.UTC).toOffsetDateTime();
-            if (tsUtc.isBefore(fromInclusive) || tsUtc.isAfter(toInclusive)) {
-                continue;
-            }
-            filtered.add(p);
+        for (AnomalyScoreSeriesResponse.Point p : points) {
             latestTs = p.ts();
             latestScores.put("30", p.scores().get("30"));
             latestScores.put("60", p.scores().get("60"));
@@ -71,26 +80,70 @@ public class AnomalyScoreSeriesService {
             updateMax("90", p.scores().get("90"), p.ts(), maxScores, maxScoreTs);
         }
 
+        AnomalyScoreSeriesResponse.Meta srcMeta = confirmed != null ? confirmed.meta()
+                : (tips != null ? tips.meta() : null);
+
         AnomalyScoreSeriesResponse.Meta meta = new AnomalyScoreSeriesResponse.Meta(
                 venueId,
-                cached.meta().venueCode(),
+                srcMeta != null ? srcMeta.venueCode() : null,
                 instrumentId,
-                cached.meta().instrumentSymbol(),
-                cached.meta().venueSymbol(),
+                srcMeta != null ? srcMeta.instrumentSymbol() : null,
+                srcMeta != null ? srcMeta.venueSymbol() : null,
                 tf,
                 sv,
                 DEFAULT_WINDOWS,
                 toKst(fromInclusive),
                 toKst(toInclusive),
                 OffsetDateTime.now(ZoneOffset.UTC).atZoneSameInstant(KST).toOffsetDateTime(),
-                filtered.size()
+                points.size()
         );
 
         return new AnomalyScoreSeriesResponse(
                 meta,
                 new AnomalyScoreSeriesResponse.Summary(latestTs, latestScores, maxScores, maxScoreTs),
-                filtered
+                points
         );
+    }
+
+    private static List<AnomalyScoreSeriesResponse.Point> mergeByTs(
+            List<AnomalyScoreSeriesResponse.Point> confirmed,
+            List<AnomalyScoreSeriesResponse.Point> tips
+    ) {
+        List<AnomalyScoreSeriesResponse.Point> out = new ArrayList<>(confirmed.size() + tips.size());
+        int i = 0;
+        int j = 0;
+        while (i < confirmed.size() && j < tips.size()) {
+            Instant a = confirmed.get(i).ts().toInstant();
+            Instant b = tips.get(j).ts().toInstant();
+            int cmp = a.compareTo(b);
+            if (cmp < 0) {
+                out.add(confirmed.get(i++));
+            } else if (cmp > 0) {
+                out.add(tips.get(j++));
+            } else {
+                out.add(tips.get(j++));
+                i++;
+            }
+        }
+        while (i < confirmed.size()) out.add(confirmed.get(i++));
+        while (j < tips.size()) out.add(tips.get(j++));
+        return out;
+    }
+
+    private static List<AnomalyScoreSeriesResponse.Point> filterRange(
+            List<AnomalyScoreSeriesResponse.Point> points,
+            OffsetDateTime fromInclusive,
+            OffsetDateTime toInclusive
+    ) {
+        List<AnomalyScoreSeriesResponse.Point> out = new ArrayList<>();
+        for (AnomalyScoreSeriesResponse.Point p : points) {
+            OffsetDateTime tsUtc = p.ts().atZoneSameInstant(ZoneOffset.UTC).toOffsetDateTime();
+            if (tsUtc.isBefore(fromInclusive) || tsUtc.isAfter(toInclusive)) {
+                continue;
+            }
+            out.add(p);
+        }
+        return out;
     }
 
     private void ensureReady() {

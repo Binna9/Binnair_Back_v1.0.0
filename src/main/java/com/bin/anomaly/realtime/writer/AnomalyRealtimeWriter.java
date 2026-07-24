@@ -50,6 +50,8 @@ public class AnomalyRealtimeWriter {
     private final AtomicBoolean warmedUp = new AtomicBoolean(false);
     private final AtomicBoolean warming = new AtomicBoolean(false);
     private volatile boolean leader = false;
+    private volatile long lastRestReconcileMs = 0L;
+    private volatile long lastSeriesPublishMs = 0L;
 
     @PostConstruct
     public void startWarmupAsync() {
@@ -154,14 +156,15 @@ public class AnomalyRealtimeWriter {
     }
 
     /**
-     * 1초(설정)마다 Redis 스냅샷 갱신.
-     * WS와 별개로 REST로 tip/확정봉을 보정한다 (WS 끊김·고착 대비).
+     * tip/final/top: interval-ms마다.
+     * tip series: 매 루프.
+     * 확정 series: series-publish-interval-ms 또는 확정봉 dirty 시.
+     * REST 보정: rest-reconcile-interval-ms (gap이면 즉시).
      */
-    @Scheduled(fixedDelayString = "${anomaly.realtime.interval-ms:1000}")
+    @Scheduled(fixedDelayString = "${anomaly.realtime.interval-ms:2000}")
     public void publishLoop() {
         if (!warmedUp.get()) return;
 
-        // 리더 락 (멀티 인스턴스)
         if (!leader) {
             leader = snapshotStore.tryAcquireWriterLock();
             if (!leader) return;
@@ -171,22 +174,42 @@ public class AnomalyRealtimeWriter {
 
         String timeframe = scoreProps.getTimeframe();
         Duration barDuration = AnomalyScoreMath.parseTimeframeToDuration(timeframe, scoreProps.getBarDuration());
+        long nowMs = System.currentTimeMillis();
         try {
-            for (AssetRealtimeEngine engine : engines.values()) {
-                try {
-                    reconcileFromRest(engine, timeframe, barDuration);
-                } catch (Exception e) {
-                    log.debug("[anomaly-writer] rest reconcile failed {}: {}",
-                            engine.binding().venueSymbol(), e.getMessage());
+            if (shouldReconcileRest(nowMs, barDuration)) {
+                for (AssetRealtimeEngine engine : engines.values()) {
+                    try {
+                        reconcileFromRest(engine, timeframe, barDuration);
+                    } catch (Exception e) {
+                        log.debug("[anomaly-writer] rest reconcile failed {}: {}",
+                                engine.binding().venueSymbol(), e.getMessage());
+                    }
                 }
+                lastRestReconcileMs = nowMs;
             }
 
             OffsetDateTime sampleTs = OffsetDateTime.now(ZoneOffset.UTC);
+            boolean seriesDue = (nowMs - lastSeriesPublishMs) >= Math.max(1000L, realtimeProps.getSeriesPublishIntervalMs());
+            boolean anyConfirmedDirty = false;
+
             for (AssetRealtimeEngine engine : engines.values()) {
                 if (!engine.ready()) continue;
                 engine.sampleTip(sampleTs);
-                publishAssetSnapshots(engine, timeframe);
+                publishFastSnapshots(engine, timeframe);
+                if (engine.peekConfirmedDirty()) {
+                    anyConfirmedDirty = true;
+                }
             }
+
+            if (seriesDue || anyConfirmedDirty) {
+                for (AssetRealtimeEngine engine : engines.values()) {
+                    if (!engine.ready()) continue;
+                    engine.consumeConfirmedDirty();
+                    publishConfirmedSeries(engine, timeframe);
+                }
+                lastSeriesPublishMs = nowMs;
+            }
+
             publishTops(timeframe);
             snapshotStore.touchUpdatedAt();
             snapshotStore.markWarmingUp(false);
@@ -195,9 +218,27 @@ public class AnomalyRealtimeWriter {
         }
     }
 
+    private boolean shouldReconcileRest(long nowMs, Duration barDuration) {
+        if (!realtimeProps.isUseWebSocket()) {
+            return true;
+        }
+        long interval = Math.max(1000L, realtimeProps.getRestReconcileIntervalMs());
+        if (nowMs - lastRestReconcileMs >= interval) {
+            return true;
+        }
+        // 확정봉 gap이면 즉시
+        for (AssetRealtimeEngine engine : engines.values()) {
+            OffsetDateTime lastFinal = engine.lastFinalBarTs();
+            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+            if (lastFinal == null || lastFinal.plus(barDuration).plusSeconds(15).isBefore(now)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * REST로 확정봉 gap-fill + tip OHLC 갱신.
-     * WS가 죽어도 tip 점수/종가가 고정되지 않고, 확정봉도 따라잡는다.
      */
     private void reconcileFromRest(AssetRealtimeEngine engine, String timeframe, Duration barDuration) {
         SymbolBinding binding = engine.binding();
@@ -210,7 +251,6 @@ public class AnomalyRealtimeWriter {
             OffsetDateTime from = lastFinal != null
                     ? lastFinal.plusSeconds(1)
                     : now.minus(barDuration.multipliedBy(100));
-            // 너무 긴 gap은 최근 2일만 (기동 직후 폭주 방지)
             OffsetDateTime minFrom = now.minusDays(2);
             if (from.isBefore(minFrom)) {
                 from = minFrom;
@@ -227,7 +267,6 @@ public class AnomalyRealtimeWriter {
             }
         }
 
-        // 최근 봉으로 tip(+방금 마감분) 보정
         List<MarketCandle> recent = marketDataClientRouter.fetchRecent(binding, timeframe, 3);
         for (MarketCandle c : recent) {
             if (c == null) continue;
@@ -235,14 +274,15 @@ public class AnomalyRealtimeWriter {
         }
     }
 
-    private void publishAssetSnapshots(AssetRealtimeEngine engine, String timeframe) {
+    /** tip series + final (매 루프). */
+    private void publishFastSnapshots(AssetRealtimeEngine engine, String timeframe) {
         SymbolBinding b = engine.binding();
         OffsetDateTime to = OffsetDateTime.now(ZoneOffset.UTC);
-        OffsetDateTime from = to.minusDays(realtimeProps.getSeriesRetentionDays());
-        AnomalyScoreSeriesResponse series = engine.buildSeries(from, to);
-        snapshotStore.putSeries(b.venueId(), b.instrumentId(), timeframe, series);
+        OffsetDateTime tipFrom = to.minus(realtimeProps.getTipRetention());
+        AnomalyScoreSeriesResponse tipSeries = engine.buildTipSeries(tipFrom, to);
+        snapshotStore.putSeriesTip(b.venueId(), b.instrumentId(), timeframe, tipSeries);
 
-        for (String mode : List.of("consensus", "max")) {
+        for (String mode : scoreModes()) {
             AnomalyScoreFinalResponse fin = engine.buildFinal(mode);
             if (fin != null) {
                 snapshotStore.putFinal(b.venueId(), b.instrumentId(), timeframe, mode, fin);
@@ -250,10 +290,38 @@ public class AnomalyRealtimeWriter {
         }
     }
 
+    /** 확정봉 series (느린 주기). */
+    private void publishConfirmedSeries(AssetRealtimeEngine engine, String timeframe) {
+        SymbolBinding b = engine.binding();
+        OffsetDateTime to = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime from = to.minusDays(realtimeProps.getSeriesRetentionDays());
+        AnomalyScoreSeriesResponse series = engine.buildConfirmedSeries(from, to);
+        snapshotStore.putSeries(b.venueId(), b.instrumentId(), timeframe, series);
+    }
+
+    /** 워밍업 직후 1회: 확정+tip+final. */
+    private void publishAssetSnapshots(AssetRealtimeEngine engine, String timeframe) {
+        publishConfirmedSeries(engine, timeframe);
+        publishFastSnapshots(engine, timeframe);
+        engine.consumeConfirmedDirty();
+    }
+
+    private List<String> scoreModes() {
+        List<String> modes = realtimeProps.getScoreModes();
+        if (modes == null || modes.isEmpty()) {
+            return List.of("consensus");
+        }
+        return modes.stream()
+                .filter(m -> m != null && !m.isBlank())
+                .map(m -> m.trim().toLowerCase(Locale.ROOT))
+                .distinct()
+                .toList();
+    }
+
     private void publishTops(String timeframe) {
         int limit = realtimeProps.getTopSnapshotLimit();
         int deltaBars = realtimeProps.getDeltaBars();
-        for (String mode : List.of("consensus", "max")) {
+        for (String mode : scoreModes()) {
             List<AssetRealtimeEngine.ScannerRow> rows = new ArrayList<>();
             for (AssetRealtimeEngine engine : engines.values()) {
                 AssetRealtimeEngine.ScannerRow row = engine.toScannerRow(mode, deltaBars);

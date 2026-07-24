@@ -55,6 +55,8 @@ public class AssetRealtimeEngine {
     /** tip 임시 점수 (윈도우 commit 없음). tipCandle이 있을 때만 non-null. */
     private ScoreBundle tipSnapshot;
     private boolean ready;
+    /** 확정봉 series Redis 재publish 필요. */
+    private boolean confirmedDirty;
 
     public AssetRealtimeEngine(
             SymbolBinding binding,
@@ -95,6 +97,16 @@ public class AssetRealtimeEngine {
 
     public synchronized OffsetDateTime lastFinalBarTs() {
         return lastFinalBarTs;
+    }
+
+    public synchronized boolean consumeConfirmedDirty() {
+        boolean d = confirmedDirty;
+        confirmedDirty = false;
+        return d;
+    }
+
+    public synchronized boolean peekConfirmedDirty() {
+        return confirmedDirty;
     }
 
     public void warmup(List<MarketCandle> candles) {
@@ -229,6 +241,7 @@ public class AssetRealtimeEngine {
         while (series.size() > seriesMaxBars) {
             series.removeFirst();
         }
+        confirmedDirty = true;
 
         AnomalyScoreMath.FinalAgg agg = AnomalyScoreMath.evaluateFinal(
                 scored.scores().get("30"), scored.scores().get("60"), scored.scores().get("90"), "consensus"
@@ -297,17 +310,46 @@ public class AssetRealtimeEngine {
             OffsetDateTime fromInclusive,
             OffsetDateTime toInclusive
     ) {
+        return buildSeries(fromInclusive, toInclusive, true, true);
+    }
+
+    /** 확정봉만 (느린 Redis 키). */
+    public synchronized AnomalyScoreSeriesResponse buildConfirmedSeries(
+            OffsetDateTime fromInclusive,
+            OffsetDateTime toInclusive
+    ) {
+        return buildSeries(fromInclusive, toInclusive, true, false);
+    }
+
+    /** tip 히스토리만 (빠른 Redis 키). */
+    public synchronized AnomalyScoreSeriesResponse buildTipSeries(
+            OffsetDateTime fromInclusive,
+            OffsetDateTime toInclusive
+    ) {
+        return buildSeries(fromInclusive, toInclusive, false, true);
+    }
+
+    private AnomalyScoreSeriesResponse buildSeries(
+            OffsetDateTime fromInclusive,
+            OffsetDateTime toInclusive,
+            boolean includeConfirmed,
+            boolean includeTips
+    ) {
         List<AnomalyScoreSeriesResponse.Point> confirmed = new ArrayList<>();
-        for (AnomalyScoreSeriesResponse.Point p : series) {
-            if (inRange(p.ts(), fromInclusive, toInclusive)) {
-                confirmed.add(p);
+        if (includeConfirmed) {
+            for (AnomalyScoreSeriesResponse.Point p : series) {
+                if (inRange(p.ts(), fromInclusive, toInclusive)) {
+                    confirmed.add(p);
+                }
             }
         }
 
         List<AnomalyScoreSeriesResponse.Point> tips = new ArrayList<>();
-        for (AnomalyScoreSeriesResponse.Point p : tipHistory) {
-            if (inRange(p.ts(), fromInclusive, toInclusive)) {
-                tips.add(p);
+        if (includeTips) {
+            for (AnomalyScoreSeriesResponse.Point p : tipHistory) {
+                if (inRange(p.ts(), fromInclusive, toInclusive)) {
+                    tips.add(p);
+                }
             }
         }
 
@@ -376,7 +418,6 @@ public class AssetRealtimeEngine {
             } else if (cmp > 0) {
                 out.add(tips.get(j++));
             } else {
-                // 동일 ts → tip 우선
                 out.add(tips.get(j++));
                 i++;
             }

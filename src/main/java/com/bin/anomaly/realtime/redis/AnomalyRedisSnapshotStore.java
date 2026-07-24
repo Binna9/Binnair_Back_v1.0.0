@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -62,15 +63,23 @@ public class AnomalyRedisSnapshotStore {
     }
 
     public void putSeries(long venueId, long instrumentId, String timeframe, AnomalyScoreSeriesResponse response) {
-        setJson(AnomalyRedisKeys.series(venueId, instrumentId, timeframe), response);
+        setJson(AnomalyRedisKeys.series(venueId, instrumentId, timeframe), response, seriesTtl());
     }
 
     public Optional<AnomalyScoreSeriesResponse> getSeries(long venueId, long instrumentId, String timeframe) {
         return getJson(AnomalyRedisKeys.series(venueId, instrumentId, timeframe), AnomalyScoreSeriesResponse.class);
     }
 
+    public void putSeriesTip(long venueId, long instrumentId, String timeframe, AnomalyScoreSeriesResponse response) {
+        setJson(AnomalyRedisKeys.seriesTip(venueId, instrumentId, timeframe), response, props.getSnapshotTtl());
+    }
+
+    public Optional<AnomalyScoreSeriesResponse> getSeriesTip(long venueId, long instrumentId, String timeframe) {
+        return getJson(AnomalyRedisKeys.seriesTip(venueId, instrumentId, timeframe), AnomalyScoreSeriesResponse.class);
+    }
+
     public void putFinal(long venueId, long instrumentId, String timeframe, String mode, AnomalyScoreFinalResponse response) {
-        setJson(AnomalyRedisKeys.finals(venueId, instrumentId, timeframe, mode), response);
+        setJson(AnomalyRedisKeys.finals(venueId, instrumentId, timeframe, mode), response, props.getSnapshotTtl());
     }
 
     public Optional<AnomalyScoreFinalResponse> getFinal(long venueId, long instrumentId, String timeframe, String mode) {
@@ -78,7 +87,7 @@ public class AnomalyRedisSnapshotStore {
     }
 
     public void putTop(String tab, String timeframe, String mode, AnomalyScoreTopResponse response) {
-        setJson(AnomalyRedisKeys.top(tab, timeframe, mode), response);
+        setJson(AnomalyRedisKeys.top(tab, timeframe, mode), response, props.getSnapshotTtl());
     }
 
     public Optional<AnomalyScoreTopResponse> getTop(String tab, String timeframe, String mode) {
@@ -98,10 +107,17 @@ public class AnomalyRedisSnapshotStore {
         redisTemplate.expire(props.getWriterLockKey(), props.getWriterLockTtl());
     }
 
-    private void setJson(String key, Object value) {
+    /** 확정 series는 publish 주기가 길어 TTL을 더 넉넉히. */
+    private Duration seriesTtl() {
+        long sec = Math.max(props.getSnapshotTtl().toSeconds(),
+                props.getSeriesPublishIntervalMs() / 1000L * 3L + 30L);
+        return Duration.ofSeconds(sec);
+    }
+
+    private void setJson(String key, Object value, Duration ttl) {
         try {
             String json = objectMapper.writeValueAsString(value);
-            redisTemplate.opsForValue().set(key, json, props.getSnapshotTtl());
+            redisTemplate.opsForValue().set(key, json, ttl);
         } catch (JsonProcessingException e) {
             log.warn("[anomaly-redis] serialize failed key={}: {}", key, e.getMessage());
         }
